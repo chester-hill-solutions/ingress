@@ -1,0 +1,34 @@
+{
+  "nativeEvidence": "artifacts/74d285d5-9726-4b91-a8a5-9770ead3de0b/squad-evidence.json",
+  "nativeIndependentChecks": {
+    "passed": 58,
+    "total": 58
+  },
+  "parentCorrections": [
+    "Clarified both chapter introductions: wrong answers award zero points and reset the streak; earned score is not subtracted.",
+    "Kept the selected chapter label readable when hovered by correcting its CSS specificity."
+  ],
+  "files": {
+    "MISSION.md": "75e9fe91e4d4a95069d923a69c5dd0354ed441acb56b773c2b20ee64b98a0236",
+    "engine.mjs": "4b7706bca52aebe59800eee112795f04bdff5aa8c21765326d63b53648296757",
+    "README.md": "c058cb9a23d4c70902a16d1966666b507cb4240679f2a473b0ef6abe2b479c5d",
+    "package.json": "16bb332d1bf5ad555d2a97cdc6f538d05cfcb48f29de6e0fe68c2b9cbd1025d4",
+    "server.mjs": "b278592ad5ce1baa92b864b077c3eb7fec4c6a519148f059fc804b44cc40c9d3",
+    "public/help.mjs": "3ef1be108410cdc18859efefa6c636610bd9a9f2e8c16d7cb9b7a5c15d4e92b6",
+    "public/cards.mjs": "1175bf3b4c1317cfc7efa2e27813f546e93979185cfc33dc0579d353b3bbd5b8",
+    "public/notebook.mjs": "f3569171baeb516c087c92b32bbcc2ff1a8611b524c0dfce8718655cc49f5fed",
+    "public/index.html": "17934ae5724db96082d21bd82e481e9a0222504ffdfb3e27223605d91b89c08e",
+    "public/atlas.mjs": "496e01afe700efcbf62c26aad0ed08399247388a74ada3b687e61c15f495a349",
+    "public/scoreboard.mjs": "4a5c4f6d64a18518978a513f47431bcca7e090cef630d1b61e5adedb6faedae5",
+    "public/timeline.mjs": "c6e58e5d0e7a9086906a993463dc85cee8741ef68761fcc97772e27a00e5d1af",
+    "public/glossary.mjs": "2f291c9efa6391a9b93ad58d9f688f94bf20f714d90e6c481b8a59a576db04c1",
+    "public/badges.mjs": "79102b8d51e5d4122e6b55ff164a0129caa2ff1d117513fc597bb8b8c882c736",
+    "public/era-intro.mjs": "4e0b976675d63d4bcba40a34d802f2ec163abfcb3853246ebd39253ffae7aaa7",
+    "public/progress.mjs": "4a87867373df0b3f1066920b9d27138379e78dcf0940a6c1f9658d75a97edb6f",
+    "public/achievements.mjs": "fcde291934ca05e21371cb7dfec5f836df145f703f0a21922c88a54beedb82ef",
+    "public/itinerary.mjs": "38753c75e7e657fd9c471c34d6e34f781e244b01e7de84b783607be56e7a4081",
+    "public/a11y.mjs": "080b6e040adf0585a2977d8c675d149de545fce524b377dc021d43a473fe14df",
+    "public/sound.mjs": "d1f19e2d52abd317ab00347a2ff7d0a4080e92985eeb864bc4d6e2ede4eec73c",
+    "data/history.json": "742decfe77c2ce9b03ae65cac68bfd33afeecac902ffb9f035fe1970dd1884f1"
+  }
+}

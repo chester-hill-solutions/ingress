@@ -1,6 +1,16 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 const RESPONSE_LIMIT = 4 * 1024 * 1024;
 const EVENT_LIMIT = 1024 * 1024;
 const identifier = value => { if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]{1,160}$/.test(value)) throw new Error('Invalid runtime identifier'); return value; };
+
+/** Small diagnostic vocabulary only; provider messages, bodies and stacks stay private. */
+export function safeRuntimeError(error) {
+  const names = new Set(['Error', 'TypeError', 'AbortError', 'TimeoutError', 'OpenCodeHTTPError']);
+  const codes = new Set(['UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_SOCKET', 'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EPIPE', 'ABORT_ERR']);
+  const code = [error?.code, error?.cause?.code].find(value => codes.has(value));
+  return { name: names.has(error?.name) ? error.name : 'unknown', ...(code ? { code } : {}), ...(Number.isInteger(error?.status) && error.status >= 100 && error.status <= 599 ? { status: error.status } : {}) };
+}
 
 async function boundedText(response, limit, signal) {
   if (!response.body) return '';
@@ -20,12 +30,13 @@ export class OpenCodeClient {
     if (url.protocol !== 'http:' || !['127.0.0.1', '[::1]'].includes(url.hostname) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Requires a dedicated loopback OpenCode endpoint');
     Object.assign(this, { endpoint: url.origin, password, model, directory, fetchImpl, permissions });
     this.streams = new Set();
+    this.admissions = new Map();
   }
 
   async request(path, method = 'GET', body, signal) {
     signal?.throwIfAborted();
     const response = await this.fetchImpl(this.endpoint + path, { method, signal, redirect: 'error', headers: { 'content-type': 'application/json', authorization: `Basic ${Buffer.from(`opencode:${this.password}`).toString('base64')}` }, body: body === undefined ? undefined : JSON.stringify(body) });
-    if (!response.ok) { await response.body?.cancel(); throw new Error(`OpenCode ${method} returned HTTP ${response.status}`); }
+    if (!response.ok) { await response.body?.cancel(); const error = new Error(`OpenCode ${method} returned HTTP ${response.status}`); error.name = 'OpenCodeHTTPError'; error.status = response.status; throw error; }
     if (response.status === 204) return;
     const text = await boundedText(response, RESPONSE_LIMIT, signal);
     try { return text ? JSON.parse(text) : undefined; } catch { throw new Error('Invalid OpenCode JSON response'); }
@@ -43,16 +54,32 @@ export class OpenCodeClient {
     const result = await this.request(`/api/session/${sessionID}/prompt`, 'POST', { id, text, delivery, ...(resume === undefined ? {} : { resume }) }, signal);
     const admitted = result?.data;
     if (admitted?.id !== id || admitted.sessionID !== sessionID || !Number.isFinite(admitted.time?.created) || admitted.delivery !== delivery) throw new Error('OpenCode admission mismatch');
+    // Parked notifications must not change the terminal boundary of the running task.
+    if (resume !== false) this.admissions.set(sessionID, admitted.time.created);
     return { id, sessionID, delivery, created: admitted.time.created };
   }
 
-  async wait(sessionID, signal) {
+  async wait(sessionID, signal, { pollIntervalMs = 1000, minIdleAt } = {}) {
     identifier(sessionID);
-    await this.request(`/api/experimental/session/${sessionID}/wait`, 'POST', undefined, signal);
-    const result = await this.request(`/api/session/${sessionID}`, 'GET', undefined, signal);
-    const data = result?.data;
-    if (!['succeeded', 'failed', 'interrupted'].includes(data?.outcome) || !Number.isFinite(data.time?.idle)) throw new Error('OpenCode terminal outcome unknown');
-    return { sessionID, outcome: data.outcome, idle: data.time.idle };
+    if (!Number.isInteger(pollIntervalMs) || pollIntervalMs < 1 || pollIntervalMs > 10000) throw new Error('Invalid native wait poll interval');
+    if (minIdleAt !== undefined && (!Number.isFinite(minIdleAt) || minIdleAt < 0)) throw new Error('Invalid native wait idle boundary');
+    const admittedAt = this.admissions.get(sessionID);
+    const boundary = minIdleAt === undefined ? admittedAt : admittedAt === undefined ? minIdleAt : Math.max(minIdleAt, admittedAt);
+    // The experimental POST wait holds response headers until native execution
+    // settles. Short GETs avoid one transport request spanning a long model turn.
+    while (true) {
+      signal?.throwIfAborted();
+      const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000);
+      const result = await this.request(`/api/session/${sessionID}`, 'GET', undefined, requestSignal);
+      signal?.throwIfAborted();
+      const data = result?.data;
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid OpenCode session state');
+      if (['succeeded', 'failed', 'interrupted'].includes(data.outcome)) {
+        if (!Number.isFinite(data.time?.idle)) throw new Error('OpenCode terminal outcome unknown');
+        if (boundary === undefined || data.time.idle >= boundary) return { sessionID, outcome: data.outcome, idle: data.time.idle };
+      }
+      await delay(pollIntervalMs, undefined, { signal });
+    }
   }
 
   context(sessionID, signal) { return this.request(`/api/session/${identifier(sessionID)}/context`, 'GET', undefined, signal); }

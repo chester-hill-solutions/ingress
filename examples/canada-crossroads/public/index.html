@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canada: Crossroads</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--paper:#f5eddd;--card:#fdf8ec;--ink:#1d2b30;--soft:#54656a;--red:#a72a35;--copper:#b06a2c;--line:#cdb895;--sh:0 10px 26px rgba(29,43,48,.12)}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:16px/1.55 "Iowan Old Style",Palatino,Georgia,serif;min-height:100vh;
+background:radial-gradient(1100px 620px at 10% -10%,#fdf8ea,transparent 60%),radial-gradient(900px 560px at 105% 0,#f4e0be,transparent 55%),var(--paper)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;z-index:9;
+background:repeating-linear-gradient(0deg,rgba(146,113,72,.05) 0 1px,transparent 1px 3px)}
+h1,h2{font-family:Georgia,"Times New Roman",serif;line-height:1.12;margin:0}
+h3.sub{font:700 .95rem/1.2 Georgia,serif;margin:1rem 0 0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(.7rem,2.4vw,1.6rem) 3rem}
+.masthead{padding:2.2rem 0 1.1rem;display:flex;gap:1.1rem;align-items:flex-start;border-bottom:3px double var(--line)}
+.leaf{flex:0 0 auto;width:clamp(38px,7vw,62px);color:var(--red);filter:drop-shadow(0 2px 0 rgba(176,106,44,.5))}
+.kicker{font:600 .72rem/1 system-ui,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--copper)}
+.masthead h1{font-size:clamp(2rem,6.4vw,3.9rem);letter-spacing:-.01em}
+.masthead p{margin:.4rem 0 0;max-width:56ch;color:var(--soft);font-size:.95rem}
+.layout{display:grid;gap:1.1rem;margin-top:1.2rem;grid-template-columns:1fr}
+@media(min-width:960px){.layout{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
+.col{display:grid;gap:1.1rem;align-content:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:1rem 1.05rem}
+.panel>h2{font:700 .76rem/1.2 system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--copper);display:flex;gap:.5rem;align-items:center}
+.panel>h2::before{content:"";width:9px;height:9px;background:var(--red);transform:rotate(45deg)}
+.hint{color:var(--soft);font-size:.85rem;font-style:italic;margin:.4rem 0 0}
+.err{margin:.6rem 0 0;padding:.5rem .7rem;border:1px solid var(--red);border-left-width:4px;border-radius:0 9px 9px 0;
+ background:#fdeeea;color:#7a1f27;font-size:.87rem}
+.err[hidden]{display:none}
+.eras{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+button{font:inherit;color:inherit;cursor:pointer;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:.5rem .85rem;transition:transform .12s,box-shadow .12s,background .12s}
+button:hover:not(:disabled){background:#fff8ec;box-shadow:0 3px 0 var(--line)}
+button:active:not(:disabled){transform:translateY(1px)}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.era[aria-current="true"]{background:var(--red);border-color:var(--red);color:#fff8ef;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.strip{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+.stat{flex:1 1 92px;border:1px solid var(--line);border-radius:10px;padding:.45rem .6rem;background:linear-gradient(#fff,#fdf6e6)}
+.stat b{display:block;font:700 1.35rem/1.1 Georgia,serif;color:var(--red)}
+.stat span{font:600 .66rem/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
+.stat.streak b{color:var(--copper)}
+.q{font:700 1.25rem/1.3 Georgia,serif;margin:.7rem 0 0}
+.era-line{font:600 .7rem/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--copper);margin:.7rem 0 0}
+.opts{list-style:none;margin:.8rem 0 0;padding:0;display:grid;gap:.5rem}
+.opts button{width:100%;text-align:left;display:flex;gap:.7rem;align-items:flex-start;background:#fffdf7}
+.opts .key{flex:0 0 auto;width:1.6rem;height:1.6rem;border-radius:6px;background:var(--copper);color:#fff;display:grid;place-items:center;font:700 .8rem/1 system-ui,sans-serif}
+.opts button:hover .key{background:var(--red)}
+.fb{margin-top:.9rem;border-left:5px solid var(--red);background:#fdeeea;border-radius:0 10px 10px 0;padding:.7rem .85rem}
+.fb.good{border-color:var(--copper);background:#fbf1e0}
+.fb[hidden],.toggles button[hidden],.hide{display:none}
+.fb h3{font:700 1rem/1.3 Georgia,serif;display:flex;gap:.55rem;align-items:baseline;flex-wrap:wrap;margin:0}
+.fb p{margin:.4rem 0 0;font-size:.94rem}
+.fb a{color:var(--red);word-break:break-word}
+.badge-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.7rem}
+.badge{border:1.5px dashed var(--line);border-radius:999px;padding:.32rem .7rem;font:600 .74rem/1 system-ui,sans-serif;color:var(--soft);background:#fff}
+.badge[data-on="true"]{border-style:solid;border-color:var(--copper);background:linear-gradient(#fff4e0,#f3ddbc);color:#7a3f12;box-shadow:0 2px 0 rgba(176,106,44,.35)}
+.badge i{font-style:normal;margin-right:.3rem}
+svg.atlas{width:100%;height:auto;display:block;margin-top:.6rem}
+.legend{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:.5rem;font:600 .72rem/1 system-ui,sans-serif;color:var(--soft)}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:.3rem}
+ol.tl{list-style:none;margin:.6rem 0 0;padding:0 0 0 .9rem;border-left:2px solid var(--line);display:grid;gap:.35rem}
+ol.tl li{position:relative;font-size:.9rem}
+ol.tl li::before{content:"";position:absolute;left:-1.15rem;top:.42rem;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--copper)}
+ol.tl li[data-visited="true"]::before{background:var(--copper)}
+ol.tl li[data-current="true"]{color:var(--red);font-weight:700}
+ol.tl .yr{font:700 .78rem/1 system-ui,sans-serif;color:var(--soft);margin-right:.4rem}
+ul.journal{list-style:none;margin:.5rem 0 0;padding:0;display:grid;gap:.4rem;max-height:13rem;overflow:auto}
+ul.journal li{font-size:.85rem;border-bottom:1px dotted var(--line);padding-bottom:.3rem}
+ul.journal .n{font:700 .78rem/1 system-ui,sans-serif}
+ul.journal .n.bad{color:var(--red)}ul.journal .n.good{color:var(--copper)}
+dl.terms{margin:.5rem 0 0;display:grid;gap:.15rem}
+dl.terms dt{font:700 .8rem/1.3 system-ui,sans-serif;color:var(--red)}
+dl.terms dd{margin:0 0 .3rem;font-size:.86rem;color:var(--soft)}
+.toggles{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.7rem}
+.toggles button{font:600 .76rem/1 system-ui,sans-serif;padding:.45rem .6rem}
+.conn{font:600 .72rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);display:inline-flex;gap:.4rem;align-items:center}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--copper)}
+.conn[data-state="live"]::before{background:#2f7d4f}.conn[data-state="down"]::before{background:var(--red)}
+.done{text-align:center;padding:.5rem 0}
+.done .big{font:700 1.6rem/1.1 Georgia,serif;color:var(--red);margin:0}
+footer{margin-top:1.6rem;border-top:3px double var(--line);padding-top:.8rem;color:var(--soft);font-size:.83rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto}}
+html[data-motion="calm"] *{transition:none!important;animation:none!important;scroll-behavior:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="masthead">
+<svg class="leaf" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path fill="currentColor" d="M50 4c4 10 2 15 6 20 3-6 9-9 16-9-2 8-7 12-13 15 7-1 13 1 18 6-6 5-13 6-20 4 5 5 7 11 6 18-8-3-12-9-13-16-2 9-7 15-15 18-2-8 1-15 6-20-7 4-14 4-21 0 3-8 10-11 18-10-8-3-12-9-12-17 8 0 14 4 17 10 1-8 5-14 13-19z"/><path fill="none" stroke="#b06a2c" stroke-width="3" stroke-linecap="round" d="M50 30v58"/></svg>
+<div>
+<p class="kicker">GangCode presents</p>
+<h1>Canada: Crossroads</h1>
+<p>A journey through twelve selected moments of Canadian history. Indigenous histories precede the earliest selected event, around 1000; this selection is not exhaustive. Map positions are illustrative, not surveyed borders.</p>
+<p class="conn" id="conn" data-state="wait">connecting</p>
+</div>
+</header>
+
+<div class="layout">
+<div class="col">
+<section class="panel" aria-labelledby="h-chapter">
+<h2 id="h-chapter">Chapter</h2>
+<div class="eras" id="eras" role="group" aria-label="Choose a chapter"></div>
+<div id="era-intro"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-question">
+<h2 id="h-question">Crossroad</h2>
+<div id="stage" aria-busy="false"><div id="cards"></div></div>
+<div id="fb" class="fb" role="status" aria-live="polite" hidden></div>
+<div id="chapter-end" class="done" hidden></div>
+<p class="err" id="err" role="alert" hidden></p>
+</section>
+
+<section class="panel" aria-labelledby="h-notes">
+<h2 id="h-notes">Field notes</h2>
+<div class="toggles">
+<button id="sound" type="button" aria-pressed="false">Sound: off</button>
+<button id="motion" type="button" aria-pressed="false">Calm motion: off</button>
+<button id="next" type="button" hidden>Hide last answer</button>
+</div>
+<h3 class="sub" id="h-notebook">Notebook</h3><div id="notebook"></div>
+<h3 class="sub" id="h-achievements">Milestone notes</h3><div id="achievements"></div>
+<h3 class="sub" id="h-glossary">Glossary</h3><div id="glossary"></div>
+<h3 class="sub" id="h-keyboard">Keyboard</h3><div id="help"></div>
+</section>
+</div>
+
+<div class="col">
+<section class="panel" aria-labelledby="h-score">
+<h2 id="h-score">Trail score</h2>
+<div class="strip" id="strip"></div>
+<div id="saved"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-badges">
+<h2 id="h-badges">Milestones</h2>
+<div id="badges"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-atlas">
+<h2 id="h-atlas">Atlas</h2>
+<div id="atlas">
+<svg class="atlas" viewBox="0 0 100 100" role="img" aria-label="Stylised map of Canada with illustrative event markers. Positions are not surveyed borders.">
+<rect width="100" height="100" rx="4" fill="#e8f0f2" stroke="#cdb895"/>
+<g fill="none" stroke="#cfe0e4" stroke-width=".6"><path d="M0 22h100M0 40h100M0 58h100M0 76h100M22 0v100M44 0v100M66 0v100M86 0v100"/></g>
+<path fill="#f7efd9" stroke="#a8875a" stroke-width=".7" d="M10 26 16 22 26 18 38 16 48 14 58 15 66 18 72 21 78 24 82 30 86 36 85 44 88 50 86 56 89 60 92 64 88 68 70 68 52 67 38 66 26 64 16 62 10 58 8 50 9 42 7 34Z"/>
+<path fill="#e8f0f2" stroke="#a8875a" stroke-width=".5" d="M44 32q7-4 13 0 4 6 0 12-7 5-13 0-4-6 0-12z"/>
+<g fill="#e8f0f2" stroke="#a8875a" stroke-width=".4"><ellipse cx="57" cy="61" rx="4" ry="2"/><ellipse cx="63" cy="59.5" rx="3" ry="1.6"/><ellipse cx="51" cy="60" rx="2.4" ry="1.4"/><path d="M62 24q3 1 3 4-3 1-3-4z"/></g>
+<g font-size="3.1" fill="#8a6a3c"><text x="46" y="52" text-anchor="middle">Canada</text><text x="46" y="56" text-anchor="middle" font-size="2.3">illustrative</text></g>
+<g><rect x="60" y="72" width="38" height="26" rx="3" fill="#f3ece0" stroke="#a8875a" stroke-width=".6" stroke-dasharray="2 1.6"/><text x="63.5" y="78" font-size="2.8" fill="#a72a35">France</text><text x="63.5" y="82" font-size="2.2" fill="#54656a" font-family="system-ui,sans-serif">overseas theatre</text></g>
+<g id="markers"></g>
+</svg>
+</div>
+<div id="atlas-extra">
+<div class="legend"><span><i style="background:#b06a2c"></i>visited</span><span><i style="background:#a72a35"></i>current</span><span><i style="background:#8d8f7a"></i>ahead</span></div>
+<p class="hint">Vimy Ridge is in the France inset: an overseas theatre, not a point in Canada.</p>
+</div>
+</section>
+
+<section class="panel" aria-labelledby="h-tl">
+<h2 id="h-tl">Itinerary</h2>
+<div id="timeline"></div>
+<div id="itinerary"></div>
+</section>
+</div>
+</div>
+
+<footer>
+<p>Official sources appear beside each answer. Answer keys, corrections and explanations never reach this page before an answer, and the raw history file is never fetched by it.</p>
+</footer>
+</div>
+<p class="sr" id="cc-live" role="status" aria-live="polite"></p>
+
+<script type="module">
+const $ = (s) => document.querySelector(s);
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+const SVG = 'http://www.w3.org/2000/svg';
+const ERAS = [['early-contact', 'Early Contact'], ['confederation', 'Confederation'], ['modern', 'Modern Canada']];
+
+function h(tag, attrs) {
+  const n = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'text') n.textContent = v;
+    else if (k === 'class') n.className = v;
+    else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (let i = 2; i < arguments.length; i++) {
+    const kid = arguments[i];
+    if (Array.isArray(kid)) { for (const k of kid) if (k) n.append(k); } else if (kid) n.append(kid);
+  }
+  return n;
+}
+function sv(tag, attrs) {
+  const n = document.createElementNS(SVG, tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'text') n.textContent = v;
+    else n.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (let i = 2; i < arguments.length; i++) {
+    const kid = arguments[i];
+    if (Array.isArray(kid)) { for (const k of kid) if (k) n.append(k); } else if (kid) n.append(kid);
+  }
+  return n;
+}
+const put = (root, kids) => { root.replaceChildren(); for (const k of [].concat(kids)) if (k) root.append(k); return root; };
+const note = (root, text) => put(root, h('p', { class: 'hint', text }));
+const show = (sel, visible) => { const n = $(sel); if (n) n.classList.toggle('hide', !visible); };
+/* The one honest error line: shown only when an action was actually refused. */
+function problem(text) {
+  const n = $('#err');
+  if (!n) return;
+  n.textContent = text || '';
+  n.hidden = !text;
+}
+
+/* ---------- transport: documented endpoints only, never the raw history ---------- */
+async function api(path, body) {
+  const opt = body === undefined
+    ? { headers: { accept: 'application/json' } }
+    : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
+  const res = await fetch(path, opt);
+  const raw = await res.text();
+  let data = null;
+  try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
+  if (!res.ok) throw new Error((data && data.error) || 'the server declined that request (' + res.status + ')');
+  return data;
+}
+function conn(state, label) {
+  const n = $('#conn');
+  n.dataset.state = state;
+  n.textContent = label || { live: 'live', wait: 'connecting', down: 'reconnecting' }[state] || state;
+}
+async function send(path, body) {
+  if (busy) return;
+  busy = true;
+  $('#stage').setAttribute('aria-busy', 'true');
+  try { apply(await api(path, body)); }
+  catch (e) {
+    // A refused action changed nothing on the server, so the connection is
+    // still fine. Say what happened, then redraw: that is what releases the
+    // question card's one-answer lock.
+    const why = String((e && e.message) || e).slice(0, 120);
+    if (S) paint(S);
+    problem(why);
+    announce('That did not go through. ' + why);
+  }
+  finally { busy = false; $('#stage').setAttribute('aria-busy', 'false'); }
+}
+const answer = (eventID, optionID) => { showFeedback = true; return send('/answer', { eventID, optionID }); };
+const chooseEra = (era) => send('/era', { era });
+const restart = () => send('/restart', {});
+
+/* One announcer for the whole page: the a11y module when it is here, a local
+   polite region otherwise, so nothing is ever said twice. */
+function announce(text) {
+  if (!text) return;
+  if (a11y) { try { a11y.announce(text); return; } catch {} }
+  const n = $('#cc-live');
+  n.textContent = '';
+  setTimeout(() => { n.textContent = text; }, 30);
+}
+
+/* ---------- peer modules: dynamic only, retried, never blocking ---------- */
+const live = new Set(), inflight = new Map(), mods = new Map(), PLUGINS = [];
+const plug = (name, mount) => PLUGINS.push({ name, mount: mount || null, handle: null });
+function load(name) {
+  if (inflight.has(name)) return inflight.get(name);
+  const p = import('./' + name + '.mjs')
+    .then((mod) => {
+      inflight.set(name, Promise.resolve(mod));
+      mods.set(name, mod);
+      live.add(name);
+      for (const pl of PLUGINS) {
+        if (pl.name !== name) continue;
+        try { pl.handle = pl.mount ? pl.mount(mod) || null : null; }
+        catch (e) {
+          console.warn('mount ' + name, e);
+          // The slot was emptied on the way in: redraw every fallback so the
+          // page is never left with a blank panel because of one bad mount.
+          pl.handle = null;
+          if (S) paint(S);
+        }
+      }
+      return mod;
+    })
+    .catch(() => { inflight.delete(name); setTimeout(() => load(name), 5000); return null; });
+  inflight.set(name, p);
+  return p;
+}
+/** Mount one module's factory into a host, then feed it the snapshot we hold. */
+const mountOnce = (mod, factory, host, options) => {
+  if (typeof (mod || {})[factory] !== 'function') return null;
+  const root = $(host);
+  if (!root) return null;
+  root.replaceChildren();
+  const handle = mod[factory](root, options);
+  if (handle && typeof handle.update === 'function' && S) handle.update(S);
+  return handle || null;
+};
+
+let S = null, busy = false, showFeedback = true, lastEvent = '', seenRevision = -1;
+let sound = null, notes = null, a11y = null, soundOn = false, calm = false;
+let card = null;
+
+/* ---------- fallbacks: playable and honest before any module lands ---------- */
+function drawEras(s) {
+  // The timeline module brings its own chapter picker; never draw a second one.
+  if (slot('timeline').handle) return;
+  put($('#eras'), ERAS.map(([id, label]) => h('button', {
+    type: 'button', class: 'era', 'aria-current': s.era === id ? 'true' : 'false', onclick: () => chooseEra(id)
+  }, label)));
+}
+function drawStrip(s) {
+  const m = mods.get('scoreboard');
+  const f = m && typeof m.formatScore === 'function' ? m.formatScore(s) : {
+    score: num(s.score), streak: num(s.streak),
+    progressLabel: num(s.progress && s.progress.answered) + ' / ' + num(s.progress && s.progress.total)
+  };
+  const stat = (v, k, cls) => h('div', { class: 'stat' + (cls ? ' ' + cls : '') },
+    h('b', { text: String(v === undefined || v === null ? 0 : v) }), h('span', { text: k }));
+  put($('#strip'), [stat(f.score, 'score'), stat(f.streak, 'streak', 'streak'), stat(f.progressLabel, 'answered')]);
+}
+function drawEraIntro(s) {
+  const m = mods.get('era-intro');
+  if (!m || typeof m.eraIntroduction !== 'function') return;
+  const i = m.eraIntroduction(s.era) || {};
+  const total = (Array.isArray(s.mapEvents) ? s.mapEvents.length : 0);
+  const done = num(s.progress && s.progress.answered);
+  put($('#era-intro'), [
+    h('p', { class: 'hint' }, i.title ? h('strong', { text: i.title + '. ' }) : null, i.description || ''),
+    h('p', { class: 'hint', text: total + ' ' + (total === 1 ? 'stop is' : 'stops are') + ' plotted in this chapter · ' + done + ' answered so far.' })
+  ]);
+}
+function drawCards(s) {
+  const ev = s.currentEvent;
+  if (!ev) return put($('#cards'), h('p', { class: 'hint', text: 'Gathering the next question…' }));
+  put($('#cards'), [
+    h('p', { class: 'era-line', text: [ev.region, ev.year].filter((v) => v !== '' && v != null).join(' · ') }),
+    h('p', { class: 'q', id: 'qtext', text: ev.question || ev.title || '' }),
+    h('ul', { class: 'opts', 'aria-labelledby': 'qtext' }, (Array.isArray(ev.options) ? ev.options : []).map((o, i) => h('li', {},
+      h('button', { type: 'button', onclick: () => answer(ev.id, o.id) },
+        h('span', { class: 'key', 'aria-hidden': 'true', text: String(i + 1) }),
+        h('span', { text: (o && o.text) || '' })))))
+  ]);
+}
+/* The chapter/reset flow stays ours: it needs era switching the card knows nothing about. */
+function drawChapterEnd(s) {
+  const box = $('#chapter-end'), over = !s.currentEvent && s.phase === 'complete';
+  box.hidden = !over;
+  if (!over) return;
+  const order = ERAS.map((e) => e[0]);
+  const next = order[(order.indexOf(s.era) + 1) % order.length];
+  const label = (ERAS.find((e) => e[0] === s.era) || [, 'this chapter'])[1];
+  put(box, [
+    h('p', { class: 'big', text: 'Chapter complete' }),
+    h('p', { class: 'hint', text: 'Every selected ' + label + ' moment has been answered.' }),
+    h('div', { class: 'eras' },
+      h('button', { type: 'button', onclick: restart, text: 'Play this chapter again' }),
+      h('button', { type: 'button', onclick: () => chooseEra(next), text: 'Travel to the next chapter' }))
+  ]);
+}
+function drawFeedback(s) {
+  const box = $('#fb'), btn = $('#next'), f = card ? null : s.feedback;
+  btn.hidden = !f;
+  if (!f) { box.hidden = true; return; }
+  btn.textContent = showFeedback ? 'Hide last answer' : 'Show last answer';
+  const src = f.source || {};
+  box.className = 'fb' + (f.correct ? ' good' : '');
+  box.hidden = !showFeedback;
+  put(box, [
+    h('h3', {},
+      h('span', { style: 'color:' + (f.correct ? 'var(--copper)' : 'var(--red)'), text: f.correct ? 'Correct' : 'Not this time' }),
+      h('span', { class: 'kicker', text: num(s.score) + ' pts · streak ' + num(s.streak) })),
+    f.explanation ? h('p', { text: f.explanation }) : null,
+    h('p', {}, 'Source: ', /^https?:\/\//i.test(String(src.url || ''))
+      ? h('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer nofollow', text: src.title || src.url })
+      : h('span', { text: src.title || 'no link supplied' }))
+  ]);
+}
+function drawBadges(s) {
+  const m = mods.get('badges');
+  const on = m && typeof m.unlockedMilestones === 'function'
+    ? m.unlockedMilestones(s)
+    : (s.milestones || []).filter((x) => x && x.unlocked === true).map((x) => x.id);
+  put($('#badges'), h('div', { class: 'badge-row' }, (s.milestones || []).map((x) => {
+    const has = on.indexOf(x.id) >= 0;
+    return h('span', { class: 'badge', 'data-on': has ? 'true' : 'false' },
+      h('i', { 'aria-hidden': 'true', text: has ? '✦' : '·' }), x.title || x.id);
+  })));
+  if (!live.has('achievements')) put($('#achievements'), (s.milestones || []).map((x) => h('p', {
+    class: 'hint', text: (on.indexOf(x.id) >= 0 ? 'Unlocked — ' : 'Locked — ') + (x.title || x.id)
+  })));
+}
+function drawNotebook(s) {
+  if (notes && typeof notes.entries === 'function' && notes.entries().length) return drawNotes(notes.entries());
+  const list = (s.answered || []).slice(-32).map((a) => {
+    const ev = (s.mapEvents || []).find((e) => e.id === a.eventID) || {};
+    return { eventID: a.eventID, correct: a.correct, explanation: (s.feedback && s.feedback.eventID === a.eventID) ? s.feedback.explanation : (ev.title || '') };
+  });
+  if (!list.length) return note($('#notebook'), 'Answers you give will be noted here.');
+  drawNotes(list);
+}
+function drawNotes(list) {
+  put($('#notebook'), h('ul', { class: 'journal' }, list.slice(-32).reverse().map((r) => h('li', {},
+    h('span', { class: 'n ' + (r.correct ? 'good' : 'bad'), text: r.correct ? '✓ correct' : '✕ not quite' }),
+    ' ', r.explanation || r.eventID || ''))));
+}
+function drawGlossary(s) {
+  const m = mods.get('glossary');
+  const rows = m && typeof m.glossaryEntries === 'function' ? m.glossaryEntries() : [
+    { term: 'Era', definition: 'The chapter you are travelling through: ' + (s.era || 'unknown') + '.' },
+    { term: 'Streak', definition: 'Correct answers in a row: ' + num(s.streak) + '.' },
+    { term: 'Progress', definition: 'Answered so far: ' + num(s.progress && s.progress.answered) + ' of ' + num(s.progress && s.progress.total) + '.' },
+    { term: 'Score', definition: 'Trail score: ' + num(s.score) + ' points.' }
+  ];
+  put($('#glossary'), h('dl', { class: 'terms' }, rows.map((r) => [h('dt', { text: r.term }), h('dd', { text: r.definition })])));
+}
+function drawHelp() {
+  if (live.has('help')) return;
+  put($('#help'), h('dl', { class: 'terms' }, [
+    ['1 – 4', 'choose an answer'], ['N', 'show or hide the last answer'], ['R', 'restart this chapter']
+  ].map(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })])));
+}
+function drawAtlas(s) {
+  const layer = $('#markers');
+  if (!layer) return;
+  const done = new Set((s.answered || []).map((a) => a.eventID));
+  const mark = (ev) => {
+    const m = mods.get('atlas');
+    let x = num(ev.x), y = num(ev.y);
+    if (m && typeof m.projectMarker === 'function') {
+      const p = m.projectMarker(ev) || {};
+      x = num(p.x); y = num(p.y);
+    }
+    const over = /france/i.test(String(ev.region || '')) || (num(ev.x) > 88 && num(ev.y) < 20);
+    const cur = !!s.currentEvent && s.currentEvent.id === ev.id;
+    const color = cur ? '#a72a35' : done.has(ev.id) ? '#b06a2c' : '#8d8f7a';
+    return sv('circle', {
+      cx: (over ? 70 + (x - 88) * 0.5 : x).toFixed(2),
+      cy: (over ? 88 : 17 + y * 0.49).toFixed(2),
+      r: cur ? 2.6 : 1.9, fill: color, stroke: '#fffdf7', 'stroke-width': 0.6
+    });
+  };
+  put(layer, (Array.isArray(s.mapEvents) ? s.mapEvents : []).map((ev) => {
+    const label = ev.title || ev.id;
+    return sv('g', { role: 'img', 'aria-label': label + ' — illustrative position' },
+      sv('title', { text: label }), mark(ev));
+  }));
+}
+function drawTimeline(s) {
+  const list = (Array.isArray(s.mapEvents) ? s.mapEvents : []).slice()
+    .sort((a, b) => (num(a.year) - num(b.year)) || String(a.id).localeCompare(String(b.id)));
+  if (!list.length) return note($('#timeline'), 'No events are selected for this chapter.');
+  const done = new Set((s.answered || []).map((a) => a.eventID));
+  put($('#timeline'), h('ol', { class: 'tl' }, list.map((ev) => h('li', {
+    'data-visited': done.has(ev.id) ? 'true' : 'false',
+    'data-current': !!(s.currentEvent && s.currentEvent.id === ev.id) ? 'true' : 'false'
+  }, h('span', { class: 'yr', text: String(ev.year) }), ev.title || ev.id))));
+}
+
+/* ---------- module slots: mounted once, then updated on every snapshot ----------
+   Each slot hides only the fallback it replaces, so the page never shows two
+   answers, two chapter pickers or two legends for the same job. */
+plug('cards', (m) => {
+  const handle = mountOnce(m, 'mountQuestionCard', '#cards', { onAnswer: (eventID, optionID) => answer(eventID, optionID) });
+  if (handle) { card = handle; show('#next', false); }   // the card owns feedback + dismissal
+  return handle;
+});
+plug('atlas', (m) => {
+  const handle = mountOnce(m, 'mountAtlas', '#atlas', { onInspect: () => {} });
+  if (handle) show('#atlas-extra', false);                // it draws its own legend
+  return handle;
+});
+plug('timeline', (m) => {
+  const handle = mountOnce(m, 'mountTimeline', '#timeline', { onEra: (era) => chooseEra(era) });
+  if (handle) { show('#eras', false); show('#h-tl', false); }  // it brings a chapter picker
+  return handle;
+});
+plug('itinerary', (m) => mountOnce(m, 'mountItinerary', '#itinerary', { onInspect: () => {} }));
+plug('badges', (m) => {
+  const handle = mountOnce(m, 'mountBadges', '#badges', { onCelebrate: (_id, message) => announce(message) });
+  if (handle) show('#h-badges', false);
+  return handle;
+});
+plug('achievements', (m) => {
+  // The page already labels this slot, so the module adds no second heading.
+  const handle = mountOnce(m, 'mountAchievementDetails', '#achievements', { heading: false });
+  if (handle) show('#h-achievements', false);
+  return handle;
+});
+plug('notebook', (m) => {
+  if (typeof m.createNotebook !== 'function') return null;
+  notes = notes || m.createNotebook();
+  const handle = mountOnce(m, 'mountNotebook', '#notebook', { notebook: notes });
+  if (handle) show('#h-notebook', false);
+  return handle;
+});
+plug('glossary', (m) => {
+  const handle = mountOnce(m, 'mountGlossary', '#glossary', { labelled: false });
+  if (handle) show('#h-glossary', false);
+  return handle;
+});
+plug('help', (m) => {
+  const handle = mountOnce(m, 'mountKeyboardHelp', '#help', { onAction: route });
+  if (handle) show('#h-keyboard', false);
+  return handle;
+});
+plug('progress', (m) => {
+  let storage = null;
+  try { storage = globalThis.localStorage; } catch { return null; }
+  return mountOnce(m, 'mountProgress', '#saved', { storage });
+});
+plug('era-intro', (m) => {
+  // The module's own chapter card when it mounts; the shell's introduction
+  // (built from eraIntroduction) stays as the fallback either way.
+  let handle = null;
+  try { handle = mountOnce(m, 'mountEraIntro', '#era-intro'); }
+  catch (e) { console.warn('mount era-intro', e); }
+  if (!handle && S) drawEraIntro(S);
+  return handle;
+});
+plug('scoreboard', (m) => {
+  if (S) drawStrip(S);
+  return mountOnce(m, 'mountScoreboard', '#strip', {});
+});
+plug('sound', (m) => {
+  if (typeof m.createSoundscape !== 'function' || sound) return null;
+  sound = m.createSoundscape();
+  try { sound.setEnabled(soundOn); } catch {}
+  return null;
+});
+plug('a11y', (m) => {
+  if (typeof m.createAccessibility !== 'function' || a11y) return null;
+  a11y = m.createAccessibility({ root: document });
+  try { a11y.setReducedMotion(calm); } catch {}
+  return null;
+});
+
+/* ---------- snapshots in ---------- */
+function afterAnswer(s) {
+  const f = s && s.feedback;
+  // No feedback means a fresh chapter or a restart: forget the last cue so the
+  // first answer of the new run is heard again.
+  if (!f) { lastEvent = ''; return; }
+  if (f.eventID === lastEvent) return;
+  lastEvent = f.eventID;
+  try { sound && sound.play(!!f.correct); } catch {}
+  try { notes && notes.record(s); } catch {}
+  if (S && !slot('notebook').handle) drawNotebook(S);
+  // The mounted card already announces its own feedback; never say it twice.
+  if (!card) announce((f.correct ? 'Correct. ' : 'Not this time. ') + (f.explanation || ''));
+}
+const slot = (name) => PLUGINS.find((p) => p.name === name) || {};
+function apply(s) {
+  if (!s || typeof s !== 'object') return;
+  // One revision is one state: the POST response and the SSE echo of the same
+  // change are drawn once, never twice.
+  if (Number.isFinite(s.revision)) {
+    if (s.revision === seenRevision) return;
+    seenRevision = s.revision;
+  }
+  paint(s);
+}
+/** Draw one snapshot into every slot: the mounted module where there is one,
+    the honest fallback everywhere else. Safe to call at any time. */
+function paint(s) {
+  S = s;
+  problem('');                 // a snapshot from the server clears the last error
+  drawEras(s);
+  drawStrip(s);
+  if (!slot('era-intro').handle) drawEraIntro(s);
+  if (!card) drawCards(s);
+  drawChapterEnd(s);
+  drawFeedback(s);
+  if (!slot('badges').handle) drawBadges(s);
+  if (!slot('timeline').handle) drawTimeline(s);
+  if (!slot('atlas').handle) drawAtlas(s);
+  if (!slot('notebook').handle) drawNotebook(s);
+  if (!slot('glossary').handle) drawGlossary(s);
+  drawHelp();
+  for (const p of PLUGINS) {
+    if (!p.handle || typeof p.handle.update !== 'function') continue;
+    try { p.handle.update(s); } catch (e) { console.warn('update ' + p.name, e); }
+  }
+  afterAnswer(s);
+}
+
+/* Safe teardown: every handle is idempotent, so a double teardown is fine. */
+function teardown() {
+  for (const p of PLUGINS) {
+    if (!p.handle || typeof p.handle.destroy !== 'function') continue;
+    try { p.handle.destroy(); } catch (e) { console.warn('destroy ' + p.name, e); }
+    p.handle = null;
+  }
+  card = null;
+  try { sound && sound.destroy(); } catch {}
+  sound = null;
+  try { a11y && a11y.destroy(); } catch {}
+  a11y = null;
+  if (stream) { try { stream.close(); } catch {} stream = null; }
+  clearTimeout(poller);
+}
+window.addEventListener('pagehide', teardown);
+
+/* ---------- controls ---------- */
+function toggleFeedback() { showFeedback = !showFeedback; if (S) drawFeedback(S); }
+function toggleSound() {
+  soundOn = !soundOn;
+  const b = $('#sound');
+  b.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+  b.textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
+  try { sound && sound.setEnabled(soundOn); } catch {}
+  announce(soundOn ? 'Sound on' : 'Sound off');
+}
+function toggleCalm() {
+  calm = !calm;
+  document.documentElement.dataset.motion = calm ? 'calm' : '';
+  const b = $('#motion');
+  b.setAttribute('aria-pressed', calm ? 'true' : 'false');
+  b.textContent = 'Calm motion: ' + (calm ? 'on' : 'off');
+  try { a11y && a11y.setReducedMotion(calm); } catch {}
+  announce(calm ? 'Calm motion on' : 'Calm motion off');
+}
+/* One tolerant router: whichever module owns input, the game reacts identically. */
+function route(action) {
+  if (!action || typeof action !== 'object') return;
+  const t = String(action.type || action.action || '').toLowerCase();
+  if (typeof action.optionID === 'string') {
+    const ev = S && S.currentEvent;
+    const id = typeof action.eventID === 'string' ? action.eventID : (ev && ev.id);
+    if (id) return answer(id, action.optionID);
+  }
+  if (S && Number.isInteger(action.index) && S.currentEvent && (S.currentEvent.options || [])[action.index]) {
+    return answer(S.currentEvent.id, S.currentEvent.options[action.index].id);
+  }
+  if (typeof action.era === 'string' && t.indexOf('era') >= 0) return chooseEra(action.era);
+  if (t.indexOf('restart') >= 0) return restart();
+  if (t.indexOf('sound') >= 0 || t.indexOf('audio') >= 0) return toggleSound();
+  if (t.indexOf('motion') >= 0) return toggleCalm();
+  if (t.indexOf('next') >= 0 || t.indexOf('dismiss') >= 0 || t.indexOf('feedback') >= 0) return toggleFeedback();
+}
+$('#sound').addEventListener('click', toggleSound);
+$('#motion').addEventListener('click', toggleCalm);
+$('#next').addEventListener('click', toggleFeedback);
+
+/* The shell keeps the keys the help module does not own, so shortcuts survive
+   whether or not that module ever loads. Both handlers see the same event; the
+   help module reports through route(), this one answers directly, and each
+   ignores the keys the other has taken. */
+function onKey(e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) return;
+  const ev = S && S.currentEvent;
+  const k = e.key.toLowerCase();
+  const helpOwns = live.has('help') && (/^[1-4]$/.test(e.key) || k === 'r');
+  if (!helpOwns && /^[1-9]$/.test(e.key) && ev && Array.isArray(ev.options) && ev.options[Number(e.key) - 1]) {
+    e.preventDefault();
+    return answer(ev.id, ev.options[Number(e.key) - 1].id);
+  }
+  if (k === 'n') { e.preventDefault(); return toggleFeedback(); }
+  if (k === 'r' && !helpOwns) { e.preventDefault(); return restart(); }
+}
+document.addEventListener('keydown', onKey);
+
+/* ---------- boot ---------- */
+let stream = null, poller = 0;
+function listen() {
+  try {
+    if (stream) stream.close();
+    stream = new EventSource('/events');
+    // The server sends one unnamed data frame per snapshot, which is what
+    // onmessage receives: the opening snapshot, then one per change.
+    stream.onmessage = (e) => { try { apply(JSON.parse(e.data)); conn('live'); } catch {} };
+    stream.addEventListener('open', () => conn('live'));
+    stream.addEventListener('error', () => { conn('down'); clearTimeout(poller); poller = setTimeout(listen, 6000); });
+  } catch { conn('down'); }
+}
+(async function boot() {
+  try { apply(await api('/state')); conn('live'); } catch { conn('down', 'offline'); }
+  listen();
+  for (const p of PLUGINS) load(p.name);
+})();
+</script>
+</body>
+</html>

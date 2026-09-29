@@ -11,6 +11,8 @@
     "test": "node --test",
     "demo": "node scripts/probe.mjs",
     "probe:real": "node scripts/probe.mjs --real",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "squad:real": "node scripts/squad.mjs --real",
+    "play": "node scripts/play-game.mjs"
   }
 }

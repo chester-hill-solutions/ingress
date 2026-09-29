@@ -1,0 +1,240 @@
+{
+  "date": "2026-09-29T23:38:56.023Z",
+  "result": {
+    "correct": true,
+    "checks": [
+      {
+        "name": "fixture-exports",
+        "passed": true
+      },
+      {
+        "name": "content-integrity",
+        "passed": true
+      },
+      {
+        "name": "era-filter-year-order",
+        "passed": true
+      },
+      {
+        "name": "constructor-validation-input-isolation",
+        "passed": true
+      },
+      {
+        "name": "successful-mutations-revision",
+        "passed": true
+      },
+      {
+        "name": "snapshot-isolation",
+        "passed": true
+      },
+      {
+        "name": "public-no-answer-keys",
+        "passed": true
+      },
+      {
+        "name": "correct-score-streak",
+        "passed": true
+      },
+      {
+        "name": "wrong-answer-reset",
+        "passed": true
+      },
+      {
+        "name": "streak-bonus-cap",
+        "passed": true
+      },
+      {
+        "name": "reject-duplicate-answer",
+        "passed": true
+      },
+      {
+        "name": "reject-out-of-order-answer",
+        "passed": true
+      },
+      {
+        "name": "reject-unknown-option",
+        "passed": true
+      },
+      {
+        "name": "reject-unknown-era",
+        "passed": true
+      },
+      {
+        "name": "feedback-cites-source",
+        "passed": true
+      },
+      {
+        "name": "completion-and-progress",
+        "passed": true
+      },
+      {
+        "name": "first-steps-after-wrong-answer",
+        "passed": true
+      },
+      {
+        "name": "milestone-unlocks-sticky",
+        "passed": true
+      },
+      {
+        "name": "restart-and-era-reset",
+        "passed": true
+      },
+      {
+        "name": "subscriptions-and-unsubscribe",
+        "passed": true
+      },
+      {
+        "name": "http-server-start",
+        "passed": true
+      },
+      {
+        "name": "http-state",
+        "passed": true
+      },
+      {
+        "name": "http-answer",
+        "passed": true
+      },
+      {
+        "name": "http-era-and-restart",
+        "passed": true
+      },
+      {
+        "name": "http-reject-invalid-input",
+        "passed": true
+      },
+      {
+        "name": "http-origin-boundary",
+        "passed": true
+      },
+      {
+        "name": "http-body-bound",
+        "passed": true
+      },
+      {
+        "name": "raw-data-private",
+        "passed": true
+      },
+      {
+        "name": "sse-initial-update",
+        "passed": true
+      },
+      {
+        "name": "ui-interactive-game",
+        "passed": true
+      },
+      {
+        "name": "server-close",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-atlas",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-timeline",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-cards",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-scoreboard",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-badges",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-sound",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-a11y",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-progress",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-glossary",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-itinerary",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-notebook",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-help",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-achievements",
+        "passed": true
+      },
+      {
+        "name": "extension-exports-era-intro",
+        "passed": true
+      },
+      {
+        "name": "extension-coordinate-clamping",
+        "passed": true
+      },
+      {
+        "name": "extension-timeline-isolation",
+        "passed": true
+      },
+      {
+        "name": "extension-score-format",
+        "passed": true
+      },
+      {
+        "name": "extension-earned-badges-only",
+        "passed": true
+      },
+      {
+        "name": "extension-sound-lazy",
+        "passed": true
+      },
+      {
+        "name": "extension-progress-best-score",
+        "passed": true
+      },
+      {
+        "name": "extension-glossary-clones",
+        "passed": true
+      },
+      {
+        "name": "extension-itinerary-evidence",
+        "passed": true
+      },
+      {
+        "name": "extension-notebook-isolation",
+        "passed": true
+      },
+      {
+        "name": "extension-achievement-evidence",
+        "passed": true
+      },
+      {
+        "name": "extension-era-introductions",
+        "passed": true
+      },
+      {
+        "name": "extension-ui-references",
+        "passed": true
+      },
+      {
+        "name": "extension-http-modules",
+        "passed": true
+      }
+    ]
+  }
+}

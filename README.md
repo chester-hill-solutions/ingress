@@ -1,4 +1,4 @@
-# Agent Collaboration
+# GangCode
 
 A standalone experiment in agents working in one native workspace with shared awareness.
 No file claims. Native observations describe activity and changed bytes; they do not
@@ -28,3 +28,33 @@ proof of reliable collaboration or Jev benefit. See [plan](docs/plan.md).
 Node 22+; no runtime packages or Stow checkout required for the initial probe.
 Private working repository, Apache-2.0. Source provenance is in
 [the transfer record](docs/source-provenance.json).
+
+
+GangCode dispatches a declared OpenCode squad into one shared project and can assign
+an integration agent after independent prechecks. The default runs the whole roster
+concurrently; an explicit concurrency setting is optional. Live scale experiments
+and deterministic relay load tests have separate evidence.
+
+```sh
+npm run squad:real -- --serve
+npm run play
+```
+
+The squad builds **Canada: Crossroads**, a Canadian history map-and-timeline game.
+The game artifact lives in `examples/canada-crossroads` after a completed promoted
+build (now available locally). Initial context and relevant dependency updates are delivered through the
+native harness; preferred file focus creates no ownership claims. All assigned
+outcomes and pre/final independent check results remain in local artifacts.
+
+For the sixteen-builder extension experiment on an existing game:
+
+```sh
+node scripts/squad.mjs --real --fixture=extensions --root=/absolute/game/path --serve
+node scripts/scale.mjs --participants=32 --events=2000
+```
+
+The first command runs every assigned builder concurrently by default. The second
+runs deterministic participants and zero models; it is a relay/context benchmark.
+The generated game passed58 independent checks and a browser play-through. Eight
+of seventeen native tasks reported success and nine reached their deadlines; both
+execution outcomes and correct outputs are retained. See [the execution record](docs/gangcode-outcomes.json).

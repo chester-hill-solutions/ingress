@@ -33,3 +33,32 @@ prior file participants and their last known positions, with uncertainty labels.
 Later causal updates use the same envelope. Native message admission, inbox delivery,
 and exact ID/text presence in projected conversation context are separate evidence.
 Presence does not establish that a provider consumed it or that the agent adapted.
+
+## GangCode diagnostic extension
+
+The Canadian-history game experiment reached sixteen simultaneous native
+OpenCode executions. The sixteen-builder phase and one later integrator are
+separate: eight tasks reported success and nine reached deadlines, all with
+confirmed process stops. Final generated output passed58 independent checks.
+Browser QA then verified real answer progression, 10/22/36 scoring, keyboard
+answers/restart, chapter completion, badges, source links and notebook updates.
+The promoted copy has small recorded wording/contrast corrections.
+
+All17 initial envelopes were delivered before the first tool event. Exact native
+projection remained observable for8;9 deadline outcomes leave projection unknown.
+39 awareness notices were admitted,31 native-delivered and8 accepted/pending.
+These counts do not establish provider consumption or comparative benefit.
+See [all assigned game outcomes](gangcode-outcomes.json),
+[source provenance](gangcode-game-provenance.json) and
+[promoted game verification](gangcode-game-verification.json).
+
+The current runtime defaults to the entire declared roster concurrently, with an
+explicit lower concurrency optional. State capacity is checked before launch;
+unsupported rosters fail visibly.32-participant deterministic load tests run zero
+models and measure relay/context cost separately.89 package tests pass.
+
+Later reviewed changes remove affinity-based suppression of stale-read updates,
+compact the dashboard and retain bounded model-step timing metadata. Those changes
+are regression-tested but were not the source version of this native16 run.
+No file claims, guarded writes, automatic conflict resolution, remote multiplayer,
+Jev evaluation or reliable comparative collaboration benefit is established.

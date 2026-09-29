@@ -1,0 +1,255 @@
+{
+  "scope": "all assigned game diagnostics; no discarded native outcomes",
+  "live": [
+    {
+      "evidence": "artifacts/d0c8d82f-2e16-48a0-9036-e9227dc3133f/squad-evidence.json",
+      "kind": "real-native-squad-build",
+      "model": {
+        "providerID": "opencode",
+        "id": "space-bunny-free"
+      },
+      "assigned": [
+        "content",
+        "engine",
+        "server",
+        "ui",
+        "integration"
+      ],
+      "actors": [
+        {
+          "id": "content",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "engine",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "server",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "ui",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "integration",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        }
+      ],
+      "verification": {
+        "passed": 28,
+        "total": 31,
+        "correct": false
+      },
+      "nativeExecutionPeak": null,
+      "elapsedMs": 422866,
+      "noticeCounts": {
+        "delivered": 13,
+        "accepted": 6,
+        "unknown": 0
+      }
+    },
+    {
+      "evidence": "artifacts/a6b5a8fc-511a-43f3-9e9d-585f55e14998/repair-evidence.json",
+      "kind": "real-native-game-repair",
+      "model": {
+        "providerID": "opencode",
+        "id": "space-bunny-free"
+      },
+      "assigned": [
+        "finisher"
+      ],
+      "actors": [
+        {
+          "id": "finisher",
+          "outcome": "runtime_failed",
+          "processStopped": true
+        }
+      ],
+      "verification": {
+        "passed": 29,
+        "total": 31,
+        "correct": false
+      },
+      "nativeExecutionPeak": null,
+      "elapsedMs": 302568,
+      "noticeCounts": {
+        "delivered": 0,
+        "accepted": 0,
+        "unknown": 0
+      }
+    },
+    {
+      "evidence": "artifacts/74d285d5-9726-4b91-a8a5-9770ead3de0b/squad-evidence.json",
+      "kind": "real-native-squad-build",
+      "model": {
+        "providerID": "opencode",
+        "id": "space-bunny-free"
+      },
+      "assigned": [
+        "map",
+        "timeline",
+        "cards",
+        "scoreboard",
+        "badges",
+        "sound",
+        "accessibility",
+        "progress",
+        "ui-shell",
+        "server-support",
+        "glossary",
+        "itinerary",
+        "notebook",
+        "keyboard-help",
+        "achievement-details",
+        "era-intro",
+        "integration"
+      ],
+      "actors": [
+        {
+          "id": "map",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "timeline",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "cards",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "scoreboard",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "badges",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "sound",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "accessibility",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "progress",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "ui-shell",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "server-support",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "glossary",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "itinerary",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "notebook",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "keyboard-help",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "achievement-details",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        },
+        {
+          "id": "era-intro",
+          "outcome": "succeeded",
+          "processStopped": true
+        },
+        {
+          "id": "integration",
+          "outcome": "deadline_or_cancelled",
+          "processStopped": true
+        }
+      ],
+      "verification": {
+        "passed": 58,
+        "total": 58,
+        "correct": true
+      },
+      "nativeExecutionPeak": 16,
+      "elapsedMs": 720508,
+      "noticeCounts": {
+        "delivered": 31,
+        "accepted": 8,
+        "unknown": 0
+      }
+    }
+  ],
+  "deterministicScale": {
+    "participants": 32,
+    "modelCalls": 0,
+    "events": 2000,
+    "dispatchP95MsRange": [
+      0.152,
+      0.178
+    ],
+    "contextP95MsRange": [
+      0.98,
+      1.57
+    ],
+    "maxContextBytes": 26544,
+    "basis": "three staging apparatus runs; not native-builder performance or collaboration benefit"
+  },
+  "browserQA": {
+    "promotedGame": "examples/canada-crossroads",
+    "passed": [
+      "correct answers advance chronology",
+      "scores10/22/36 and streak1/2/3",
+      "three chapter badges unlock",
+      "feedback and official source links",
+      "notebook records answered feedback",
+      "chapter switch resets scoring",
+      "wrong answer awardszero and advances",
+      "keyboard3 answers and r restarts",
+      "glossary opens with definitions",
+      "reload preserves saved best progress",
+      "no warnings or errors in fresh preview"
+    ],
+    "nativePreQAErrors": [
+      "undefined tl",
+      "notebook/glossary DOM mounting"
+    ],
+    "parentCorrections": [
+      "accurate zero-point/reset-streak chapter introductions",
+      "selected chapter hover contrast"
+    ],
+    "mobileBrowserQA": "not performed"
+  }
+}

@@ -1,0 +1,362 @@
+[
+  {
+    "id": "norse",
+    "title": "Atlantic voyagers · around 1000",
+    "year": 1000,
+    "era": "early-contact",
+    "region": "Newfoundland and Labrador",
+    "question": "Which archaeological site preserves evidence of a Norse settlement in Newfoundland?",
+    "options": [
+      {
+        "id": "a",
+        "text": "L’Anse aux Meadows"
+      },
+      {
+        "id": "b",
+        "text": "Fort York"
+      },
+      {
+        "id": "c",
+        "text": "Head-Smashed-In Buffalo Jump"
+      }
+    ],
+    "correctOptionID": "a",
+    "explanation": "Norse seafarers established a short-lived base at L’Anse aux Meadows around the year 1000. This is evidence of a European presence, not the beginning of Indigenous history.",
+    "source": {
+      "title": "Parks Canada: L’Anse aux Meadows",
+      "url": "https://parks.canada.ca/culture/designation/lieu-site/anse-aux-meadows"
+    },
+    "x": 91,
+    "y": 49
+  },
+  {
+    "id": "quebec",
+    "title": "A St. Lawrence foothold",
+    "year": 1608,
+    "era": "early-contact",
+    "region": "St. Lawrence Valley",
+    "question": "Which French explorer founded the colonial settlement at Québec in 1608?",
+    "options": [
+      {
+        "id": "a",
+        "text": "John Cabot"
+      },
+      {
+        "id": "b",
+        "text": "Samuel de Champlain"
+      },
+      {
+        "id": "c",
+        "text": "James Cook"
+      }
+    ],
+    "correctOptionID": "b",
+    "explanation": "Samuel de Champlain founded Québec in 1608. The French fur trade depended on Indigenous traders and intermediaries, including the Montagnais, Algonquin and Huron First Nations.",
+    "source": {
+      "title": "Parks Canada: Champlain at Chambly",
+      "url": "https://parks.canada.ca/lhn-nhs/qc/fortchambly/culture/histoire-history/site/samuel-de-champlain"
+    },
+    "x": 75,
+    "y": 68
+  },
+  {
+    "id": "proclamation",
+    "title": "Rights and the Crown",
+    "year": 1763,
+    "era": "early-contact",
+    "region": "Eastern North America",
+    "question": "The Royal Proclamation became a foundation for which process?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Building the Pacific railway"
+      },
+      {
+        "id": "b",
+        "text": "Choosing the maple leaf flag"
+      },
+      {
+        "id": "c",
+        "text": "Treaty-making with First Nations"
+      }
+    ],
+    "correctOptionID": "c",
+    "explanation": "Issued on October 7, 1763, the Royal Proclamation established procedures concerning First Nations lands and helped form a basis for treaty-making and the relationship with the Crown.",
+    "source": {
+      "title": "Crown-Indigenous Relations: Royal Proclamation",
+      "url": "https://www.cirnac.gc.ca/eng/1370355181092/1607905122267"
+    },
+    "x": 69,
+    "y": 71
+  },
+  {
+    "id": "confederation",
+    "title": "A federation takes shape",
+    "year": 1867,
+    "era": "confederation",
+    "region": "Eastern Canada",
+    "question": "Which four provinces formed the federation in 1867?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Ontario, Québec, Nova Scotia and New Brunswick"
+      },
+      {
+        "id": "b",
+        "text": "Manitoba, Alberta, Saskatchewan and British Columbia"
+      },
+      {
+        "id": "c",
+        "text": "Newfoundland, Prince Edward Island, Ontario and Yukon"
+      }
+    ],
+    "correctOptionID": "a",
+    "explanation": "Confederation brought Ontario, Québec, Nova Scotia and New Brunswick together in 1867. Full independence from Britain developed through later constitutional changes.",
+    "source": {
+      "title": "Intergovernmental Affairs: Provinces and territories",
+      "url": "https://www.canada.ca/en/intergovernmental-affairs/services/provinces-territories.html"
+    },
+    "x": 82,
+    "y": 78
+  },
+  {
+    "id": "manitoba",
+    "title": "Red River negotiations",
+    "year": 1870,
+    "era": "confederation",
+    "region": "Manitoba",
+    "question": "Which Métis leader headed the provisional government involved in the creation of Manitoba?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Lester B. Pearson"
+      },
+      {
+        "id": "b",
+        "text": "Louis Riel"
+      },
+      {
+        "id": "c",
+        "text": "Samuel de Champlain"
+      }
+    ],
+    "correctOptionID": "b",
+    "explanation": "Louis Riel led a provisional government at Red River. Negotiations between its representatives and the federal government produced the Manitoba Act, and Manitoba joined Confederation in 1870.",
+    "source": {
+      "title": "Canadian Heritage: Manitoba",
+      "url": "https://www.canada.ca/en/canadian-heritage/services/provincial-territorial-symbols-canada/manitoba.html"
+    },
+    "x": 50,
+    "y": 71
+  },
+  {
+    "id": "indian-act",
+    "title": "An unequal colonial law",
+    "year": 1876,
+    "era": "confederation",
+    "region": "Canada",
+    "question": "Under the original Indian Act, who could lose registered status by marrying a man without Indian status?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Every Canadian citizen"
+      },
+      {
+        "id": "b",
+        "text": "Only railway workers"
+      },
+      {
+        "id": "c",
+        "text": "First Nations women"
+      }
+    ],
+    "correctOptionID": "c",
+    "explanation": "The Indian Act was enacted in 1876. Its discriminatory marriage rules removed status from First Nations women who married men without status, while men retained status regardless of marriage. Later amendments sought to address these inequities.",
+    "source": {
+      "title": "Auditor General: Indian Act registration timeline",
+      "url": "https://www.canada.ca/en/auditor-general/our-work/audit-reports/report-1-registration-under-the-indian-act.html"
+    },
+    "x": 63,
+    "y": 68
+  },
+  {
+    "id": "last-spike",
+    "title": "The last spike",
+    "year": 1885,
+    "era": "confederation",
+    "region": "British Columbia",
+    "question": "In which province was the Canadian Pacific Railway’s ceremonial last spike driven?",
+    "options": [
+      {
+        "id": "a",
+        "text": "British Columbia"
+      },
+      {
+        "id": "b",
+        "text": "Nova Scotia"
+      },
+      {
+        "id": "c",
+        "text": "Prince Edward Island"
+      }
+    ],
+    "correctOptionID": "a",
+    "explanation": "Donald Smith drove the ceremonial last spike at Craigellachie in British Columbia on November 7, 1885, marking completion of the Canadian Pacific Railway.",
+    "source": {
+      "title": "Library and Archives Canada: Last spike",
+      "url": "https://www.canada.ca/en/library-archives/collection/engage-learn/podcasts/treasures-revealed/episode-016.html"
+    },
+    "x": 22,
+    "y": 72
+  },
+  {
+    "id": "vimy",
+    "title": "Vimy Ridge · overseas",
+    "year": 1917,
+    "era": "modern",
+    "region": "France (overseas)",
+    "question": "In which country did Canadian troops fight the Battle of Vimy Ridge?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Belgium"
+      },
+      {
+        "id": "b",
+        "text": "France"
+      },
+      {
+        "id": "c",
+        "text": "Italy"
+      }
+    ],
+    "correctOptionID": "b",
+    "explanation": "The Battle of Vimy Ridge took place in northern France from April 9 to 12, 1917, during the First World War. Its capture came at a heavy human cost.",
+    "source": {
+      "title": "Veterans Affairs Canada: Vimy Ridge",
+      "url": "https://www.veterans.gc.ca/en/remembrance/military-history/first-world-war/battle-vimy-ridge"
+    },
+    "x": 94,
+    "y": 12
+  },
+  {
+    "id": "persons",
+    "title": "The Persons Case",
+    "year": 1929,
+    "era": "modern",
+    "region": "Canada",
+    "question": "What did the 1929 Persons Case establish about women’s eligibility?",
+    "options": [
+      {
+        "id": "a",
+        "text": "They could join Confederation as a province"
+      },
+      {
+        "id": "b",
+        "text": "They alone could vote in every election"
+      },
+      {
+        "id": "c",
+        "text": "They were eligible for appointment to the Senate"
+      }
+    ],
+    "correctOptionID": "c",
+    "explanation": "The Famous Five won the Persons Case in 1929. The ruling recognized women as persons for the constitutional provision governing appointment to the Senate; it did not instantly remove every barrier to equality.",
+    "source": {
+      "title": "Public Services: Famous Five memorial",
+      "url": "https://www.canada.ca/en/public-services-procurement/services/infrastructure-buildings/parliamentary-precinct/discover/statues.html"
+    },
+    "x": 65,
+    "y": 78
+  },
+  {
+    "id": "flag",
+    "title": "A new national symbol",
+    "year": 1965,
+    "era": "modern",
+    "region": "Ottawa",
+    "question": "Which symbol is at the centre of the national flag first raised in 1965?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A red maple leaf"
+      },
+      {
+        "id": "b",
+        "text": "A blue fleur-de-lis"
+      },
+      {
+        "id": "c",
+        "text": "A golden beaver"
+      }
+    ],
+    "correctOptionID": "a",
+    "explanation": "The red-and-white maple leaf flag was first raised on Parliament Hill on February 15, 1965. The maple leaf was already a familiar symbol before the new flag was adopted.",
+    "source": {
+      "title": "Canadian Heritage: National Flag history",
+      "url": "https://www.canada.ca/en/canadian-heritage/services/flag-canada-history.html"
+    },
+    "x": 70,
+    "y": 75
+  },
+  {
+    "id": "charter",
+    "title": "Rights in the Constitution",
+    "year": 1982,
+    "era": "modern",
+    "region": "Ottawa",
+    "question": "Which document became part of the Constitution in 1982?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The Hudson’s Bay Company charter"
+      },
+      {
+        "id": "b",
+        "text": "The Canadian Charter of Rights and Freedoms"
+      },
+      {
+        "id": "c",
+        "text": "The Manitoba Act"
+      }
+    ],
+    "correctOptionID": "b",
+    "explanation": "The Canadian Charter of Rights and Freedoms came into force on April 17, 1982. Its equality-rights section took effect three years later, in 1985.",
+    "source": {
+      "title": "Canadian Heritage: Charter guide",
+      "url": "https://www.canada.ca/en/canadian-heritage/services/how-rights-protected/guide-canadian-charter-rights-freedoms.html"
+    },
+    "x": 72,
+    "y": 73
+  },
+  {
+    "id": "nunavut",
+    "title": "Our land",
+    "year": 1999,
+    "era": "modern",
+    "region": "Nunavut",
+    "question": "What does Nunavut mean in Inuktitut?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Northern railway"
+      },
+      {
+        "id": "b",
+        "text": "Maple forest"
+      },
+      {
+        "id": "c",
+        "text": "Our land"
+      }
+    ],
+    "correctOptionID": "c",
+    "explanation": "Nunavut means “our land” in Inuktitut. The territory was created on April 1, 1999, following a process tied to the Inuit land claims agreement.",
+    "source": {
+      "title": "Canadian Heritage: Nunavut",
+      "url": "https://www.canada.ca/en/canadian-heritage/services/provincial-territorial-symbols-canada/nunavut.html"
+    },
+    "x": 60,
+    "y": 25
+  }
+]

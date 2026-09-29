@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { OpenCodeClient } from '../src/opencode.mjs';
+import { OpenCodeClient, safeRuntimeError } from '../src/opencode.mjs';
 
 const envelope = (seq, type, data = {}) => ({ id: `evt_${seq}`, type, created: 1000 + seq, durable: { aggregateID: 'ses_one', seq, version: type === 'session.tool.success' ? 2 : 1 }, data: { sessionID: 'ses_one', ...data } });
 function streamResponse(values, { chunks } = {}) {
@@ -38,6 +38,78 @@ test('explicit resume false admits steering without waking an idle successor',as
   assert.deepEqual(body,{id:'msg_notice',text:'Peer fact changed',delivery:'steer',resume:false});
   await instance.prompt('ses_one','Explicit task',{id:'msg_task',resume:true});assert.equal(body.resume,true);
   await assert.rejects(instance.prompt('ses_one','Bad control',{id:'msg_bad',resume:'false'}),/resume setting/);
+});
+
+test('wait polls short GETs through pending states and returns the native terminal outcome', async () => {
+  const calls = [], states = [
+    { time: {} }, { outcome: 'running', time: {} },
+    { outcome: 'failed', time: { idle: 123 } }
+  ];
+  const instance = client(async (url, options) => {
+    calls.push({ url, method: options.method });
+    return Response.json({ data: states.shift() });
+  });
+  assert.deepEqual(await instance.wait('ses_one', undefined, { pollIntervalMs: 1 }), { sessionID: 'ses_one', outcome: 'failed', idle: 123 });
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every(c => c.method === 'GET' && c.url.endsWith('/api/session/ses_one')));
+});
+
+test('wait ignores a prior terminal outcome using the admission time; parked notices do not reset it', async () => {
+  let reads = 0;
+  const instance = client(async (url, options) => {
+    if (url.endsWith('/prompt')) {
+      const input = JSON.parse(options.body);
+      return Response.json({ data: { id: input.id, sessionID: 'ses_one', delivery: input.delivery, time: { created: input.resume === false ? 200 : 100 } } });
+    }
+    return Response.json({ data: { outcome: 'succeeded', time: { idle: ++reads === 1 ? 99 : 110 } } });
+  });
+  await instance.prompt('ses_one', 'task', { id: 'msg_task' });
+  await instance.prompt('ses_one', 'parked notice', { id: 'msg_notice', resume: false });
+  assert.equal((await instance.wait('ses_one', undefined, { pollIntervalMs: 1 })).idle, 110);
+  assert.equal(reads, 2);
+});
+
+test('explicit wait boundary handles existing sessions and interruption; malformed terminal state fails', async () => {
+  const states = [{ outcome: 'failed', time: { idle: 12 } }, { outcome: 'interrupted', time: { idle: 20 } }];
+  const instance = client(async () => Response.json({ data: states.shift() }));
+  assert.equal((await instance.wait('ses_one', undefined, { minIdleAt: 20, pollIntervalMs: 1 })).outcome, 'interrupted');
+  await assert.rejects(client(async () => Response.json({ data: { outcome: 'succeeded', time: {} } })).wait('ses_one'), /terminal outcome unknown/);
+  await assert.rejects(client(async () => Response.json({ data: null })).wait('ses_one'), /session state/);
+  await assert.rejects(instance.wait('ses_one', undefined, { pollIntervalMs: 0 }), /poll interval/);
+  await assert.rejects(instance.wait('ses_one', undefined, { minIdleAt: NaN }), /idle boundary/);
+});
+
+test('wait cancellation interrupts the polling delay and never starts a successor request', async () => {
+  let calls = 0;
+  const instance = client(async () => { calls++; return Response.json({ data: { time: {} } }); });
+  const controller = new AbortController();
+  const waiting = instance.wait('ses_one', controller.signal, { pollIntervalMs: 10000 });
+  await new Promise(resolve => setImmediate(resolve));
+  controller.abort();
+  await assert.rejects(waiting, error => error.name === 'AbortError');
+  assert.equal(calls, 1);
+  await assert.rejects(instance.wait('ses_one', controller.signal), error => error.name === 'AbortError');
+  assert.equal(calls, 1);
+});
+
+test('wait aborts an active GET with the caller signal', async () => {
+  const instance = client(async (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })));
+  const controller = new AbortController();
+  const waiting = instance.wait('ses_one', controller.signal);
+  controller.abort();
+  await assert.rejects(waiting, error => error.name === 'AbortError');
+});
+
+test('runtime diagnostics retain only allowlisted transport names/codes and numeric HTTP status', async () => {
+  const failure = new TypeError('PRIVATE PROVIDER RESPONSE', { cause: { code: 'UND_ERR_HEADERS_TIMEOUT', message: 'PRIVATE URL' } });
+  assert.deepEqual(safeRuntimeError(failure), { name: 'TypeError', code: 'UND_ERR_HEADERS_TIMEOUT' });
+  assert.deepEqual(safeRuntimeError({ name: 'PRIVATE', code: 'PRIVATE', status: '500', stack: 'PRIVATE' }), { name: 'unknown' });
+  const instance = client(async () => new Response('PRIVATE BODY', { status: 503 }));
+  await assert.rejects(instance.wait('ses_one'), error => {
+    assert.deepEqual(safeRuntimeError(error), { name: 'OpenCodeHTTPError', status: 503 });
+    assert.ok(!JSON.stringify(safeRuntimeError(error)).includes('PRIVATE'));
+    return true;
+  });
 });
 
 test('native SSE preserves durable source IDs, cursors and tool correlation without prose', async () => {
