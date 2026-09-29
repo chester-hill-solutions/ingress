@@ -225,7 +225,12 @@
       1.57
     ],
     "maxContextBytes": 26544,
-    "basis": "three staging apparatus runs; not native-builder performance or collaboration benefit"
+    "basis": "three staging apparatus runs; not native-builder performance or collaboration benefit",
+    "evidencePaths": [
+      "artifacts/scale-0c0e4498-1f7c-4326-bdbd-2463a4a9aac0/scale-evidence.json",
+      "artifacts/scale-10fae6b4-6fdd-4f8c-900a-33fabc349af8/scale-evidence.json",
+      "artifacts/scale-904bc2c7-f965-4cb0-a34f-5eff6a090a64/scale-evidence.json"
+    ]
   },
   "browserQA": {
     "promotedGame": "examples/canada-crossroads",
