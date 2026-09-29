@@ -1,0 +1,3 @@
+# Agent Collaboration
+
+Follow docs/plan.md. This repository owns the collaboration product; Stow is an optional public storage integration. No file claims. Observation cannot promise stale-write prevention. Record uncertainty, source coverage, and delivery versus adaptation honestly. Never commit credentials, raw provider context, or generated model prose by default. Use Node built-ins for this initial probe. Independent deterministic tests must require neither Stow nor OpenCode. Real harness trials are opt-in and use the configured model. Preserve all assigned trials. Do not mark RT-1 useful benefit based on one demonstration.

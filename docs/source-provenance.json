@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-29",
+  "source_repository": "https://github.com/chester-hill-solutions/stow-s3",
+  "source_checkout_head": "f54927668a135146518f56efaf27eca2b7df1578",
+  "working_tree_notes": "The source checkout contains uncommitted prototype and plan work; SHA256 records identify transferred bytes independently of HEAD.",
+  "license": "Apache-2.0",
+  "transferred": [
+    {
+      "path": "docs/realtime-multiplayer-plan.md",
+      "sha256": "72bba7625155bb77b3a628187aa34b6e04f599a2d82cb32cb2b3bba6ebff47ba"
+    },
+    {
+      "path": "docs/realtime-multiplayer-engineering.md",
+      "sha256": "09dd2ae5da84d5bd557ce9c51bb10cc6b3828e30cac1107da51ac09b8b67326c"
+    },
+    {
+      "path": "docs/realtime-collaboration-evaluation.md",
+      "sha256": "b932c7c091ca53792261743716937d564777c74908bae6703c32e7b8afb3a501"
+    },
+    {
+      "path": "docs/realtime-multiplayer-plan-review.md",
+      "sha256": "98bb471336f611b22e5ed5cd69b76c0a2aa304f5817b3b3b976a330ae065d106"
+    },
+    {
+      "path": "docs/realtime-repository-boundary.md",
+      "sha256": "e3c5478bbfc587ba60226a0ea80a296694207e9754e462e6fe57ee7c76a4dde3"
+    }
+  ],
+  "adapted_caller_sources": [
+    {
+      "path": "examples/opencode/opencode.mjs",
+      "sha256": "5fe3e3c55d7dae6c0d910227324f1248723be421ed0fb66941976167f8a602b0"
+    },
+    {
+      "path": "examples/opencode/server.mjs",
+      "sha256": "30c37573d22d42288ac2ce048207069a93209b7cd78907b97f16f40ec435edb0"
+    },
+    {
+      "path": "examples/opencode/local-store.mjs",
+      "sha256": "124517a38027e64ffef783301eeb5083d9d4546c31ae585745583a01da76d204"
+    }
+  ],
+  "new_implementation": "Independent caller code; original storage/private imports, claim protocol and legacy receipt interpretations are not carried forward."
+}

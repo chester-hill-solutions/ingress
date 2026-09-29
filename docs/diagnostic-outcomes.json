@@ -1,0 +1,194 @@
+{
+  "date": "2026-09-29",
+  "qualification": "diagnostic only; different implementation revisions are not a controlled comparison",
+  "latestRunID": "f38ac252-77c6-4b44-8a55-aba72ab01816",
+  "assignedTrials": [
+    {
+      "runID": "abe1cdcc-b728-46e2-9100-5d54b2d89484",
+      "trialIndex": 0,
+      "evidenceVersion": 1,
+      "condition": "awareness-disabled",
+      "assigned": true,
+      "admittedActors": 2,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [
+        null,
+        null
+      ],
+      "initialDeliveredBeforeFirstTool": [
+        null,
+        null
+      ],
+      "errors": []
+    },
+    {
+      "runID": "abe1cdcc-b728-46e2-9100-5d54b2d89484",
+      "trialIndex": 1,
+      "evidenceVersion": 1,
+      "condition": "awareness-enabled",
+      "assigned": true,
+      "admittedActors": 2,
+      "independentCorrect": true,
+      "readBarrier": true,
+      "notificationOpportunity": true,
+      "noticeStatuses": [
+        "delivered"
+      ],
+      "projectedInitialContext": [
+        true,
+        true
+      ],
+      "initialDeliveredBeforeFirstTool": [
+        null,
+        null
+      ],
+      "errors": []
+    },
+    {
+      "runID": "ecc3d549-8519-4201-afc9-26372fb54588",
+      "trialIndex": 0,
+      "evidenceVersion": 1,
+      "condition": "awareness-disabled",
+      "assigned": true,
+      "admittedActors": 0,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [],
+      "initialDeliveredBeforeFirstTool": [],
+      "errors": [
+        {
+          "code": "setup_or_runtime_failure"
+        }
+      ]
+    },
+    {
+      "runID": "ecc3d549-8519-4201-afc9-26372fb54588",
+      "trialIndex": 1,
+      "evidenceVersion": 1,
+      "condition": "awareness-enabled",
+      "assigned": true,
+      "admittedActors": 0,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [],
+      "initialDeliveredBeforeFirstTool": [],
+      "errors": [
+        {
+          "code": "setup_or_runtime_failure"
+        }
+      ]
+    },
+    {
+      "runID": "ed9311e0-25c0-43cc-9b91-9c4165960300",
+      "trialIndex": 0,
+      "evidenceVersion": 1,
+      "condition": "awareness-disabled",
+      "assigned": true,
+      "admittedActors": 0,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [],
+      "initialDeliveredBeforeFirstTool": [],
+      "errors": [
+        {
+          "code": "setup_or_runtime_failure",
+          "reason": "OpenCode exited before readiness"
+        }
+      ]
+    },
+    {
+      "runID": "ed9311e0-25c0-43cc-9b91-9c4165960300",
+      "trialIndex": 1,
+      "evidenceVersion": 1,
+      "condition": "awareness-enabled",
+      "assigned": true,
+      "admittedActors": 0,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [],
+      "initialDeliveredBeforeFirstTool": [],
+      "errors": [
+        {
+          "code": "setup_or_runtime_failure",
+          "reason": "OpenCode exited before readiness"
+        }
+      ]
+    },
+    {
+      "runID": "f38ac252-77c6-4b44-8a55-aba72ab01816",
+      "trialIndex": 0,
+      "evidenceVersion": 2,
+      "condition": "awareness-enabled",
+      "assigned": true,
+      "admittedActors": 2,
+      "independentCorrect": true,
+      "readBarrier": true,
+      "notificationOpportunity": true,
+      "noticeStatuses": [
+        "delivered"
+      ],
+      "projectedInitialContext": [
+        true,
+        true
+      ],
+      "initialDeliveredBeforeFirstTool": [
+        true,
+        true
+      ],
+      "errors": []
+    },
+    {
+      "runID": "fd497e38-5a22-4270-b966-874ba7aa7317",
+      "trialIndex": 0,
+      "evidenceVersion": 1,
+      "condition": "awareness-disabled",
+      "assigned": true,
+      "admittedActors": 2,
+      "independentCorrect": false,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [
+        null,
+        null
+      ],
+      "initialDeliveredBeforeFirstTool": [
+        null,
+        null
+      ],
+      "errors": []
+    },
+    {
+      "runID": "fd497e38-5a22-4270-b966-874ba7aa7317",
+      "trialIndex": 1,
+      "evidenceVersion": 1,
+      "condition": "awareness-enabled",
+      "assigned": true,
+      "admittedActors": 2,
+      "independentCorrect": true,
+      "readBarrier": false,
+      "notificationOpportunity": false,
+      "noticeStatuses": [],
+      "projectedInitialContext": [
+        null,
+        null
+      ],
+      "initialDeliveredBeforeFirstTool": [
+        null,
+        null
+      ],
+      "errors": []
+    }
+  ]
+}
