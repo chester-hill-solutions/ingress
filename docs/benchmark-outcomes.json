@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "invalidPilot": {
+    "evidence": "artifacts/benchmark-796f5749-2013-454e-86a8-58de19fb8e13/evidence.json",
+    "classification": "invalid-test-apparatus",
+    "cause": "Native OpenCode edit resources are location-relative; absolute permission resources rejected valid writes. Canonical paths also needed for consistent observation.",
+    "assigned": 36,
+    "outcomes": {
+      "completed": 8,
+      "deadline": 1,
+      "cancelled": 6,
+      "not-run": 21
+    },
+    "admittedActors": 30,
+    "inference": "No model or GangCode effectiveness conclusion is valid from this pilot."
+  },
+  "nativeWritePreflight": {
+    "evidence": "/private/var/folders/f3/n5tk3w792px0vctvqjytc6t00000gn/T/oc-native-write-smoke-MccmVZ/evidence.json",
+    "passed": true,
+    "checks": 9,
+    "provider": "loopback scripted fixture",
+    "note": "Earlier failed probe attempts retained in their original temporary evidence directories."
+  },
+  "study": {
+    "status": "not-admitted",
+    "protocolVersion": 3
+  },
+  "supersededStudy": {
+    "evidence": "artifacts/benchmark-f2c206ce-3122-49ac-ac6d-baa864264f98/evidence.json",
+    "classification": "cancelled-after-user-model-steering",
+    "assigned": 144,
+    "outcomes": {
+      "deadline": 21,
+      "completed": 16,
+      "failed": 21,
+      "cancelled": 12,
+      "not-run": 74
+    },
+    "correctCompleted": 16,
+    "artifactCorrect": 32,
+    "sourceSnapshot": "artifacts/benchmark-f2c206ce-3122-49ac-ac6d-baa864264f98/source-snapshot",
+    "nativeFailureSample": {
+      "observedAt": "2026-09-30T01:04:37Z",
+      "source": "persisted native session_message assistant error, joined by evidence sessionID",
+      "matchedActors": 30,
+      "type": "provider.auth",
+      "httpStatus": 403,
+      "interpretation": "provider rejection; exact access cause and retryability unknown; not coding-quality evidence"
+    }
+  },
+  "requestedModelPreflight": {
+    "evidence": "/private/var/folders/f3/n5tk3w792px0vctvqjytc6t00000gn/T/gangcode-model-preflight-0b1jjH/evidence.json",
+    "models": [
+      "opencode/gpt-5-nano",
+      "opencode/deepseek-v4-flash"
+    ],
+    "passed": true,
+    "nativeReadCompleted": true,
+    "primaryHTTPStatus": 200,
+    "processStopped": true
+  }
+}

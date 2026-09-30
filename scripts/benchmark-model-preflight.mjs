@@ -1,0 +1,18 @@
+import{mkdtemp,mkdir,writeFile,readFile,realpath}from'node:fs/promises';
+import{join}from'node:path';import{tmpdir}from'node:os';
+import{selectedProfile}from'../src/profile.mjs';import{startOpenCode}from'../src/process.mjs';import{OpenCodeClient,safeRuntimeError}from'../src/opencode.mjs';
+if(process.argv.slice(2).join(' ')!=='--real')throw Error('Opt-in native availability probe: --real');
+const root=await realpath(await mkdtemp(join(tmpdir(),'gangcode-model-preflight-'))),receipts=join(root,'receipts.jsonl');
+const workspace=join(root,'workspace');await mkdir(join(workspace,'.opencode/plugins/availability'),{recursive:true});await writeFile(receipts,'');await writeFile(join(workspace,'probe.txt'),'native read availability\n');
+await writeFile(join(workspace,'.opencode/plugins/availability/index.ts'),`
+import{appendFileSync}from'node:fs';let n=0;const record=row=>{if(n++<128)appendFileSync(${JSON.stringify(receipts)},JSON.stringify(row)+'\\n')};
+export default{id:'benchmark.model-availability',async setup(ctx){
+ await ctx.session.hook('context',event=>{for(const name of Object.keys(event.tools))if(name!=='read')delete event.tools[name]});
+ await ctx.session.hook('http.response',event=>record({type:'http',sessionID:event.sessionID,model:event.model.id,kind:event.kind,status:event.response.status}));
+ await ctx.tool.hook('execute.after',event=>record({type:'tool',sessionID:event.sessionID,tool:event.tool,status:event.status}));
+}};
+`);
+const evidence={version:1,kind:'requested-model-native-availability',date:new Date().toISOString(),models:['gpt-5-nano','deepseek-v4-flash'],outcomes:[]};let host;const clients=[];
+try{const profile=await selectedProfile();host=await startOpenCode({...profile,directory:workspace,stateDir:join(root,'state')});const signal=AbortSignal.timeout(60000);await Promise.all(evidence.models.map(async id=>{const client=new OpenCodeClient({...host,directory:workspace,model:{providerID:'opencode',id},permissions:[{action:'*',resource:'*',effect:'deny'},{action:'read',resource:'*',effect:'allow'},{action:'external_directory',resource:'*',effect:'deny'}]});clients.push(client);const row={model:id};evidence.outcomes.push(row);try{row.sessionID=await client.createSession('Requested model availability',signal);await client.prompt(row.sessionID,'Read probe.txt once using the native read tool, then finish. Do not change any files.',{id:'msg_availability_'+id.replaceAll('-','_'),signal});row.terminal=await client.wait(row.sessionID,signal,{pollIntervalMs:100});}catch(error){row.error=safeRuntimeError(error)}}))}catch(error){evidence.error=safeRuntimeError(error)}finally{for(const c of clients)c.close();try{await host?.close();evidence.stopped=true}catch(error){evidence.stopped=false;evidence.stopError=safeRuntimeError(error)}}
+evidence.receipts=(await readFile(receipts,'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);evidence.passed=evidence.stopped===true&&!evidence.error&&evidence.outcomes.length===2&&evidence.outcomes.every(row=>row.terminal?.outcome==='succeeded'&&evidence.receipts.some(r=>r.type==='tool'&&r.sessionID===row.sessionID&&r.tool==='read'&&r.status==='completed'));
+await writeFile(join(root,'evidence.json'),JSON.stringify(evidence,null,2)+'\n',{mode:0o600});console.log(JSON.stringify({passed:evidence.passed,stopped:evidence.stopped,outcomes:evidence.outcomes.map(row=>({model:row.model,outcome:row.terminal?.outcome??'unknown',error:row.error})),http:evidence.receipts.filter(row=>row.type==='http').map(row=>({model:row.model,kind:row.kind,status:row.status})),evidence:join(root,'evidence.json')}));if(!evidence.passed)process.exitCode=1;

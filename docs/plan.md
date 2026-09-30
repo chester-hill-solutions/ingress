@@ -102,3 +102,17 @@ loopback routing, cleanup and process stop. All seven development attempts are r
 The production squad still uses its previous process-per-actor adapter; no runtime
 migration, compaction/cancellation proof, model adaptation or RT-1 qualification is
 implied by this plumbing result.
+
+## Repeated native benchmark pilot
+
+The user requested varied repeated tests measuring completion time, complexity and
+instruction following. The frozen [benchmark protocol](benchmark-protocol.md) assigns
+six two-agent workloads to awareness-off/on conditions, three repeats each. Retain
+all36 cohort outcomes and measure native/plugin delivery separately from artifact
+behavior. No held-out RT-1 or cross-harness qualification follows from this pilot.
+
+## 2026-09-29: repeated tuning study
+
+The first awareness pilot was stopped and retained as invalid apparatus evidence: absolute permission resources rejected native location-relative edits. Corrected native loopback preflight verifies actual writes. The new [tuning protocol](benchmark-protocol.md) preassigns144 trials/324 roles across stock baselines, coordinated2/4/8-agent teams, builder-reviewer phases, three models, mixed-model pairs,8KiB context and500ms refresh.161 deterministic package tests pass before admission. Completed results and remaining limitations belong in [benchmark outcomes](benchmark-outcomes.json); do not qualify RT-1 based on small tasks.
+
+The user selected GPT-5 Nano and DeepSeek V4 Flash for additional model comparisons. Both passed native read preflight with primary HTTP200 and confirmed stop. The previous study remains cancelled/retained; version3 starts fresh assignments and keeps Space Bunny as the existing control.166 deterministic checks pass before the revised admission.
