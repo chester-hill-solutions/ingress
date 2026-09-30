@@ -6,11 +6,11 @@ import {configureBenchmarkFixture} from '../fixtures/benchmark-configurations.mj
 import {assignBenchmarkStudy} from '../fixtures/benchmark-study.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 
-test('entire frozen study preassigns144 cohorts and324 actors before execution',()=>{
+test('entire frozen study preassigns162 cohorts and360 actors before execution',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures);
-  assert.equal(rows.length,144);assert.equal(rows.flatMap(row=>row.actors).length,324);assert.equal(new Set(rows.map(row=>row.id)).size,144);
+  assert.equal(rows.length,162);assert.equal(rows.flatMap(row=>row.actors).length,360);assert.equal(new Set(rows.map(row=>row.id)).size,162);
   assert.deepEqual([...new Set(rows.map(row=>row.repeat))],[1,2,3]);
-  for(const repeat of [1,2,3]){const block=rows.filter(row=>row.repeat===repeat);assert.equal(block.length,48);assert.equal(block.filter(row=>row.studyVariant==='core').length,18);assert.equal(block.filter(row=>row.studyVariant==='role-context-tuning').length,15);assert.equal(block.filter(row=>row.studyVariant==='additional-model').length,12);assert.equal(block.filter(row=>row.studyVariant==='mixed-pair').length,3);}
+  for(const repeat of [1,2,3]){const block=rows.filter(row=>row.repeat===repeat);assert.equal(block.length,54);assert.equal(block.filter(row=>row.studyVariant==='core').length,18);assert.equal(block.filter(row=>row.studyVariant==='role-context-tuning').length,15);assert.equal(block.filter(row=>row.studyVariant==='additional-model').length,18);assert.equal(block.filter(row=>row.studyVariant==='mixed-pair').length,3);}
   assert.ok(rows.every(row=>row.assigned&&row.outcome==='not-run'&&!row.correct&&row.deadlineMs===90000));
   assert.ok(rows.flatMap(row=>row.actors).every(actor=>actor.assigned&&!actor.admitted&&actor.outcome==='not-run'&&actor.processStopped===null));
 });
@@ -31,14 +31,14 @@ test('goal and seed hashes match runner configuration exactly and remain invaria
 test('homogeneous and mixed models have sorted unique identities with alternating role allocations',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures),mixed=rows.filter(row=>row.studyVariant==='mixed-pair');
   assert.equal(mixed.length,9);
-  for(const row of mixed){assert.equal(row.configID,'gang-pair');assert.equal(row.modelSet,'opencode/gpt-5-nano+opencode/space-bunny-free');assert.equal(new Set(row.actorModels.map(model=>model.id)).size,2);assert.ok(row.id.includes('mixed-pair'));}
+  for(const row of mixed){assert.equal(row.configID,'gang-pair');assert.equal(row.modelSet,'opencode/deepseek-v4-flash+opencode/gpt-5-nano');assert.equal(new Set(row.actorModels.map(model=>model.id)).size,2);assert.ok(row.id.includes('mixed-pair'));}
   const shared=mixed.filter(row=>row.fixtureID==='shared-features').sort((a,b)=>a.repeat-b.repeat);assert.notDeepEqual(shared[0].actorModels,shared[1].actorModels);assert.deepEqual(shared[0].actorModels,shared[2].actorModels);
-  const extra=rows.filter(row=>row.studyVariant==='additional-model');assert.equal(extra.length,36);assert.deepEqual([...new Set(extra.map(row=>row.modelSet))].sort(),['opencode/deepseek-v4-flash','opencode/gpt-5-nano']);assert.ok(extra.every(row=>['stock-solo','gang-pair'].includes(row.configID)));
+  const extra=rows.filter(row=>row.studyVariant==='additional-model');assert.equal(extra.length,54);assert.deepEqual([...new Set(extra.map(row=>row.modelSet))].sort(),['opencode/deepseek-v4-flash','opencode/gpt-5-nano']);assert.ok(extra.every(row=>['stock-solo','stock-parallel-pair','gang-pair'].includes(row.configID)));
 });
 
 test('baseline choice distinguishes matched pairs, practical alternatives and unmatched mixed arms',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures,{repeats:1});
-  for(const row of rows){if(row.system==='stock'){assert.equal(row.baselineConfigID,null);assert.equal(row.baselineAvailable,null);}else if(row.studyVariant==='mixed-pair'){assert.equal(row.baselineConfigID,'stock-parallel-pair');assert.equal(row.baselineAvailable,false);}else{assert.equal(row.baselineAvailable,true);if(row.studyVariant==='additional-model'||row.configID==='builder-reviewer'||row.plannedAgentCount>2){assert.equal(row.baselineConfigID,'stock-solo');assert.equal(row.baselineKind,'practical-stock-alternative-not-equal-compute');}else assert.equal(row.baselineConfigID,'stock-parallel-pair');}}
+  for(const row of rows){if(row.system==='stock'){assert.equal(row.baselineConfigID,null);assert.equal(row.baselineAvailable,null);}else if(row.studyVariant==='mixed-pair'){assert.equal(row.baselineConfigID,'stock-parallel-pair');assert.equal(row.baselineAvailable,false);}else{assert.equal(row.baselineAvailable,true);if(row.configID==='builder-reviewer'||row.plannedAgentCount>2){assert.equal(row.baselineConfigID,'stock-solo');assert.equal(row.baselineKind,'practical-stock-alternative-not-equal-compute');}else assert.equal(row.baselineConfigID,'stock-parallel-pair');}}
 });
 
 test('planned protocol is deeply frozen while callers can clone mutable execution evidence',()=>{
@@ -54,16 +54,16 @@ test('bounds, duplicate fixtures and conflicting main candidates fail explicitly
 
 test('maximum accepted repeat and model labels keep safe bounded unique assignment IDs',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures,{repeats:10,mainModel:{providerID:'p'.repeat(64),id:'m'.repeat(128)}});
-  assert.equal(rows.length,480);assert.ok(rows.every(row=>row.id.length<=128));assert.equal(new Set(rows.map(row=>row.id)).size,480);
+  assert.equal(rows.length,540);assert.ok(rows.every(row=>row.id.length<=128));assert.equal(new Set(rows.map(row=>row.id)).size,540);
 });
 
 
 test('additional candidates are explicit bounded distinct models without alias rewriting',()=>{
   const models=[{providerID:'custom',id:'first:v1',ignored:'NOT_PERSISTED'},{providerID:'opencode',id:'deepseek-v4-flash'}];
   const rows=assignBenchmarkStudy(benchmarkFixtures,{repeats:1,additionalModels:models});
-  assert.equal(rows.length,48);assert.equal(rows.flatMap(row=>row.actors).length,108);
+  assert.equal(rows.length,54);assert.equal(rows.flatMap(row=>row.actors).length,120);
   assert.deepEqual([...new Set(rows.filter(row=>row.studyVariant==='additional-model').map(row=>row.modelSet))].sort(),['custom/first:v1','opencode/deepseek-v4-flash']);
-  assert.ok(rows.filter(row=>row.studyVariant==='mixed-pair').every(row=>row.modelSet==='custom/first:v1+opencode/space-bunny-free'));
+  assert.ok(rows.filter(row=>row.studyVariant==='mixed-pair').every(row=>row.modelSet==='custom/first:v1+opencode/deepseek-v4-flash'));
   assert.equal(JSON.stringify(rows).includes('NOT_PERSISTED'),false);
   models[0].id='changed-after-assignment';
   assert.ok(rows.some(row=>row.modelSet==='custom/first:v1'));
@@ -72,4 +72,17 @@ test('additional candidates are explicit bounded distinct models without alias r
   const historical=assignBenchmarkStudy(benchmarkFixtures,{repeats:1,additionalModels:[{providerID:'opencode',id:'big-pickle'},{providerID:'opencode',id:'mimo-v2.6-flash-free'}]});
   assert.ok(historical.some(row=>row.modelSet==='opencode/big-pickle'));
   assert.deepEqual(assignBenchmarkStudy(benchmarkFixtures),assignBenchmarkStudy(benchmarkFixtures,{additionalModels:[{providerID:'opencode',id:'gpt-5-nano'},{providerID:'opencode',id:'deepseek-v4-flash'}]}));
+});
+
+
+test('each additional-model pair has an otherwise identical same-model stock parallel control',()=>{
+  const rows=assignBenchmarkStudy(benchmarkFixtures);
+  const pairs=rows.filter(row=>row.studyVariant==='additional-model'&&row.configID==='gang-pair');
+  assert.equal(pairs.length,18);
+  for(const candidate of pairs){
+    const control=rows.find(row=>row.repeat===candidate.repeat&&row.fixtureID===candidate.fixtureID&&row.modelSet===candidate.modelSet&&row.configID==='stock-parallel-pair');
+    assert.ok(control);assert.equal(candidate.baselineConfigID,control.configID);assert.equal(candidate.baselineAvailable,true);assert.equal(candidate.baselineKind,'same-model-two-specialist-stock');
+    assert.equal(candidate.workGoalHash,control.workGoalHash);assert.equal(candidate.seedHash,control.seedHash);assert.deepEqual(candidate.actorModels,control.actorModels);assert.deepEqual(candidate.phases,control.phases);assert.deepEqual(candidate.actors.map(a=>[a.id,a.role]),control.actors.map(a=>[a.id,a.role]));assert.equal(candidate.deadlineMs,control.deadlineMs);
+    assert.equal(control.nativePlugin,false);assert.equal(candidate.nativePlugin,true);
+  }
 });

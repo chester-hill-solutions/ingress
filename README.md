@@ -58,3 +58,19 @@ runs deterministic participants and zero models; it is a relay/context benchmark
 The generated game passed58 independent checks and a browser play-through. Eight
 of seventeen native tasks reported success and nine reached their deadlines; both
 execution outcomes and correct outputs are retained. See [the execution record](docs/gangcode-outcomes.json).
+
+
+The repeated native tuning study compares stock OpenCode and GangCode teams across
+six fixture families, with solo/pair baselines, four/eight-agent teams, mixed models,
+context budgets and refresh rates. See [the protocol](docs/benchmark-protocol.md)
+[the results](docs/benchmark-results.md) and [the outcome ledger](docs/benchmark-outcomes.json).
+
+```sh
+npm run benchmark:real
+node scripts/benchmark-view.mjs --evidence=/absolute/path/evidence.json --port=65392
+```
+
+The read-only benchmark dashboard provides live progress, model/configuration
+filters and expandable agent rosters. It keeps correct final artifacts, native
+completion, instruction checks and observation coverage separate. Missing live
+activity stays unknown; filters apply to the bounded comparison/activity views.

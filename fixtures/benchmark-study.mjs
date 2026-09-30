@@ -36,7 +36,7 @@ export function assignBenchmarkStudy(fixtures,{repeats=3,seed=104729,mainModel={
     const slug=modelSet.toLowerCase().replace(/[^a-z0-9-]+/g,'-').slice(0,40);
     const id=`${fixtureID}-${configID}-${studyVariant}-r${repeat}-${slug}-${hash(identity).slice(0,12)}`;
     const stock=!configured.nativePlugin;
-    const baselineConfigID=stock?null:studyVariant==='additional-model'||configID==='builder-reviewer'||configured.agentCount>2?'stock-solo':'stock-parallel-pair';
+    const baselineConfigID=stock?null:configID==='builder-reviewer'||configured.agentCount>2?'stock-solo':'stock-parallel-pair';
     return {id,fixtureID,configID,repeat,studyVariant,condition:configured.awareness?'awareness-on':'awareness-off',system:stock?'stock':'gangcode',modelSet,actorModels,
       workGoalHash:hash(configured.canonicalGoal),seedHash:hash(JSON.stringify(base.files)),baselineConfigID,
       baselineKind:stock?null:baselineConfigID==='stock-solo'?'practical-stock-alternative-not-equal-compute':'same-model-two-specialist-stock',
@@ -49,8 +49,8 @@ export function assignBenchmarkStudy(fixtures,{repeats=3,seed=104729,mainModel={
     const block=[];
     for(const fixtureID of fixtureIDs)for(const configID of coreConfigs)block.push(assignment(fixtureID,configID,repeat,'core',[main]));
     for(const fixtureID of representativeIDs)for(const configID of tunedConfigs)block.push(assignment(fixtureID,configID,repeat,'role-context-tuning',[main]));
-    for(const model of candidates)for(const fixtureID of representativeIDs)for(const configID of ['stock-solo','gang-pair'])block.push(assignment(fixtureID,configID,repeat,'additional-model',[model]));
-    for(const[fixtureIndex,fixtureID]of representativeIDs.entries())block.push(assignment(fixtureID,'gang-pair',repeat,'mixed-pair',(repeat+fixtureIndex)%2?[main,candidates[0]]:[candidates[0],main]));
+    for(const model of candidates)for(const fixtureID of representativeIDs)for(const configID of ['stock-solo','stock-parallel-pair','gang-pair'])block.push(assignment(fixtureID,configID,repeat,'additional-model',[model]));
+    for(const[fixtureIndex,fixtureID]of representativeIDs.entries())block.push(assignment(fixtureID,'gang-pair',repeat,'mixed-pair',(repeat+fixtureIndex)%2?[candidates[0],candidates[1]]:[candidates[1],candidates[0]]));
     for(const row of block)row.baselineAvailable=row.baselineConfigID===null?null:block.some(candidate=>candidate.fixtureID===row.fixtureID&&candidate.configID===row.baselineConfigID&&candidate.modelSet===row.modelSet);
     for(let i=block.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[block[i],block[j]]=[block[j],block[i]];}
     assigned.push(...block);

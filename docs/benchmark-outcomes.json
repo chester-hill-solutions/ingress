@@ -22,8 +22,43 @@
     "note": "Earlier failed probe attempts retained in their original temporary evidence directories."
   },
   "study": {
-    "status": "not-admitted",
-    "protocolVersion": 3
+    "status": "complete",
+    "protocolVersion": 4,
+    "assignedCohorts": 162,
+    "assignedActors": 360,
+    "evidence": "artifacts/benchmark-8c51e44c-bb2f-4e89-b076-d654ce9d0973/evidence.json",
+    "sourceFingerprintScope": "15 execution, scoring and reporting files; dashboard excluded",
+    "outcomes": {
+      "completed": 91,
+      "deadline": 71
+    },
+    "correctCompleted": 71,
+    "artifactCorrect": 113,
+    "validComparisons": 156,
+    "admittedActors": 356,
+    "nativeSucceededActors": 218,
+    "ownedProcessesStopped": true,
+    "sourceFingerprintsVerified": 15,
+    "sourceSnapshot": "artifacts/benchmark-8c51e44c-bb2f-4e89-b076-d654ce9d0973/source-snapshot",
+    "analysis": "artifacts/benchmark-8c51e44c-bb2f-4e89-b076-d654ce9d0973/analysis.json",
+    "qualification": "Exploratory only; no consistent coordination advantage or RT-1 qualification.",
+    "reportedUsage": {
+      "cohorts": 162,
+      "actors": 360,
+      "admitted": 356,
+      "observedSteps": 1867,
+      "actorsWithNoStep": 4,
+      "input": 8090086,
+      "output": 766363,
+      "reportedCost": 0.4090498040000001,
+      "missingInputSteps": 0,
+      "missingOutputSteps": 0,
+      "missingCostSteps": 0,
+      "nullCostActors": 4,
+      "correct": 71,
+      "basis": "Reported native closed model steps only; input/output fields omit cached/reasoning breakdown; interrupted/unreported work may incur additional charges; not billing reconciliation",
+      "excludes": "Superseded runs, preflights, other provider traffic and Codex dashboard builders"
+    }
   },
   "supersededStudy": {
     "evidence": "artifacts/benchmark-f2c206ce-3122-49ac-ac6d-baa864264f98/evidence.json",
@@ -58,5 +93,38 @@
     "nativeReadCompleted": true,
     "primaryHTTPStatus": 200,
     "processStopped": true
+  },
+  "toolCompatibilityStudy": {
+    "evidence": "artifacts/benchmark-c1980f31-8ffa-462f-b700-ed846a6018be/evidence.json",
+    "classification": "cancelled-after-detecting-native-tool-menu-defect",
+    "affectedComparison": "GPT-5 Nano coordinated and mixed teams had their native patch tool removed. Do not infer model quality or coordination benefit from those rows.",
+    "assigned": 144,
+    "outcomes": {
+      "deadline": 29,
+      "completed": 38,
+      "cancelled": 12,
+      "not-run": 65
+    },
+    "sourceSnapshot": "artifacts/benchmark-c1980f31-8ffa-462f-b700-ed846a6018be/source-snapshot",
+    "preservation": "All original rows unchanged; new revision4 assignments are separate."
+  },
+  "nativeEditPreflight": {
+    "evidence": "/private/var/folders/f3/n5tk3w792px0vctvqjytc6t00000gn/T/gangcode-model-preflight-5KpqPW/evidence.json",
+    "passed": true,
+    "nativeBytesVerified": true,
+    "gptTool": "patch",
+    "deepSeekTool": "edit",
+    "processStopped": true
+  },
+  "gangContextEditPreflight": {
+    "evidence": "/private/var/folders/f3/n5tk3w792px0vctvqjytc6t00000gn/T/gangcode-model-preflight-pnd2W5/evidence.json",
+    "nativeCapabilitiesVerified": true,
+    "nativeMenusPreserved": true,
+    "bothNativeMutationsCompleted": true,
+    "bothSeedBytesChanged": true,
+    "contextSerialized": true,
+    "processStopped": true,
+    "exactTaskPassed": false,
+    "exactTaskLimitation": "DeepSeek changed the bytes but omitted the requested final newline. This is task noncompliance, not inability to edit. The original failed exact-task evidence remains unchanged; task correctness is scored independently in the study."
   }
 }

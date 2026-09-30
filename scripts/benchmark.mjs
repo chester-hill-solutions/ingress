@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile, rename } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { cpus, platform, release } from 'node:os';
@@ -19,7 +19,7 @@ const abort=new AbortController();process.once('SIGINT',()=>abort.abort());proce
 // is the OpenCode model selected by the user for this study.
 const results=structuredClone(assignBenchmarkStudy(benchmarkFixtures,{repeats,seed,mainModel:{providerID:'opencode',id:'space-bunny-free'}}));
 for(const row of results)row.deadlineMs=deadlineMs;
-const evidence={version:3,kind:'native-collaboration-tuning-study',date:new Date().toISOString(),status:'assigned',
+const evidence={version:4,kind:'native-collaboration-tuning-study',date:new Date().toISOString(),status:'assigned',
  protocol:{repeats,parallelCohorts:parallel,actorsPerCohort:'1,2,4,8',concurrentWithinDeclaredPhase:true,builderReviewerSequential:true,deadlineMs,seed,conditions:['stock-solo','stock-parallel-pair','gang-pair','gang-four','gang-eight','builder-reviewer','gang-pair-small-context','gang-pair-slow-updates','mixed-pair'],models:['opencode/space-bunny-free','opencode/gpt-5-nano','opencode/deepseek-v4-flash'],
  initialGoalsAndFiles:'identical fixture seed and complete goal; role instructions differ by declared layout',inferenceDeterministic:false,rescuePrompts:0,qualification:'exploratory tuning study; small tasks and three repeats do not establish product benefit',
  timeLimitIncludesSetup:true,complexity:'lexical JavaScript indicators; not a quality score',otherProviderTraffic:'not measured'},
@@ -28,7 +28,9 @@ const evidencePath=join(output,'evidence.json');let writer=null,pending=null,per
 function save(){pending=JSON.stringify(evidence,null,2)+'\n';if(writer)return writer;writer=(async()=>{while(pending!==null){const value=pending;pending=null;const temp=evidencePath+'.'+randomUUID()+'.tmp';await writeFile(temp,value,{mode:0o600});await rename(temp,evidencePath);}})().catch(()=>{persistenceFailure=true;abort.abort();throw Error('benchmark_evidence_persistence_failed');}).finally(()=>{writer=null;});return writer;}
 console.log('Benchmark evidence: '+evidencePath);await save();
 const repository=resolve(import.meta.dirname,'..');
-const sources=['scripts/benchmark.mjs','fixtures/benchmarks.mjs','fixtures/benchmark-configurations.mjs','fixtures/benchmark-study.mjs',...(await readdir(join(repository,'src'))).filter(name=>name.endsWith('.mjs')).sort().map(name=>'src/'+name)];
+// Fingerprint execution, scoring and report dependencies; the independently served UI
+// can evolve during a run without changing the experimental treatment.
+const sources=['scripts/benchmark.mjs','fixtures/benchmarks.mjs','fixtures/benchmark-configurations.mjs','fixtures/benchmark-study.mjs',...['benchmark','benchmark-plugin','benchmark-tool-paths','benchmark-metrics','benchmark-report','workspace-state','context','file-observer','opencode','process','profile'].map(name=>'src/'+name+'.mjs')];
 for(const path of sources)evidence.sourceFingerprints[path]=createHash('sha256').update(await readFile(join(repository,path))).digest('hex');
 let cursor=0,active=0,peak=0,finished=0;
 try{

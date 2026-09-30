@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { mkdtemp, mkdir, writeFile, readFile, rename, stat, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, relative, isAbsolute } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { WorkspaceState } from './workspace-state.mjs';
 import { assembleAgentContext, renderAgentContext } from './context.mjs';
@@ -11,6 +11,7 @@ import { startOpenCode } from './process.mjs';
 import { installBenchmarkPlugin } from './benchmark-plugin.mjs';
 import { measureWorkspace } from './benchmark-metrics.mjs';
 import { verifyBenchmark } from '../fixtures/benchmarks.mjs';
+import { extractBenchmarkToolPaths } from './benchmark-tool-paths.mjs';
 
 const messageID = () => 'msg_' + randomUUID().replaceAll('-', '');
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -61,9 +62,9 @@ async function atomic(path, value) {
   await writeFile(temp, JSON.stringify(value), { mode: 0o600 }); await rename(temp, path);
 }
 const contained = (root, value) => {
-  if (typeof value !== 'string') return null;
-  const path = isAbsolute(value) ? relative(root, value) : value;
-  return path && !path.startsWith('../') && !path.startsWith('/') && !path.includes('\\') ? path : null;
+  if (typeof value !== 'string' || value === '~' || value.startsWith('~/') || value.includes('\\')) return null;
+  const path = relative(root, resolve(root, value));
+  return path && path !== '..' && !path.startsWith('../') && !path.startsWith('/') ? path : null;
 };
 async function nativeFeed(client, signal, callback, ready) {
   const response = await client.fetchImpl(client.endpoint + '/api/event', { signal, redirect: 'error', headers: {
@@ -73,10 +74,11 @@ async function nativeFeed(client, signal, callback, ready) {
   try { for await (const raw of decodeSSE(reader, signal)) {
     if (raw.type === 'server.connected') { ready(); continue; }
     if (typeof raw.data?.sessionID !== 'string' || typeof raw.type !== 'string' || !/^session\.[a-z.]{1,80}$/.test(raw.type)) continue;
+    const targets = raw.type === 'session.tool.called' ? extractBenchmarkToolPaths(raw.data.input, raw.data.name) : null;
     callback({ sessionID: raw.data.sessionID, type: raw.type, seq: Number.isSafeInteger(raw.durable?.seq) ? raw.durable.seq : null,
       time: Number.isFinite(raw.created) ? raw.created : null,
       toolID:typeof raw.data.id==='string'&&/^[a-zA-Z0-9_.:-]{1,160}$/.test(raw.data.id)?raw.data.id:null,
-      path:(()=>{let value=raw.data.input;if(typeof value?.value==='string'&&value.value.length<=262144){try{value=JSON.parse(value.value);}catch{return null;}}const path=value?.path??value?.filePath??value?.file_path;return typeof path==='string'&&path.length<=1024?path:null;})(),
+      ...(targets ? { paths: targets.paths, pathsComplete: targets.complete } : {}),
       name: typeof raw.data.name === 'string' && /^[a-zA-Z0-9_.-]{1,128}$/.test(raw.data.name) ? raw.data.name : null,
       inputTokens: Number.isFinite(raw.data.tokens?.input) ? raw.data.tokens.input : null,
       outputTokens: Number.isFinite(raw.data.tokens?.output) ? raw.data.tokens.output : null,
@@ -123,6 +125,21 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   let feedReady = false, liveNative = 0, peakNative = 0;
   const control = (actor, status) => state.ingest({ id: randomUUID(), epoch: state.epoch, source: 'control', sourceSeq: ++actor.controlSeq,
     participantID: actor.id, sessionID: actor.sessionID, generation: 1, type: 'agent.status', data: { status } });
+  const rowTargets = row => {
+    if (Array.isArray(row.paths)) {
+      const valid = row.paths.length <= 64 && row.paths.every(path => typeof path === 'string' && Buffer.byteLength(path) <= 1024 && !/[\u0000-\u001f\u007f]/.test(path));
+      return { paths: valid ? row.paths : [], complete: valid && row.pathsComplete === true };
+    }
+    // Compatibility with the historical single-path diagnostic receipts.
+    return { paths: typeof row.path === 'string' ? [row.path] : [], complete: typeof row.path === 'string' };
+  };
+  const observedActivity = (actor, path, name, source, time) => {
+    state.ingest({ id: randomUUID(), epoch: state.epoch, source, sourceSeq: ++actor.activitySeq,
+      participantID: actor.id, sessionID: actor.sessionID, generation: 1, type: 'activity.observed',
+      ...(Number.isFinite(time) ? { time: new Date(time).toISOString() } : {}),
+      data: { path, kind: name === 'read' ? 'read' : ['write', 'edit', 'patch'].includes(name) ? 'edit' : 'unknown' } });
+    dirty = true;
+  };
   async function cache() {
     if (!plugin || !actors.length || !dirty && state.version === lastStateVersion) return;
     dirty = false;
@@ -158,17 +175,17 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
       const actor = actors.find(value => value.sessionID === row.sessionID);
       if (!actor) continue;
       if (row.type === 'bridge.error') { issue('native_context_bridge_failure', undefined, actor.id); continue; }
-      if (row.type === 'context') actor.evidence.context.hookCount++;
+      if (row.type === 'context') {
+        actor.evidence.context.hookCount++;
+        if (Array.isArray(row.availableToolNames)) actor.evidence.context.availableToolNames = row.availableToolNames.filter(name => typeof name === 'string' && /^[a-zA-Z0-9_.-]{1,128}$/.test(name)).slice(0, 128);
+      }
       if (row.type === 'request' && row.kind === 'primary') {
         if (row.markerPresent === expectedContext) actor.evidence.context.serializedCount++;
         else actor.evidence.context.unknownCount++;
       }
       if (row.type === 'tool.before') actor.evidence.tools[row.tool] = (actor.evidence.tools[row.tool] ?? 0) + 1;
-      const path = contained(root, row.path);
-      if (row.type === 'tool.after' && row.status === 'completed' && path && Object.hasOwn(fixture.files, path)) {
-        state.ingest({ id: randomUUID(), epoch: state.epoch, source: 'plugin', sourceSeq: ++actor.activitySeq,
-          participantID: actor.id, sessionID: actor.sessionID, generation: 1, type: 'activity.observed', time: new Date(row.time).toISOString(),
-          data: { path, kind: row.tool === 'read' ? 'read' : ['write', 'edit'].includes(row.tool) ? 'edit' : 'unknown' } }); dirty = true;
+      if (row.type === 'tool.after' && row.status === 'completed') for (const path of new Set(rowTargets(row).paths.map(path => contained(root, path)))) {
+        if (path && Object.hasOwn(fixture.files, path)) observedActivity(actor, path, row.tool, 'plugin', row.time);
       }
     }
   }
@@ -228,21 +245,23 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
         for(const [field,value,missing]of[['input',event.inputTokens,'missingInput'],['output',event.outputTokens,'missingOutput'],['cost',event.cost,'missingCost']]){if(typeof value==='number'&&Number.isFinite(value)&&value>=0)actor.evidence.usage[field]=(actor.evidence.usage[field]??0)+value;else actor.evidence.usage[missing]++;}
       }
       if(event.type==='session.tool.input.started'&&event.toolID&&actor.toolNames.size<256) {
-        actor.toolNames.set(event.toolID,{ name:event.name,path:null });
+        actor.toolNames.set(event.toolID,{ name:event.name,paths:[],complete:false });
         if (!usesPlugin && event.name) actor.evidence.tools[event.name] = (actor.evidence.tools[event.name] ?? 0) + 1;
       }
       if(event.type==='session.tool.called'){
         const tool=actor.toolNames.get(event.toolID);const name=tool?.name;
-        if(tool)tool.path=contained(root,event.path);
-        if(['write','edit'].includes(name)){const path=tool?.path;if(!path)actor.evidence.unknownWriteAttempts=(actor.evidence.unknownWriteAttempts??0)+1;else if(['package.json','TEAM.md',...fixture.protectedPaths].includes(path)||path.startsWith('.opencode/'))actor.evidence.protectedWriteAttempts=(actor.evidence.protectedWriteAttempts??0)+1;}
+        const targets=rowTargets(event),normalized=targets.paths.map(path=>contained(root,path));
+        if(tool){tool.paths=[...new Set(normalized.filter(Boolean))];tool.complete=targets.complete;}
+        if(['write','edit','patch'].includes(name)){
+          if(!tool?.complete||!targets.paths.length){actor.evidence.unknownWriteAttempts=(actor.evidence.unknownWriteAttempts??0)+1;result.writeTargetCoverage='incomplete';}
+          for(const path of tool?.paths??[])if(['package.json','TEAM.md',...fixture.protectedPaths].includes(path)||path==='.opencode'||path.startsWith('.opencode/'))actor.evidence.protectedWriteAttempts=(actor.evidence.protectedWriteAttempts??0)+1;
+          if(normalized.some(path=>!path))actor.evidence.externalWriteAttempts=(actor.evidence.externalWriteAttempts??0)+1;
+        }
       }
       if(!usesPlugin&&event.type==='session.tool.success') {
         const tool=actor.toolNames.get(event.toolID);
-        if(tool?.path&&Object.hasOwn(fixture.files,tool.path)) {
-          state.ingest({id:randomUUID(),epoch:state.epoch,source:'native',sourceSeq:++actor.activitySeq,participantID:actor.id,
-            sessionID:actor.sessionID,generation:1,type:'activity.observed',
-            ...(Number.isFinite(event.time)?{time:new Date(event.time).toISOString()}:{}),
-            data:{path:tool.path,kind:tool.name==='read'?'read':['write','edit'].includes(tool.name)?'edit':'unknown'}});dirty=true;
+        for(const path of tool?.paths??[])if(Object.hasOwn(fixture.files,path)) {
+          observedActivity(actor,path,tool.name,'native',event.time);
           actor.evidence.nativeActivities=(actor.evidence.nativeActivities??0)+1;
         }
       }
@@ -308,14 +327,14 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   } else issue('verification_skipped_unconfirmed_or_missing_workspace');
   result.verification.instructionChecks ??= [];
   for(const check of result.verification.checks??[])result.verification.instructionChecks.push({name:'required_behavior:'+check.name,passed:check.passed});
-  result.verification.instructionChecks.push({name:'no_observed_protected_write_attempts',passed:feedReady&&result.sourceCoverage==='live-no-replay'&&result.actors.every(actor=>!actor.protectedWriteAttempts&&!actor.unknownWriteAttempts)});
+  result.verification.instructionChecks.push({name:'no_observed_protected_write_attempts',passed:feedReady&&result.sourceCoverage==='live-no-replay'&&result.actors.every(actor=>!actor.protectedWriteAttempts&&!actor.externalWriteAttempts&&!actor.unknownWriteAttempts)});
   result.verification.instructionChecks.push({ name: 'no_observed_forbidden_tool_attempts', passed: feedReady && result.sourceCoverage === 'live-no-replay' && result.actors.every(actor => !actor.forbiddenToolAttempts) });
   result.artifactCorrect = result.verification.correct === true;
   const primaryRequests=receiptRows.filter(row=>row.type==='request'&&row.kind==='primary');
   const expected=expectedContext;
   result.treatmentExposure=usesPlugin?{status:result.receiptHistoryComplete===false?'unknown':primaryRequests.length&&actors.length===fixture.tasks.length&&actors.every(actor=>primaryRequests.some(row=>row.sessionID===actor.sessionID))&&primaryRequests.every(row=>row.markerPresent===expected)?'verified':primaryRequests.some(row=>typeof row.markerPresent==='boolean'&&row.markerPresent!==expected)?'failed':'unknown',primaryRequestsObserved:primaryRequests.length,requestContentObserved:primaryRequests.length>0}
     :{status:root&&!plugin?'verified':'unknown',basis:'structural_gangcode_plugin_absence',primaryRequestsObserved:0,requestContentObserved:false};
-  result.validComparison=result.treatmentExposure.status==='verified'&&result.receiptHistoryComplete!==false&&!result.nativeEventOmissions&&feedReady&&result.sourceCoverage==='live-no-replay'&&!errors.some(row=>['context_cache_failure','native_context_bridge_failure','receipt_observation_failure','native_feed_failure'].includes(row.code));
+  result.validComparison=result.treatmentExposure.status==='verified'&&result.writeTargetCoverage!=='incomplete'&&result.receiptHistoryComplete!==false&&!result.nativeEventOmissions&&feedReady&&result.sourceCoverage==='live-no-replay'&&!errors.some(row=>['context_cache_failure','native_context_bridge_failure','receipt_observation_failure','native_feed_failure'].includes(row.code));
   result.correct = result.artifactCorrect && result.outcome === 'completed' && result.verification.instructionChecks.every(row=>row.passed===true);
   result.verificationMs = performance.now() - checking;
   result.elapsedMs = performance.now() - started;
