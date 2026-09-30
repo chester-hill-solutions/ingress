@@ -25,7 +25,7 @@ sanitized evidence; it does not modify user workspaces or global harness setting
 The deterministic demo checks the apparatus. A small real probe is diagnostic, not
 proof of reliable collaboration or Jev benefit. See [plan](docs/plan.md).
 
-Node 22+; no runtime packages or Stow checkout required for the initial probe.
+Node 26+; no runtime packages or Stow checkout required for the initial probe.
 Private working repository, Apache-2.0. Source provenance is in
 [the transfer record](docs/source-provenance.json).
 
@@ -74,3 +74,13 @@ The read-only benchmark dashboard provides live progress, model/configuration
 filters and expandable agent rosters. It keeps correct final artifacts, native
 completion, instruction checks and observation coverage separate. Missing live
 activity stays unknown; filters apply to the bounded comparison/activity views.
+
+## Large missions and blind tasting
+
+Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/GangCode rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md). Executable mission grading requires Node 26.
+
+```sh
+npm run missions:plan
+npm run missions:real
+npm run missions:review -- --directory=<private flight directory>
+```

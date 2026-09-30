@@ -92,7 +92,9 @@ async function limit(promise, ms) {
 
 /** Assigned pilot cohort. Shared awareness observes, never fences ordinary file writes. */
 export async function runBenchmarkCohort({ assignment, fixture, profile, deadlineMs = 180000, signal, onUpdate = () => {}, runtime = {} }) {
-  if (!['awareness-off', 'awareness-on', 'stock', 'native-stock'].includes(assignment?.condition) || fixture.id !== assignment.fixtureID || !Number.isInteger(deadlineMs) || deadlineMs < 10 || deadlineMs > 360000) throw Error('invalid_benchmark_cohort');
+  if (!['awareness-off', 'awareness-on', 'stock', 'native-stock'].includes(assignment?.condition) || fixture.id !== assignment.fixtureID || !Number.isInteger(deadlineMs) || deadlineMs < 10 || deadlineMs > 1800000) throw Error('invalid_benchmark_cohort');
+  const evaluatorTimeoutMs = fixture.evaluatorTimeoutMs ?? 6000;
+  if (!Number.isInteger(evaluatorTimeoutMs) || evaluatorTimeoutMs < 1000 || evaluatorTimeoutMs > 35000) throw Error('invalid_evaluator_budget');
   const usesPlugin = fixture.nativePlugin !== false && !['stock', 'native-stock'].includes(assignment.condition);
   const expectedContext = usesPlugin && (fixture.awareness ?? assignment.condition === 'awareness-on');
   const contextBytes = usesPlugin ? fixture.contextBytes ?? 32768 : 0;
@@ -320,7 +322,7 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   }
   const checking = performance.now();
   if (root && !stopUnconfirmed) {
-    try { result.verification = await limit((runtime.verifyBenchmark ?? verifyBenchmark)(fixture.id, root), 6000); }
+    try { result.verification = await limit((runtime.verifyBenchmark ?? verifyBenchmark)(fixture.id, root), evaluatorTimeoutMs); }
     catch (error) { issue('evaluator_failure', error); }
     try { result.complexity = await limit((runtime.measureWorkspace ?? measureWorkspace)(root, fixture.editablePaths),6000); }
     catch (error) { issue('complexity_failure', error); }

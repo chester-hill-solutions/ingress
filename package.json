@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Native workspace awareness and bounded agent coordination experiment",
   "engines": {
-    "node": ">=22"
+    "node": ">=26"
   },
   "scripts": {
     "test": "node --test",
@@ -14,6 +14,9 @@
     "check": "node scripts/check.mjs",
     "squad:real": "node scripts/squad.mjs --real",
     "play": "node scripts/play-game.mjs",
-    "benchmark:real": "node scripts/benchmark.mjs --real"
+    "benchmark:real": "node scripts/benchmark.mjs --real",
+    "missions:plan": "node scripts/mission-benchmark.mjs --plan",
+    "missions:real": "node scripts/mission-benchmark.mjs --real",
+    "missions:review": "node scripts/blind-review.mjs"
   }
 }
