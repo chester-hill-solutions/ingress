@@ -30,3 +30,8 @@ checks and further controlled comparisons remain necessary.
 This increment supports OpenCode only. Codex/ChatGPT, Pi and other harness adapters
 must establish their own initial injection and model-boundary delivery capabilities;
 telemetry alone cannot satisfy the context contract.
+
+The next native seam is primary-turn context injection through an OpenCode plugin.
+See [integration model](opencode-integration.md) for the installed compatibility proof
+and the separate receipts required for request-local context, durable inbox delivery
+and agent adaptation. The existing production adapter has not yet migrated.

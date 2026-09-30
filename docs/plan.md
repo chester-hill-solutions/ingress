@@ -91,3 +91,14 @@ and verification records are gangcode-game-provenance.json and
 gangcode-game-verification.json. Live/deterministic results are separate in
 gangcode-outcomes.json. Qualification of reliable benefit and larger native
 cohorts remains open.
+
+## Native OpenCode integration investigation
+
+[Integration model](opencode-integration.md) records the pinned hook/control contracts,
+shared-host design, SDK/fork boundaries and remaining compatibility gates. An opt-in
+installed-binary probe passed eight assertions: two overlapping sessions on one host,
+native successful reads, updated per-session provider-bound context on continuation,
+loopback routing, cleanup and process stop. All seven development attempts are retained.
+The production squad still uses its previous process-per-actor adapter; no runtime
+migration, compaction/cancellation proof, model adaptation or RT-1 qualification is
+implied by this plumbing result.

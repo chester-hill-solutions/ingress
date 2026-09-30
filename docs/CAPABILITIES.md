@@ -62,3 +62,18 @@ compact the dashboard and retain bounded model-step timing metadata. Those chang
 are regression-tested but were not the source version of this native16 run.
 No file claims, guarded writes, automatic conflict resolution, remote multiplayer,
 Jev evaluation or reliable comparative collaboration benefit is established.
+
+## Native plugin and shared-host compatibility
+
+The installed OpenCode 2.0.16 binary passed an opt-in scripted-provider probe with
+two concurrent sessions on one host. Both executed a native read; both subsequent
+provider-bound requests contained fresh context, matched against an independent
+session header. Eight assertions cover overlap, per-session continuation, read
+hooks, observed loopback requests, successful outcomes, cleanup and process stop.
+All seven development attempts and earlier proof limitations are retained in
+[plugin compatibility](opencode-plugin-compatibility.json).
+
+This validates plumbing with a deterministic loopback provider; it does not prove
+real-model adaptation, compaction, shared-host cancellation, stale-write safety or
+productive speedup. The production squad still owns a process per actor. See the
+[integration model](opencode-integration.md) for migration and qualification gates.

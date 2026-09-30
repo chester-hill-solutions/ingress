@@ -1,0 +1,870 @@
+{
+  "version": 1,
+  "installedVersion": "2.0.16",
+  "pinnedSourceCommit": "3a103fe0aff726a4edc7492f03f7b88195d9e4c9",
+  "scope": "installed native plumbing, not external-model adaptation",
+  "attempts": [
+    {
+      "mode": "installed-native-scripted-provider",
+      "providerRequests": [],
+      "sessions": [
+        "ses_f106783cbffegz6hmqATfncvAU",
+        "ses_f106783caffeDmU80AAjkI1Uw0"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f106783cbffegz6hmqATfncvAU",
+          "outcome": "failed",
+          "idle": 1790726143988
+        },
+        {
+          "sessionID": "ses_f106783caffeDmU80AAjkI1Uw0",
+          "outcome": "failed",
+          "idle": 1790726143993
+        }
+      ],
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f106783cbffegz6hmqATfncvAU",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f106783cbffegz6hmqATfncvAU",
+          "kind": "primary"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f106783caffeDmU80AAjkI1Uw0",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f106783caffeDmU80AAjkI1Uw0",
+          "kind": "primary"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "nonLoopbackRequestsPrepared": 2,
+      "externalTransportOutcome": "unknown",
+      "credential": "fixture only",
+      "qualification": "failed: no loopback provider request",
+      "attempt": 1,
+      "sourceSHA256": null
+    },
+    {
+      "mode": "installed-native-scripted-provider",
+      "providerRequests": [],
+      "sessions": [
+        "ses_f1066ba48ffeGQlNf3lqWpnDjT",
+        "ses_f1066ba47ffeoZ8moYeGNAX0wR"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f1066ba48ffeGQlNf3lqWpnDjT",
+          "outcome": "failed",
+          "idle": 1790726195532
+        },
+        {
+          "sessionID": "ses_f1066ba47ffeoZ8moYeGNAX0wR",
+          "outcome": "failed",
+          "idle": 1790726195576
+        }
+      ],
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1066ba48ffeGQlNf3lqWpnDjT",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1066ba48ffeGQlNf3lqWpnDjT",
+          "kind": "primary",
+          "loopback": false,
+          "route": "chat"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1066ba47ffeoZ8moYeGNAX0wR",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1066ba47ffeoZ8moYeGNAX0wR",
+          "kind": "primary",
+          "loopback": false,
+          "route": "chat"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "nonLoopbackRequestsPrepared": 2,
+      "externalTransportOutcome": "unknown",
+      "credential": "fixture only",
+      "qualification": "failed: no loopback provider request",
+      "attempt": 2,
+      "sourceSHA256": null
+    },
+    {
+      "mode": "installed-native-scripted-provider",
+      "externalModelCalls": 0,
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 0
+        },
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 0
+        }
+      ],
+      "sessions": [
+        "ses_f106604e9ffeaOt9eegX2srqbw",
+        "ses_f106604e8ffeUYgJTpOwrx6pwC"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f106604e9ffeaOt9eegX2srqbw",
+          "outcome": "succeeded",
+          "idle": 1790726241717
+        },
+        {
+          "sessionID": "ses_f106604e8ffeUYgJTpOwrx6pwC",
+          "outcome": "succeeded",
+          "idle": 1790726241724
+        }
+      ],
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f106604e9ffeaOt9eegX2srqbw",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f106604e9ffeaOt9eegX2srqbw",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f106604e8ffeUYgJTpOwrx6pwC",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f106604e8ffeUYgJTpOwrx6pwC",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "qualification": "incomplete: successful sessions but zero advertised tools; continuation not exercised",
+      "attempt": 3,
+      "sourceSHA256": null
+    },
+    {
+      "mode": "installed-native-scripted-provider",
+      "externalModelCalls": 0,
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 0
+        },
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 0
+        }
+      ],
+      "sessions": [
+        "ses_f10659fb8ffepyYc94WRG78O0w",
+        "ses_f10659fb7ffeB0Zs62QlVG03sc"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f10659fb8ffepyYc94WRG78O0w",
+          "outcome": "succeeded",
+          "idle": 1790726267685
+        },
+        {
+          "sessionID": "ses_f10659fb7ffeB0Zs62QlVG03sc",
+          "outcome": "succeeded",
+          "idle": 1790726267708
+        }
+      ],
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10659fb8ffepyYc94WRG78O0w",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10659fb8ffepyYc94WRG78O0w",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10659fb8ffepyYc94WRG78O0w",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10659fb7ffeB0Zs62QlVG03sc",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10659fb7ffeB0Zs62QlVG03sc",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10659fb7ffeB0Zs62QlVG03sc",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "qualification": "incomplete: successful sessions but zero advertised tools; continuation not exercised",
+      "attempt": 4,
+      "sourceSHA256": null
+    },
+    {
+      "mode": "installed-native-scripted-provider",
+      "externalModelCalls": 0,
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 2,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "marked": true,
+          "revision": 2,
+          "toolCount": 1
+        }
+      ],
+      "sessions": [
+        "ses_f10652028ffePutUgMZAkid476",
+        "ses_f10652027ffeT7l5mLja93c5S8"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "outcome": "succeeded",
+          "idle": 1790726300307
+        },
+        {
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "outcome": "succeeded",
+          "idle": 1790726300313
+        }
+      ],
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "tool": "read"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "tool": "read"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10652028ffePutUgMZAkid476",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f10652027ffeT7l5mLja93c5S8",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "qualification": "native read and fresh continuation observed; exploratory run; cross-session marker isolation was not independently verified",
+      "attempt": 5,
+      "sourceSHA256": null
+    },
+    {
+      "version": 1,
+      "mode": "installed-native-scripted-provider",
+      "date": "2026-09-29T23:59:30.725Z",
+      "sourceSHA256": "5f08108ffa73dd1dad8c49abfe039e420ef7644a8042bb18a46efb41ee1fb5fc",
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "marked": true,
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "marked": true,
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "marked": true,
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "marked": true,
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        }
+      ],
+      "externalModelCalls": 0,
+      "sessions": [
+        "ses_f1064093cffeYnfqtTpwXt15IA",
+        "ses_f1064093affex4U4bOMR0HJi4E"
+      ],
+      "outcomes": [
+        {
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "outcome": "succeeded",
+          "idle": 1790726371687
+        },
+        {
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "outcome": "succeeded",
+          "idle": 1790726371682
+        }
+      ],
+      "processStopped": true,
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "tool": "read"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "tool": "read"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1064093affex4U4bOMR0HJi4E",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "tools",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "toolNames": [
+            "edit",
+            "glob",
+            "grep",
+            "question",
+            "read",
+            "shell",
+            "skill",
+            "subagent",
+            "webfetch",
+            "websearch",
+            "write",
+            "execute"
+          ]
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f1064093cffeYnfqtTpwXt15IA",
+          "kind": "primary",
+          "loopback": true,
+          "route": "chat"
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "checks": {
+        "twoSessions": true,
+        "simultaneousRequests": true,
+        "freshContinuation": true,
+        "nativeReadHooks": true,
+        "loopbackRequests": true,
+        "successfulSessions": true,
+        "pluginCleanup": true,
+        "stopped": true
+      },
+      "passed": true,
+      "qualification": "passed eight explicit compatibility assertions; cross-session marker isolation was not independently verified",
+      "attempt": 6
+    },
+    {
+      "version": 1,
+      "mode": "installed-native-scripted-provider",
+      "date": "2026-09-30T00:05:31.642Z",
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "markerSessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "markerSessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "markerSessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "markerSessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        }
+      ],
+      "routing": {
+        "observedModelRequests": "loopback",
+        "otherTraffic": "not measured"
+      },
+      "sourceSHA256": "bb94d024547152c9da542a737ea07cddaa9c38e8d4e4423dec41d40d773c20d7",
+      "sessions": [
+        "ses_f105e864dffeinq3gTrkT0ds6g",
+        "ses_f105e864bffef5B37Y2KvoC23j"
+      ],
+      "initialRequestsHeldTogether": true,
+      "outcomes": [
+        {
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "outcome": "succeeded",
+          "idle": 1790726733061
+        },
+        {
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "outcome": "succeeded",
+          "idle": 1790726733069
+        }
+      ],
+      "processStopped": true,
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.16"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "tool": "read"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "tool": "read"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f105e864dffeinq3gTrkT0ds6g",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_f105e864bffef5B37Y2KvoC23j",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "checks": {
+        "twoSessions": true,
+        "simultaneousRequests": true,
+        "freshContinuation": true,
+        "nativeReadHooks": true,
+        "loopbackRequests": true,
+        "successfulSessions": true,
+        "pluginCleanup": true,
+        "stopped": true
+      },
+      "passed": true,
+      "attempt": 7,
+      "qualification": "passed eight assertions after independent request identity and cleanup/bounds review"
+    }
+  ]
+}
