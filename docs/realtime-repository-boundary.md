@@ -6,11 +6,22 @@ This repository now owns the RT plan. Stow retains source evidence and a pointer
 
 ## Ownership
 
-The collaboration product owns observation, current-state reduction, participant
-presence, dependency impact, decisions, scheduling, harness adapters, controls,
-shared editing, UI and its evaluation apparatus. It has its own build, lockfile,
-tests, CI and release decisions. Stow owns portable working storage under
-[ADR 0014](reference/stow-storage-boundary.md).
+GangCode owns native harness observation, participant presence/intentions, agent
+read tracking, semantic dependency impact, relevant context, decisions, scheduling,
+harness adapters, controls, shared editing, UI and its evaluation apparatus. It has
+its own build, lockfile, tests, CI and release decisions.
+
+Stow owns storage identity, supported guarded-save admission, saved artifacts,
+retention, transfer and recovery. Its accepted expansion also owns generic content
+reconciliation, durable storage subscriptions/replay, immutable ready reports and
+optional webhook delivery; those notification capabilities remain planned. GangCode
+consumes qualified storage facts and decides what they mean for active work.
+
+The current boundary is reconciled in the [ownership/integration reference](../../stow/docs/gangcode-stow-boundary.md)
+and Stow's [consolidated plan](../../stow/docs/storage-foundation-plan.md). The
+[original ADR 0014 snapshot](reference/stow-storage-boundary.md) remains dated
+provenance; later Stow ADRs 0015/0016 extend it. This boundary update schedules no
+runtime migration and upgrades no capability claim.
 
 Stow is a storage integration, not a prerequisite for attaching to an existing
 workspace or testing RT-0–RT-1. Ordinary workspace directories and deterministic
@@ -30,9 +41,18 @@ integration follows at RT-5, through a bounded storage-adapter contract.
   that import cannot cross the new package boundary. Implement/port caller-owned
   supervision with provenance and its termination tests, or use a qualified harness
   lifecycle API. Do not expose a storage-internal helper merely for migration.
-- Keep the collaboration journal and operational state separate from Stow's registry.
+- GangCode owns the meaning and lifecycle of task, presence, context and control
+  state; selected versioned artifacts may be persisted through Stow. Do not duplicate
+  Stow's storage notification/save receipts or interpret its private registry.
   Provider credentials, live process handles and telemetry endpoint secrets remain
   host-local and never enter portable snapshots.
+- Keep ordinary-directory observation as a standalone fallback. When a qualified
+  Stow notification profile is integrated, use its journal as the storage-change
+  authority and retain native harness evidence separately. A delivery receipt does
+  not prove context injection, provider consumption or useful adaptation.
+- The current native object MCP profile protects participating object saves, not
+  native workspace filesystem edits. Guarded code editing needs a qualified tool
+  path and workspace/document semantics; attaching MCP supplies no automatic guard.
 
 No new generic harness package, plugin publication, hosted service or language
 migration is required to establish this repository boundary.

@@ -1,6 +1,10 @@
 # Agent Collaboration implementation plan
 
 This repository is the owner of RT scope/status. Stow storage release work is separate.
+The [repository boundary](realtime-repository-boundary.md) now distinguishes Stow-owned
+storage facts/durable delivery from GangCode-owned agent meaning, context and coordination.
+Notification integration follows qualified public Stow capabilities; the standalone
+observer remains available. This scope clarification changes no RT completion status.
 See [product](realtime-multiplayer-plan.md), [engineering](realtime-multiplayer-engineering.md),
 [evaluation](realtime-collaboration-evaluation.md) and [review](realtime-multiplayer-plan-review.md).
 
