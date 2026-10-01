@@ -17,8 +17,8 @@ reconciliation, durable storage subscriptions/replay, immutable ready reports an
 optional webhook delivery; those notification capabilities remain planned. GangCode
 consumes qualified storage facts and decides what they mean for active work.
 
-The current boundary is reconciled in the [ownership/integration reference](../../stow/docs/gangcode-stow-boundary.md)
-and Stow's [consolidated plan](../../stow/docs/storage-foundation-plan.md). The
+The current boundary is reconciled in the [ownership/integration reference](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/gangcode-stow-boundary.md)
+and Stow's [consolidated plan](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/storage-foundation-plan.md). The
 [original ADR 0014 snapshot](reference/stow-storage-boundary.md) remains dated
 provenance; later Stow ADRs 0015/0016 extend it. This boundary update schedules no
 runtime migration and upgrades no capability claim.

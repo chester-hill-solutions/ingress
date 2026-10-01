@@ -73,7 +73,7 @@ Each requested-model pair configuration below attempted the same three families 
 
 Nano GangCode pairs used about 2.9 times the reported input of stock pairs; DeepSeek pairs used about 7.4 times. Reported cost increased about 16% and 99%, respectively. No token-efficiency benefit is established. The measured configuration refreshes a bounded whole-context envelope at model-request boundaries. Stable initial context, compact subsequent changes, relevant peer details and actual cache/reasoning accounting are refinement candidates, not changes to this frozen run.
 
-Stow storage operations themselves call no model. Its local [checkpoint profile](../../stow/docs/plan.md) measured 129 ms median for 256 files / 8 MiB and 1.74 s for 4,096 files / 64 MiB across five captures, with an 11.10 s first capture for the larger fixture. Those timings describe storage, separately from model/token spend; full-copy retention remains proportional to payload per checkpoint.
+Stow storage operations themselves call no model. Its local [checkpoint profile](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/plan.md) measured 129 ms median for 256 files / 8 MiB and 1.74 s for 4,096 files / 64 MiB across five captures, with an 11.10 s first capture for the larger fixture. Those timings describe storage, separately from model/token spend; full-copy retention remains proportional to payload per checkpoint.
 
 ## Workload and deadline qualification
 
