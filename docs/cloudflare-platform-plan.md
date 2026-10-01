@@ -96,6 +96,20 @@ resumes its intention and read basis. Neither git nor a local filesystem can do 
 Step 7's `make demo` runs headless against a seeded fixture so the run instructions are
 one command and the video is not the only proof the system works.
 
+Step 7 carries more weight than its position suggests. The published rubric is 50%
+originality and quality of the prototype, 25% effectiveness of multi-agent concurrency and
+coordination, and **25% ease of use and product/user experience**. A quarter of the score
+is user experience, so a legible first-run path is not polish here — it is a scored
+requirement. See [the submission protocol](competition-submission.md) for the rubric in
+full and its consequences for this plan.
+
+The same rubric is a caution on the honest-negative framing. Leading with results where
+eight-agent teams produced 8 correct artifacts and 0 of 9 in-budget completions will read
+as rigour or as an unfinished prototype depending entirely on whether the surrounding
+artifact is visibly complete. That argues for a demo that runs first time, a checked
+run-instructions path, and negative results presented alongside the mechanism that
+explains them rather than in place of one.
+
 ### P1, only if P0 is clean
 
 - Workers Builds and Previews as an independent verification gate before acceptance.
