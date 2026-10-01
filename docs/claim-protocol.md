@@ -173,6 +173,7 @@ Gate 0 comes first because it can kill the whole idea cheaply.
 
 | # | Gate | Assertion | Falsification test |
 | --- | --- | --- | --- |
+| 0 | Coordination is actually expensive today | conversation consumes a material share of total tokens in the existing harness | **run — premise holds from roster 4 upward, and fails at roster 2. See below** |
 | 0 | Coordination is actually expensive today | conversation consumes a material share of total tokens in the existing harness | instrument `runRealSquad`; if coordination is a small share of total tokens, the premise is false and this stops |
 | 1 | Every push to a claimed path had an open claim | 0 violations | push to `P` with no claim; the gate must go red |
 | 2 | No claim acted on a stale basis | 0 violations | claim naming a revision that is not an ancestor of the merged head; red |
@@ -184,6 +185,74 @@ Gate 0 comes first because it can kill the whole idea cheaply.
 Gate 0 matters because the entire argument is a cost argument. If the existing
 conversation overhead turns out to be a few percent of tokens, this is a large amount
 of new machinery for nothing, and the honest move is to stop.
+
+## Gate 0 result
+
+**Run 2026-10-01. Premise holds from roster 4 upward and fails at roster 2.**
+
+Method: the repository's own `assembleAgentContext` and `renderAgentContext`, at
+rosters of 2 to 32 with every peer in the same file, live intentions and an observed
+read basis on each agent. Token counts are real, from `gpt-tokenizer`'s `encode`, not
+estimated. Baseline is the recorded 162-cohort native run in
+[benchmark-results.md](benchmark-results.md): 1,867 closed steps, 8,090,086 input
+tokens, which is **4,333 input tokens per step** and 22,725 per actor. That run
+already recorded treated pairs at **2.9× stock input on Nano and 7.4× on DeepSeek**,
+so a coordination premium is established; what follows decomposes it.
+
+The comparison had to be corrected once. Measuring the whole rendered context against
+a claim record gave a tidy 10× at roster 8, but that was dishonest: the context also
+carries assigned task, observed files, read basis and the coverage/uncertainty honesty
+fields, which a claim record would not replace and which are required whether or not
+claims exist. Those are separated below.
+
+| Roster | Peers in room | Total context | Replaceable (peers) | Retained floor | vs claim record | Replaceable as share of one step |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 | 1 | 695 | 142 | 451 | **0.9×** | 3.3% |
+| 4 | 3 | 978 | 420 | 456 | 2.7× | 9.7% |
+| 8 | 7 | 1,537 | 976 | 459 | 6.3× | 22.5% |
+| 16 | 15 | 2,644 | 2,088 | 454 | 13.6× | 48.2% |
+| 32 | 31 | 4,874 | 4,312 | 460 | **28×** | 99.5% |
+
+Tokens. A claim record as specified above is **154 tokens / 417 bytes**. The retained
+floor is flat at ~451 tokens plus a 58-token preamble, plus a 44-token constant from
+JSON structure that the per-section sums do not capture.
+
+Three things follow, and the first is a negative result.
+
+**Awareness costs about 139 tokens per co-located peer, and grows linearly.** At 32
+peers in one room, awareness alone costs 4,312 tokens — a whole model step's input —
+and the premium is entirely O(peers). The retained floor does not move with roster.
+
+**A claim record is O(1) in peers and O(k) in open claims on one path.** Typically k is
+zero or one even at 32 agents, because agents work different files. So the saving
+scales with roster times co-location, and is unbounded in the limit. This is the
+structural argument, and the ratio above only understates it at large rosters.
+
+**At roster 2 the trade is a loss.** A claim record costs 154 tokens against 142 for
+the awareness it would replace. Two-agent work is most of the recorded benchmark data,
+and there is no token argument for claims at that size. The honest position is that
+claims earn their cost at roster 4 and above, and that a two-agent pilot would need a
+different justification than cost.
+
+The 139-token-per-peer figure also explains the recorded result more precisely than
+"conversation is expensive" does. The multiplier is not primarily dialogue — it is a
+whole-context envelope refreshed at every model-request boundary, and awareness is
+what fills it. So the addressable cost is the awareness section specifically, which is
+what this table isolates.
+
+### What Gate 0 does not establish
+
+It prices the coordination signal. It says nothing about whether a 154-token claim
+record is *adequate* for an agent to make the same decision the 976-token peer section
+supported. A claim is narrower than a peer snapshot: it carries claimant, basis
+revision, intent, expiry and scope, but not peer task detail or observed cursor
+position. Cheaper and less informative are separable properties, and adequacy is
+untested. Gates 1 through 3 are where that would fail, and they should be run at
+roster 8 where the cost argument actually holds.
+
+Reproducing this needs `gpt-tokenizer`, which the repository does not depend on. The
+measurement was run from a scratch directory rather than adding a dependency for a
+one-off, and no tokenizer approximation is used anywhere in the numbers above.
 
 ## Relationship to the existing plan
 
