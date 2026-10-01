@@ -15,7 +15,7 @@ const models=value=>typeof value==='string'?value.split('+').slice(0,16).map(ide
 const finalStatuses=new Set(['complete','completed','failed','cancelled']);
 const terminalOutcomes=new Set(['completed','deadline','failed','cancelled']);
 const actorOutcomes=new Set(['not-run','running','succeeded','failed','interrupted','setup-failed','runtime-failed','deadline-or-cancel']);
-const titles={'stock-solo':'Stock · one builder','stock-parallel-pair':'Stock · two concurrent specialists','gang-pair':'GangCode · two specialists','gang-four':'GangCode · four concurrent roles','gang-eight':'GangCode · eight concurrent roles','builder-reviewer':'GangCode · builder then reviewer','gang-pair-small-context':'GangCode · 8 KiB context','gang-pair-slow-updates':'GangCode · 500 ms context refresh','mixed-pair':'GangCode · mixed models'};
+const titles={'stock-solo':'Stock · one builder','stock-parallel-pair':'Stock · two concurrent specialists','ingress-pair':'Ingress · two specialists','ingress-four':'Ingress · four concurrent roles','ingress-eight':'Ingress · eight concurrent roles','builder-reviewer':'Ingress · builder then reviewer','ingress-pair-small-context':'Ingress · 8 KiB context','ingress-pair-slow-updates':'Ingress · 500 ms context refresh','mixed-pair':'Ingress · mixed models'};
 const modelNames={'space-bunny-free':'Space Bunny','big-pickle':'Big Pickle','mimo-v2.6-flash-free':'MiMo V2.6 Flash','gpt-5-nano':'GPT-5 Nano','deepseek-v3.2-free':'DeepSeek V3.2 Free','deepseek-v4-flash':'DeepSeek V4 Flash'};
 const modelLabel=id=>modelNames[id.split('/').at(-1)]??id;
 const title=id=>titles[id]??id;

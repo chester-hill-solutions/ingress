@@ -1,4 +1,4 @@
-# GangCode tuning study
+# Ingress tuning study
 
 Protocol version 4, frozen before valid study admission on 2026-09-29 (Toronto).
 This is an exploratory study of configurable native OpenCode teams. The earlier
@@ -10,7 +10,7 @@ two overlapping requests, continuation context and confirmed writer stop.
 
 The version 2 study was cancelled after user model steering. Its 144 assignments and every attempted outcome remain separate. Native persisted errors identified provider.auth / HTTP403 for the early Big Pickle and MiMo failures; those are access failures, not coding quality evidence. Version 3 replaces only the additional model selections and mixed-pair member. No earlier rows are silently replaced.
 
-The version 3 requested-model study was stopped after discovering a model-specific integration defect: GangCode removed GPT-5 Nano’s native patch tool, leaving those agents without their normal editing capability. Nano coordinated and mixed-team outcomes from that version cannot support quality comparisons. Source snapshots and all assigned outcomes remain in the earlier artifact. Version 4 preserves native menus and verifies actual edits with both requested models before admission.
+The version 3 requested-model study was stopped after discovering a model-specific integration defect: Ingress removed GPT-5 Nano’s native patch tool, leaving those agents without their normal editing capability. Nano coordinated and mixed-team outcomes from that version cannot support quality comparisons. Source snapshots and all assigned outcomes remain in the earlier artifact. Version 4 preserves native menus and verifies actual edits with both requested models before admission.
 
 ## Fixed assignments
 
@@ -25,13 +25,13 @@ is not deterministic. No result-based rescue prompts or replacement trials.
 | --- | ---: | ---: | --- |
 | Stock solo | 1 | all six | Space Bunny |
 | Stock parallel specialists | 2 | all six | Space Bunny |
-| GangCode specialists | 2 | all six | Space Bunny |
-| GangCode concurrent roles | 4 and 8 | three representative families | Space Bunny |
-| GangCode builder then reviewer | 2 sequential stages | three representative families | Space Bunny |
-| GangCode 8 KiB context | 2 | three representative families | Space Bunny |
-| GangCode 500 ms refresh | 2 | three representative families | Space Bunny |
-| Stock solo / stock pair / GangCode pair | 1 / 2 / 2 | three representative families | GPT-5 Nano and DeepSeek V4 Flash |
-| GangCode mixed pair | 2 | three representative families | GPT-5 Nano + DeepSeek V4 Flash |
+| Ingress specialists | 2 | all six | Space Bunny |
+| Ingress concurrent roles | 4 and 8 | three representative families | Space Bunny |
+| Ingress builder then reviewer | 2 sequential stages | three representative families | Space Bunny |
+| Ingress 8 KiB context | 2 | three representative families | Space Bunny |
+| Ingress 500 ms refresh | 2 | three representative families | Space Bunny |
+| Stock solo / stock pair / Ingress pair | 1 / 2 / 2 | three representative families | GPT-5 Nano and DeepSeek V4 Flash |
+| Ingress mixed pair | 2 | three representative families | GPT-5 Nano + DeepSeek V4 Flash |
 
 Six families: money contracts, same-file independent features, dependency
 extraction, TTL/cache loading, strict parsing/formatting, and human requirements
@@ -50,8 +50,8 @@ checker feedback. Each actor's exact model and role are retained.
 ## Harness and load
 
 Pinned OpenCode 2.0.16, one shared host and event feed per cohort. Stock conditions
-install no GangCode plugin or context bridge. GangCode preserves the native per-model tool menu; permissions are identical in both arms, including the model-specific native patch tool. Common external file/native event
-observation remains. GangCode uses native primary-context injection, peer presence,
+install no Ingress plugin or context bridge. Ingress preserves the native per-model tool menu; permissions are identical in both arms, including the model-specific native patch tool. Common external file/native event
+observation remains. Ingress uses native primary-context injection, peer presence,
 observed read/write activity and declared dependencies. Normal context limit is
 32 KiB, refresh 100 ms; variants change one setting. A 4 KiB preflight could not retain the complete strict-format goal plus mandatory uncertainty/schema, so the smaller-context arm was set to 8 KiB before model admission. Truncated structured evidence
 records omissions while preserving the assigned goal. This is observation, not a
@@ -65,7 +65,7 @@ account traffic is unmeasured. Plugin and context overhead are part of treatment
 
 Native edits use location-relative resources, explicit protected-file denials and
 external-directory denial. Workspaces and observer paths are canonical. Shell,
-package installation and nested agent tools are denied in every arm. Tool availability comes from the same native permissions in both arms. GangCode never removes a model-specific editing tool. Patch metadata retains only bounded file headers, including move destinations, and marks missing or malformed target evidence unknown.
+package installation and nested agent tools are denied in every arm. Tool availability comes from the same native permissions in both arms. Ingress never removes a model-specific editing tool. Patch metadata retains only bounded file headers, including move destinations, and marks missing or malformed target evidence unknown.
 
 ## Evidence and scoring
 
@@ -83,15 +83,15 @@ depth are descriptive complexity indicators with missing/ambiguous denominators;
 they are not cyclomatic complexity or a quality score. Correct artifacts are reported
 separately so untouched seeds cannot appear to be simpler successful implementations.
 
-GangCode request-marker receipts verify serialized context exposure, not adaptation.
+Ingress request-marker receipts verify serialized context exposure, not adaptation.
 Stock plugin absence is structural evidence; request bodies are not inspected by a
-GangCode plugin in that arm. Coverage gaps, saturated receipts and bridge errors
+Ingress plugin in that arm. Coverage gaps, saturated receipts and bridge errors
 invalidate comparative evidence without discarding assigned outcomes. No credentials,
 raw provider contexts, model prose or tool outputs enter evidence. Generated source
 remains in temporary workspaces, outside committed documentation.
 
 Compare fixture/repeat pairs only when model set, initial bytes and full goal hashes
-match. Main two-agent GangCode uses stock parallel as its baseline. Additional-model GangCode pairs also use the same-model stock parallel controls. Larger teams use stock solo as a practical alternative, not equal compute.
+match. Main two-agent Ingress uses stock parallel as its baseline. Additional-model Ingress pairs also use the same-model stock parallel controls. Larger teams use stock solo as a practical alternative, not equal compute.
 Mixed-model arms without matching stock model assignment remain unpaired. Show
 all observed times, completed-only times and correct-completed times separately;
 timeouts are censored. Three repeats establish preliminary variability, not

@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 
 export const missionConfigurations = [
-  ['stock-solo', 1, false], ['stock-two', 2, false], ['gang-two', 2, true],
-  ['stock-four', 4, false], ['gang-four', 4, true], ['stock-eight', 8, false], ['gang-eight', 8, true],
+  ['stock-solo', 1, false], ['stock-two', 2, false], ['ingress-two', 2, true],
+  ['stock-four', 4, false], ['ingress-four', 4, true], ['stock-eight', 8, false], ['ingress-eight', 8, true],
 ].map(([id, agentCount, nativePlugin]) => Object.freeze({ id, agentCount, nativePlugin }));
 const guidance = 'Read protected MISSION.md first, then the public contracts and inputs it references. All requirements in MISSION.md apply to the complete result. Use native file tools; no packages, shell processes or nested agents. Preserve all protected files byte-for-byte. Work concurrently through shared source and contracts. File focus is not exclusive ownership; inspect peer changes and preserve useful work. Do not include authors, model names or team identity in deliverables.\n';
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');

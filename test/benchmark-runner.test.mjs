@@ -175,7 +175,7 @@ test('deadline is a retained timeout outcome, not a successful duration sample',
 test('both conditions retain identical original task prompts and tool permissions', async t => {
   const off = await cohort(t), on = await cohort(t, { condition: 'awareness-on' });
   assert.deepEqual(off.calls.prompts.map(row => row.text), on.calls.prompts.map(row => row.text));
-  const normalize = rows => rows.map(row => ({ ...row, resource: row.resource.replace(/\/[^*]+\/gangcode-benchmark-[^/]+/, '/WORKSPACE') }));
+  const normalize = rows => rows.map(row => ({ ...row, resource: row.resource.replace(/\/[^*]+\/ingress-benchmark-[^/]+/, '/WORKSPACE') }));
   assert.deepEqual(normalize(off.calls.permissions), normalize(on.calls.permissions));
   assert.equal(off.result.seedSHA256, on.result.seedSHA256);
 });
@@ -198,14 +198,14 @@ test('physical harness paths and native location-relative write/edit resources m
     'wildcard edit permission must retain the independent external-directory denial');
 });
 
-test('stock mode installs no GangCode plugin and observes native tools without request-body claims', async t => {
+test('stock mode installs no Ingress plugin and observes native tools without request-body claims', async t => {
   const stock = configureBenchmarkFixture(fixture, 'stock-parallel-pair');
   const { result, calls } = await cohort(t, { fixture: stock, nativeActivity: true });
-  await assert.rejects(stat(join(result.workspace, '.opencode/plugins/gangcode-benchmark')), { code: 'ENOENT' });
+  await assert.rejects(stat(join(result.workspace, '.opencode/plugins/ingress-benchmark')), { code: 'ENOENT' });
   assert.equal(result.pluginSHA256, null); assert.equal(result.system, 'stock');
   assert.deepEqual(result.pluginReceipts, []); assert.equal(result.contextBytes, 0); assert.equal(result.cacheIntervalMs, 0);
   assert.equal(result.treatmentExposure.status, 'verified');
-  assert.equal(result.treatmentExposure.basis, 'structural_gangcode_plugin_absence');
+  assert.equal(result.treatmentExposure.basis, 'structural_ingress_plugin_absence');
   assert.equal(result.treatmentExposure.requestContentObserved, false); assert.equal(result.validComparison, true);
   assert.ok(result.actors.every(actor => actor.tools.read === 1 && actor.nativeActivities === 1));
   assert.equal(calls.clientCloses, 2);
@@ -289,14 +289,14 @@ test('builder/reviewer phases settle sequentially with no hidden evaluation betw
 });
 
 for (const count of [4, 8]) test(`${count} configured roles are admitted concurrently and every client closes`, async t => {
-  const configured = configureBenchmarkFixture(fixture, count === 4 ? 'gang-four' : 'gang-eight');
+  const configured = configureBenchmarkFixture(fixture, count === 4 ? 'ingress-four' : 'ingress-eight');
   const { result, calls } = await cohort(t, { fixture: configured, condition: 'awareness-on' });
   assert.equal(result.executionPeak, count); assert.equal(calls.prompts.length, count); assert.equal(calls.clientCloses, count);
   assert.ok(result.actors.every(actor => actor.admitted && actor.outcome === 'succeeded' && actor.processStopped));
 });
 
 test('a 4 KiB test context preserves the complete goal and exposes omitted evidence when it fits', async t => {
-  const selected = { ...configureBenchmarkFixture(fixture, 'gang-pair-small-context'), contextBytes: 4096 };
+  const selected = { ...configureBenchmarkFixture(fixture, 'ingress-pair-small-context'), contextBytes: 4096 };
   const { result, calls } = await cohort(t, { fixture: selected, condition: 'awareness-on' });
   const cache = JSON.parse(await readFile(join(calls.directories[1], 'context.json'), 'utf8'));
   for (const [index, actor] of result.actors.entries()) {
@@ -320,7 +320,7 @@ test('an impossible budget fails explicitly instead of shortening the assigned t
 
 test('all six actual configured small-context fixture goals fit with explicit evidence omissions', async t => {
   for (const base of benchmarkFixtures) {
-    const configured = configureBenchmarkFixture(base, 'gang-pair-small-context');
+    const configured = configureBenchmarkFixture(base, 'ingress-pair-small-context');
     const { result } = await cohort(t, { fixture: configured, condition: 'awareness-on' });
     assert.equal(result.outcome, 'completed', `${base.id}: ${JSON.stringify(result.errors)}`);
     assert.equal(configured.contextBytes, 8192, 'the preflighted study budget is 8 KiB');

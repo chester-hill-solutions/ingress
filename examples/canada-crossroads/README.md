@@ -1,6 +1,6 @@
 # Canada: Crossroads
 
-A Canadian history game built by the GangCode squad. After implementation, run `npm start` and open its printed loopback URL. See MISSION.md.
+A Canadian history game built by the Ingress squad. After implementation, run `npm start` and open its printed loopback URL. See MISSION.md.
 
 Indigenous histories precede the earliest selected event. These twelve events are not exhaustive; the stylized map is illustrative. Official sources appear with answer feedback.
 

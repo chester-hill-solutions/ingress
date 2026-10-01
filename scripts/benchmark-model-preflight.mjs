@@ -11,7 +11,7 @@ import {assembleAgentContext} from '../src/context.mjs';
 import {boundedBenchmarkContext} from '../src/benchmark.mjs';
 
 if(process.argv.slice(2).join(' ')!=='--real')throw Error('Opt-in native read/write probe: --real');
-const root=await realpath(await mkdtemp(join(tmpdir(),'gangcode-model-preflight-')));
+const root=await realpath(await mkdtemp(join(tmpdir(),'ingress-model-preflight-')));
 const workspace=join(root,'workspace'),receipts=join(root,'receipts.jsonl'),bridge=join(root,'bridge');
 const models=['gpt-5-nano','deepseek-v4-flash'];
 await mkdir(join(workspace,'.opencode/plugins/availability'),{recursive:true});
@@ -31,7 +31,7 @@ export default{id:'benchmark.model-availability',async setup(ctx){
   tool:event.tool,status:event.status}));
 }};
 `);
-const evidence={version:2,kind:'requested-model-native-gangcode-read-write',date:new Date().toISOString(),models,outcomes:[]};
+const evidence={version:2,kind:'requested-model-native-ingress-read-write',date:new Date().toISOString(),models,outcomes:[]};
 const state=new WorkspaceState({epoch:randomUUID()});
 let host;const clients=[];
 try{

@@ -30,7 +30,7 @@ export async function createBlindStudy(directory, assignments, fixtures, protoco
 }
 function neutral(text) {
   let redactions = 0;
-  return { text: text.replace(/(?:opencode\/)?(?:gpt-5-nano|deepseek-v4-flash)|GangCode|stock-(?:solo|two|four|eight)|gang-(?:two|four|eight)/gi, () => { redactions++; return '[authorship withheld]'; }), get redactions() { return redactions; } };
+  return { text: text.replace(/(?:opencode\/)?(?:gpt-5-nano|deepseek-v4-flash)|Ingress|stock-(?:solo|two|four|eight)|ingress-(?:two|four|eight|pair)(?:-[a-z-]+)?|builder-reviewer/gi, () => { redactions++; return '[authorship withheld]'; }), get redactions() { return redactions; } };
 }
 export async function freezeBlindSample(directory, study, result, fixture) {
   const sample = study.samples.find(value => value.assignmentID === result.id);

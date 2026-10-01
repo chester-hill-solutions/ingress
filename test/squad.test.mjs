@@ -51,12 +51,12 @@ function fakeRuntime({ failRole = null, hangingRole = null, unconfirmedRole = nu
       let closed = false;
       return { endpoint: role, password: 'DO_NOT_PERSIST_SECRET', async close() { if (role === unconfirmedRole) throw new Error('unconfirmed'); if (!closed) { shared.live--; closed = true; } } };
     },
-    async seedGangCode(root) {
+    async seedIngress(root) {
       await mkdir(join(root, 'data'), { recursive: true });
       await writeFile(join(root, 'data/history.json'), '[]');
       return { paths: ['data/history.json'], tasks: roles.map(id => ({ id, task: `Build ${id} part of the Canadian history game`, files: ['data/history.json'], dependencies: [{ producerPath: 'data/history.json', consumerPath: 'data/history.json' }] })), integrationTask: 'Integrate and verify the Canadian history game' };
     },
-    async verifyGangCode() { shared.verificationLive.push(shared.live); shared.verified++; return { correct: shared.verified > 1, checks: [{ name: 'game_complete', passed: shared.verified > 1 }] }; },
+    async verifyIngress() { shared.verificationLive.push(shared.live); shared.verified++; return { correct: shared.verified > 1, checks: [{ name: 'game_complete', passed: shared.verified > 1 }] }; },
     async observeFiles({ onObservation, epoch }) {
       onObservation({ id: 'baseline', epoch, source: 'file-watcher', sourceSeq: 1, type: 'file.observed', data: { path: 'data/history.json', hash: createHash('sha256').update('[]').digest('hex'), revision: 1 } });
       return { close() {}, async reconcile() {} };
@@ -244,7 +244,7 @@ test('preserving an existing workspace never calls seed and retains trusted fixt
   const root = await mkdtemp(join(tmpdir(), 'collaboration-existing-'));
   const { runtime, shared } = fakeRuntime();
   let seeded = false;
-  runtime.seedGangCode = async () => { seeded = true; throw new Error('seed must not run'); };
+  runtime.seedIngress = async () => { seeded = true; throw new Error('seed must not run'); };
   try {
     await mkdir(join(root, 'data'));
     await writeFile(join(root, 'data/history.json'), 'existing game data');

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { verifyGangCode } from './gangcode-verifier.mjs';
+import { verifyIngress } from './ingress-verifier.mjs';
 
 // Independent assertions stay outside the builders' workspace.
 const worker = String.raw`
@@ -46,8 +46,8 @@ async function verifyModules(root) {
   });
 }
 
-export async function verifyGangCodeExtensions(root) {
-  const base = await verifyGangCode(root);
+export async function verifyIngressExtensions(root) {
+  const base = await verifyIngress(root);
   const checks = [...base.checks, ...await verifyModules(root)];
   return { correct: checks.every(check => check.passed), checks };
 }

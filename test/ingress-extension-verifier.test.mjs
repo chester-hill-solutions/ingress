@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { seedGangCode } from '../fixtures/gangcode.mjs';
-import { verifyGangCodeExtensions } from '../fixtures/gangcode-extension-verifier.mjs';
+import { seedIngress } from '../fixtures/ingress.mjs';
+import { verifyIngressExtensions } from '../fixtures/ingress-extension-verifier.mjs';
 
 test('extension evaluator retains every missing component outcome instead of accepting an incomplete game', async () => {
   const root = await mkdtemp(join(tmpdir(), 'missing-crossroads-extensions-'));
   try {
-    await seedGangCode(root);
-    const result = await verifyGangCodeExtensions(root);
+    await seedIngress(root);
+    const result = await verifyIngressExtensions(root);
     assert.equal(result.correct, false);
     assert.equal(result.checks.length, 58);
     const exports = result.checks.filter(check => check.name.startsWith('extension-exports-'));

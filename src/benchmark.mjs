@@ -113,8 +113,8 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   Object.assign(result, { actors: fixture.tasks.map(task => ({ id: task.id, role: task.role ?? null, assigned: true, admitted: false, outcome: 'not-run', processStopped: null,
     tools: {}, usage: { input: null, output: null, cost: null, observedSteps: 0, missingInput:0,missingOutput:0,missingCost:0 }, context: { hookCount: 0, serializedCount: 0, unknownCount: 0 } })),
     errors, verification: { correct: false, checks: [], instructionChecks: [] }, complexity: null, deadlineMs,
-    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-gangcode-plugin', sourceCoverage: 'unknown', observationMode: true, writesFenced: false,
-    configID: fixture.configurationID ?? assignment.configID ?? null, system: usesPlugin ? 'gangcode' : 'stock',
+    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-ingress-plugin', sourceCoverage: 'unknown', observationMode: true, writesFenced: false,
+    configID: fixture.configurationID ?? assignment.configID ?? null, system: usesPlugin ? 'ingress' : 'stock',
     modelSet: [...new Set(actorModels.map(model => model.providerID + '/' + model.id))].sort().join('+'), actorModels: structuredClone(actorModels),
     nativePlugin: usesPlugin, contextBytes, cacheIntervalMs, phases: structuredClone(phases), phaseEvidence: [], contextProjections: [],
     evidenceBounds: { nativeEvents: MAX_NATIVE_EVENTS, pluginReceipts: MAX_RECEIPTS, nativeSelection: 'execution_step_tool_metadata', receiptBytes: 8 * 1024 * 1024 } });
@@ -195,8 +195,8 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   let pollRunning=false,pollPending=false;
   const schedulePoll=()=>{pollPending=true;if(pollRunning)return pollWriter;pollRunning=true;pollWriter=(async()=>{while(pollPending){pollPending=false;try{await poll();}catch(error){issue('receipt_observation_failure',error);result.sourceCoverage='unknown';}}})().finally(()=>{pollRunning=false;});return pollWriter;};
   try {
-    root = await realpath(await mkdtemp(join(tmpdir(), 'gangcode-benchmark-')));
-    bridgeDirectory = await realpath(await mkdtemp(join(tmpdir(), 'gangcode-benchmark-state-')));
+    root = await realpath(await mkdtemp(join(tmpdir(), 'ingress-benchmark-')));
+    bridgeDirectory = await realpath(await mkdtemp(join(tmpdir(), 'ingress-benchmark-state-')));
     result.workspace = root;
     for (const [path, content] of Object.entries(fixture.files)) { await mkdir(join(root, path, '..'), { recursive: true }); await writeFile(join(root, path), content); }
     await writeFile(join(root, 'TEAM.md'), fixture.tasks.map(task => `## ${task.id}\n\n${task.text}\n`).join('\n'));
@@ -335,7 +335,7 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   const primaryRequests=receiptRows.filter(row=>row.type==='request'&&row.kind==='primary');
   const expected=expectedContext;
   result.treatmentExposure=usesPlugin?{status:result.receiptHistoryComplete===false?'unknown':primaryRequests.length&&actors.length===fixture.tasks.length&&actors.every(actor=>primaryRequests.some(row=>row.sessionID===actor.sessionID))&&primaryRequests.every(row=>row.markerPresent===expected)?'verified':primaryRequests.some(row=>typeof row.markerPresent==='boolean'&&row.markerPresent!==expected)?'failed':'unknown',primaryRequestsObserved:primaryRequests.length,requestContentObserved:primaryRequests.length>0}
-    :{status:root&&!plugin?'verified':'unknown',basis:'structural_gangcode_plugin_absence',primaryRequestsObserved:0,requestContentObserved:false};
+    :{status:root&&!plugin?'verified':'unknown',basis:'structural_ingress_plugin_absence',primaryRequestsObserved:0,requestContentObserved:false};
   result.validComparison=result.treatmentExposure.status==='verified'&&result.writeTargetCoverage!=='incomplete'&&result.receiptHistoryComplete!==false&&!result.nativeEventOmissions&&feedReady&&result.sourceCoverage==='live-no-replay'&&!errors.some(row=>['context_cache_failure','native_context_bridge_failure','receipt_observation_failure','native_feed_failure'].includes(row.code));
   result.correct = result.artifactCorrect && result.outcome === 'completed' && result.verification.instructionChecks.every(row=>row.passed===true);
   result.verificationMs = performance.now() - checking;

@@ -15,7 +15,7 @@ export async function gradeMissionSnapshot(fixture, root, verify) {
     for (const path of paths) { files[path] = await readMissionFile(root, path); bytes += Buffer.byteLength(files[path]); hashes[path] = createHash('sha256').update(files[path]).digest('hex'); }
     if (bytes > missionBounds.totalBytes) throw Error('snapshot_bytes_bounds');
     for (const path of paths) if (createHash('sha256').update(await readMissionFile(root, path)).digest('hex') !== hashes[path]) return { status: 'unstable', elapsedMs: performance.now() - started, basis: 'double_collection_changed' };
-    snapshot = await mkdtemp(join(tmpdir(), 'gangcode-mission-observation-'));
+    snapshot = await mkdtemp(join(tmpdir(), 'ingress-mission-observation-'));
     for (const path of paths) { await mkdir(dirname(join(snapshot, path)), { recursive: true }); await writeFile(join(snapshot, path), files[path], { mode: 0o600 }); }
     const verification = await verify(fixture.id, snapshot);
     return { status: 'graded', elapsedMs: performance.now() - started, hashes, verification, basis: 'double_collection_stable_nonatomic_then_immutable_copy' };

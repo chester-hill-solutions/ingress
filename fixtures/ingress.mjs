@@ -1,9 +1,9 @@
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-export const gangCodeSpec=`# Canada: Crossroads
+export const ingressSpec=`# Canada: Crossroads
 
-GangCode is the collaborating squad name. Build Canada: Crossroads, a playful Canadian history exploration game, with Node built-ins, ES modules and browser APIs only. Use native file tools; the harness executes and verifies. No dependencies, remote assets, services or credentials. Files are preferred focus, not claims: cross-module edits are allowed when needed. Inspect live peer contracts.
+Ingress is the collaborating squad name. Build Canada: Crossroads, a playful Canadian history exploration game, with Node built-ins, ES modules and browser APIs only. Use native file tools; the harness executes and verifies. No dependencies, remote assets, services or credentials. Files are preferred focus, not claims: cross-module edits are allowed when needed. Inspect live peer contracts.
 
 ## Canonical content
 
@@ -31,14 +31,14 @@ A playful, richly illustrated paper/ink/red/copper journey, not an admin panel. 
 
 README: npm start, printed loopback URL, gameplay/API and sample/illustrative-map limitations. Independent verification stays outside this project. Seed functions are intentionally unfinished; real specialists implement them.
 `;
-const shared='Read MISSION.md and canonical data/history.json. Work concurrently with the GangCode squad in this SAME workspace using native file tools only. Inspect current peer edits/contracts. Listed files are preferred focus, not ownership claims; cross-module edits are allowed when needed. Keep exports stable. ';
-export const gangCodeTasks=[
+const shared='Read MISSION.md and canonical data/history.json. Work concurrently with the Ingress squad in this SAME workspace using native file tools only. Inspect current peer edits/contracts. Listed files are preferred focus, not ownership claims; cross-module edits are allowed when needed. Keep exports stable. ';
+export const ingressTasks=[
  {id:'content',files:['data/history.json','README.md'],dependencies:[],task:shared+'Polish event title/region/x/y and standalone introduction ONLY, preserving immutable id/year/era/question/options/correctOptionID/explanation/source EXACTLY. Coordinate pedagogical region/timeline vocabulary with UI. Vimy belongs in a France inset. Do not invent facts or sources. Indigenous histories precede the first selected event; the twelve events are not exhaustive.'},
  {id:'engine',files:['engine.mjs'],dependencies:[{producerPath:'data/history.json',consumerPath:'engine.mjs'}],task:shared+'Implement createGame completely: chronological eras, strict answer validation/progression, score/streak, exact milestone rules, cloned public snapshots without answer-key leakage, subscriptions, chooseEra/reset/restart. Correct answers remain internal. Follow MISSION.md exactly.'},
  {id:'server',files:['server.mjs','README.md'],dependencies:[{producerPath:'data/history.json',consumerPath:'server.mjs'},{producerPath:'engine.mjs',consumerPath:'server.mjs'}],task:shared+'Implement createGameServer Node HTTP/SSE, game routes, bounded safe JSON, own-loopback Origin checks, raw-data404, SSE disconnect/idempotent close and direct npm start. Load canonical data server-side only. Inspect evolving engine API and update accurate README run/routes.'},
  {id:'ui',files:['public/index.html'],dependencies:[{producerPath:'data/history.json',consumerPath:'public/index.html'},{producerPath:'engine.mjs',consumerPath:'public/index.html'},{producerPath:'server.mjs',consumerPath:'public/index.html'}],task:shared+'Build the polished playful Canada: Crossroads browser game, paper/ink/red/copper aesthetic with illustrated Canada SVG terrain/water, region markers and overseas France/Vimy inset, timeline, accessible choice cards, scoreboard/progress/milestones, prominent source-linked feedback and nextquestion, complete/restart flow. Use SSE, safe DOM rendering, keyboard/mobile/loading/error states. Never fetch/embed raw answerkeys. Inspect actual live server/engine contracts.'},
 ];
-export const gangCodeIntegrationTask=shared+'Integrate Canada: Crossroads by inspecting final data/engine/server/browser and repairing concrete cross-module mistakes. Preserve immutable researched data and distinctive playful UI. Make npm start and complete era gameplay match MISSION.md; prevent public answer-key leaks and verify source-linked feedback. Update truthful README. Use file tools only; harness executes independent checks. Specialist completion is not proof of correctness.';
+export const ingressIntegrationTask=shared+'Integrate Canada: Crossroads by inspecting final data/engine/server/browser and repairing concrete cross-module mistakes. Preserve immutable researched data and distinctive playful UI. Make npm start and complete era gameplay match MISSION.md; prevent public answer-key leaks and verify source-linked feedback. Update truthful README. Use file tools only; harness executes independent checks. Specialist completion is not proof of correctness.';
 const seedFiles={
  'package.json':JSON.stringify({name:'canada-crossroads',version:'0.0.0',private:true,type:'module',scripts:{start:'node server.mjs'}},null,2)+'\n',
  'engine.mjs':`export function createGame({events,seed=1}={}) {
@@ -53,14 +53,14 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  for(const signal of ['SIGINT','SIGTERM'])process.once(signal,async()=>{await server.close();});
 }\n`,
  'public/index.html':`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Canada: Crossroads</title><style>body{margin:0;background:#f5efe4;color:#153b35;font:16px system-ui;padding:3rem}h1{font:700 clamp(2rem,7vw,5rem) Georgia,serif}small{color:#a72a35}</style><main><small>GANGCODE PRESENTS</small><h1>Canada: Crossroads</h1><p>The browser specialist is building a journey through selected Canadian history.</p><p>Indigenous histories precede the earliest selected event. This selection is not exhaustive; map coordinates are illustrative.</p></main></html>\n`,
- 'README.md':'# Canada: Crossroads\n\nA Canadian history game built by the GangCode squad. After implementation, run `npm start` and open its printed loopback URL. See MISSION.md.\n\nIndigenous histories precede the earliest selected event. These twelve events are not exhaustive; the stylized map is illustrative. Official sources appear with answer feedback.\n',
- 'MISSION.md':gangCodeSpec,
+ 'README.md':'# Canada: Crossroads\n\nA Canadian history game built by the Ingress squad. After implementation, run `npm start` and open its printed loopback URL. See MISSION.md.\n\nIndigenous histories precede the earliest selected event. These twelve events are not exhaustive; the stylized map is illustrative. Official sources appear with answer feedback.\n',
+ 'MISSION.md':ingressSpec,
 };
-export async function seedGangCode(root,{historyPath=new URL('./canadian-history.json',import.meta.url)}={}) {
+export async function seedIngress(root,{historyPath=new URL('./canadian-history.json',import.meta.url)}={}) {
  const content=await readFile(historyPath,'utf8'),parsed=JSON.parse(content),events=Array.isArray(parsed)?parsed:parsed.events;
  if(!Array.isArray(events)||events.length===0)throw new Error('Canonical Canadian history data unavailable');
  await mkdir(join(root,'public'),{recursive:true});await mkdir(join(root,'data'),{recursive:true});
  const files={...seedFiles,'data/history.json':content};
  for(const[path,value]of Object.entries(files))await writeFile(join(root,path),value,{flag:'wx'});
- return {paths:Object.keys(files),tasks:structuredClone(gangCodeTasks),integrationTask:gangCodeIntegrationTask,dependencies:gangCodeTasks.flatMap(task=>structuredClone(task.dependencies))};
+ return {paths:Object.keys(files),tasks:structuredClone(ingressTasks),integrationTask:ingressIntegrationTask,dependencies:ingressTasks.flatMap(task=>structuredClone(task.dependencies))};
 }

@@ -177,4 +177,4 @@ export async function verifyCanadaCrossroads(root, { expectedEvents, timeoutMs =
   });
 }
 
-export const verifyGangCode = verifyCanadaCrossroads;
+export const verifyIngress = verifyCanadaCrossroads;

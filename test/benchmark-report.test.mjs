@@ -89,25 +89,25 @@ test('reports show unknown measurements, censor qualification, counts and escape
 });
 
 test('matrix groups separate configurations and models while configuration overview aggregates fixtures',()=>{
- const results=[row({configID:'gang-4',modelSet:'SpaceBunny',fixtureID:'one'}),row({configID:'gang-4',modelSet:'SpaceBunny',fixtureID:'two'}),row({configID:'gang-4',modelSet:'BigPickle',fixtureID:'one'}),row({configID:'gang-8',modelSet:'SpaceBunny',fixtureID:'one'}),row({configID:'gang-mixed',modelSet:'BigPickle+SpaceBunny',fixtureID:'one'})];
+ const results=[row({configID:'ingress-4',modelSet:'SpaceBunny',fixtureID:'one'}),row({configID:'ingress-4',modelSet:'SpaceBunny',fixtureID:'two'}),row({configID:'ingress-4',modelSet:'BigPickle',fixtureID:'one'}),row({configID:'ingress-8',modelSet:'SpaceBunny',fixtureID:'one'}),row({configID:'ingress-mixed',modelSet:'BigPickle+SpaceBunny',fixtureID:'one'})];
  const summary=summarizeBenchmarks(results);
  assert.equal(summary.groups.length,5);
  assert.equal(summary.configurations.length,4);
- const pooled=summary.configurations.find(c=>c.configID==='gang-4'&&c.modelSet==='SpaceBunny');
+ const pooled=summary.configurations.find(c=>c.configID==='ingress-4'&&c.modelSet==='SpaceBunny');
  assert.equal(pooled.assigned,2);assert.deepEqual(pooled.fixtureIDs,['one','two']);
- assert.deepEqual(summary.groups.find(g=>g.configID==='gang-mixed').models,['BigPickle','SpaceBunny']);
+ assert.deepEqual(summary.groups.find(g=>g.configID==='ingress-mixed').models,['BigPickle','SpaceBunny']);
  assert.equal(summary.paired.length,0,'matrix rows do not enter legacy on/off comparisons');
  const report=renderBenchmarkReport(results);
  assert.match(report,/Configuration overview pools fixtures descriptively/);
- assert.match(report,/gang-4 \/ awareness-on \| SpaceBunny \| 2 \| 2 \/ 2/);
+ assert.match(report,/ingress-4 \/ awareness-on \| SpaceBunny \| 2 \| 2 \/ 2/);
  assert.match(report,/not equal compute/);
- assert.match(report,/gang-mixed \/ BigPickle, SpaceBunny/);
+ assert.match(report,/ingress-mixed \/ BigPickle, SpaceBunny/);
 });
 
 test('stock comparisons require same model, seed and goal; actor counts never imply equal compute',()=>{
  const stock=(changes={})=>row({configID:'stock-parallel-pair',system:'stock',condition:'awareness-off',modelSet:'SpaceBunny',seedHash:'seed',workGoalHash:'goal',validComparison:true,elapsedMs:12000,...changes});
- const gang=(changes={})=>row({configID:'gang-8',system:'gangcode',condition:'awareness-on',modelSet:'SpaceBunny',seedHash:'seed',workGoalHash:'goal',baselineConfigID:'stock-parallel-pair',validComparison:true,actors:Array(8).fill({admitted:true,outcome:'succeeded'}),...changes});
- const rows=[stock(),gang(),stock({repeat:2}),gang({repeat:2,seedHash:'different'}),stock({repeat:3}),gang({repeat:3,workGoalHash:undefined}),stock({repeat:4}),gang({repeat:4,modelSet:'BigPickle+SpaceBunny'}),stock({repeat:5}),gang({repeat:5,outcome:'deadline',correct:false,elapsedMs:180000}),stock({repeat:6}),gang({repeat:6}),gang({repeat:6})];
+ const treated=(changes={})=>row({configID:'ingress-8',system:'ingress',condition:'awareness-on',modelSet:'SpaceBunny',seedHash:'seed',workGoalHash:'goal',baselineConfigID:'stock-parallel-pair',validComparison:true,actors:Array(8).fill({admitted:true,outcome:'succeeded'}),...changes});
+ const rows=[stock(),treated(),stock({repeat:2}),treated({repeat:2,seedHash:'different'}),stock({repeat:3}),treated({repeat:3,workGoalHash:undefined}),stock({repeat:4}),treated({repeat:4,modelSet:'BigPickle+SpaceBunny'}),stock({repeat:5}),treated({repeat:5,outcome:'deadline',correct:false,elapsedMs:180000}),stock({repeat:6}),treated({repeat:6}),treated({repeat:6})];
  const pairs=summarizeBenchmarks(rows).configPaired;
  const first=pairs.find(p=>p.repeat===1);
  assert.equal(first.status,'observed');assert.equal(first.elapsedMsCandidateMinusBaseline,-2000);assert.equal(first.candidateActors,8);assert.equal(first.baselineActors,2);assert.equal(first.validComparison,true);

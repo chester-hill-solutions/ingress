@@ -2,12 +2,12 @@
 export const benchmarkConfigurations = Object.freeze([
   {id:'stock-solo',title:'Stock / one combined builder',agentCount:1,nativePlugin:false,awareness:false,contextBytes:0,cacheIntervalMs:0,mixModels:'per_actor_assignment'},
   {id:'stock-parallel-pair',title:'Stock / two specialists',agentCount:2,nativePlugin:false,awareness:false,contextBytes:0,cacheIntervalMs:0,mixModels:'per_actor_assignment'},
-  {id:'gang-pair',title:'GangCode / two specialists',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
-  {id:'gang-four',title:'GangCode / four concurrent roles',agentCount:4,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
-  {id:'gang-eight',title:'GangCode / eight concurrent roles',agentCount:8,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
-  {id:'builder-reviewer',title:'GangCode / builder then reviewer',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
-  {id:'gang-pair-small-context',title:'GangCode / two specialists, 8KiB context',agentCount:2,nativePlugin:true,awareness:true,contextBytes:8192,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
-  {id:'gang-pair-slow-updates',title:'GangCode / two specialists, 500ms refresh',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:500,mixModels:'per_actor_assignment'},
+  {id:'ingress-pair',title:'Ingress / two specialists',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
+  {id:'ingress-four',title:'Ingress / four concurrent roles',agentCount:4,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
+  {id:'ingress-eight',title:'Ingress / eight concurrent roles',agentCount:8,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
+  {id:'builder-reviewer',title:'Ingress / builder then reviewer',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
+  {id:'ingress-pair-small-context',title:'Ingress / two specialists, 8KiB context',agentCount:2,nativePlugin:true,awareness:true,contextBytes:8192,cacheIntervalMs:100,mixModels:'per_actor_assignment'},
+  {id:'ingress-pair-slow-updates',title:'Ingress / two specialists, 500ms refresh',agentCount:2,nativePlugin:true,awareness:true,contextBytes:32768,cacheIntervalMs:500,mixModels:'per_actor_assignment'},
 ].map(value=>Object.freeze(value)));
 
 const guidance='Use native file tools; no packages, shell processes or nested agents. Preserve package.json and all protected files byte-for-byte. File focus is not exclusive ownership. Preserve useful existing work and use the stated public module contracts. ';

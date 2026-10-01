@@ -7,7 +7,7 @@ import {assembleAgentContext,renderAgentContext} from './context.mjs';
 import {observeFiles} from './file-observer.mjs';
 import {OpenCodeClient} from './opencode.mjs';
 import {startOpenCode} from './process.mjs';
-import {verifyGangCode} from '../fixtures/gangcode-verifier.mjs';
+import {verifyIngress} from '../fixtures/ingress-verifier.mjs';
 
 const PATHS=['package.json','engine.mjs','server.mjs','public/index.html','README.md','MISSION.md','data/history.json'];
 const TASK='Finish the existing Canada: Crossroads game. Engine/server already satisfy most independent checks: preserve useful existing behavior. Main missing work is a polished playable public/index.html. Read MISSION.md and current server API as needed; do not resurvey all historical data. Build a playful paper/ink/red/copper Canadian journey with stylized SVG terrain/water map, era timeline, accessible choice cards, score/streak/progress/milestones, prominent previous feedback/source link alongside next question, completion/restart, mobile and keyboard support. Keep UI compact, preferably under300 lines, one file with CSS/JS and no remote assets. Preserve immutable data/history.json facts and working engine cases. Known prechecks needing attention: http-origin-boundary, sse-initial-update, ui-interactive-game. Inspect/fix concrete server origin or SSE cleanup bugs if necessary: own-server loopback Origin only or omitted; foreign403; SSE initial and updated snapshots; close all SSE sockets idempotently. Use native file tools only, no processes/subagents/external services. This is an explicitly authorized completion task. File focus is not ownership. Do not replace the whole working project or add scaffolding.';
@@ -25,7 +25,7 @@ async function priorMetadata(path){
 export async function runGameRepair({profile,buildRoot,priorEvidencePath,onUpdate=()=>{},signal,deadlineMs=480000,runtime={}}){
  if(!profile?.model||typeof buildRoot!=='string'||typeof priorEvidencePath!=='string'||!Number.isFinite(deadlineMs)||deadlineMs<=0||deadlineMs>480000)throw new TypeError('Invalid repair assignment');
  const root=await realpath(resolve(buildRoot)),id=randomUUID(),artifactRoot=resolve(import.meta.dirname,'../artifacts',id);
- const start=runtime.startOpenCode??startOpenCode,Client=runtime.OpenCodeClient??OpenCodeClient,observe=runtime.observeFiles??observeFiles,verify=runtime.verifyGangCode??verifyGangCode;
+ const start=runtime.startOpenCode??startOpenCode,Client=runtime.OpenCodeClient??OpenCodeClient,observe=runtime.observeFiles??observeFiles,verify=runtime.verifyIngress??verifyIngress;
  await mkdir(artifactRoot,{recursive:true,mode:0o700});
  const evidencePath=join(artifactRoot,'repair-evidence.json'),state=new WorkspaceState({epoch:randomUUID()}),started=Date.now();
  const controller=new AbortController(),stopSignal=AbortSignal.any([controller.signal,AbortSignal.timeout(deadlineMs),...(signal?[signal]:[])]);

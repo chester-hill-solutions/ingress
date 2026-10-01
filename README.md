@@ -1,4 +1,4 @@
-# GangCode
+# Ingress
 
 A standalone experiment in agents working in one native workspace with shared awareness.
 No file claims. Native observations describe activity and changed bytes; they do not
@@ -30,7 +30,7 @@ Private working repository, Apache-2.0. Source provenance is in
 [the transfer record](docs/source-provenance.json).
 
 
-GangCode dispatches a declared OpenCode squad into one shared project and can assign
+Ingress dispatches a declared OpenCode squad into one shared project and can assign
 an integration agent after independent prechecks. The default runs the whole roster
 concurrently; an explicit concurrency setting is optional. Live scale experiments
 and deterministic relay load tests have separate evidence.
@@ -57,10 +57,10 @@ The first command runs every assigned builder concurrently by default. The secon
 runs deterministic participants and zero models; it is a relay/context benchmark.
 The generated game passed58 independent checks and a browser play-through. Eight
 of seventeen native tasks reported success and nine reached their deadlines; both
-execution outcomes and correct outputs are retained. See [the execution record](docs/gangcode-outcomes.json).
+execution outcomes and correct outputs are retained. See [the execution record](docs/ingress-outcomes.json).
 
 
-The repeated native tuning study compares stock OpenCode and GangCode teams across
+The repeated native tuning study compares stock OpenCode and Ingress teams across
 six fixture families, with solo/pair baselines, four/eight-agent teams, mixed models,
 context budgets and refresh rates. See [the protocol](docs/benchmark-protocol.md)
 [the results](docs/benchmark-results.md) and [the outcome ledger](docs/benchmark-outcomes.json).
@@ -77,7 +77,7 @@ activity stays unknown; filters apply to the bounded comparison/activity views.
 
 ## Large missions and blind tasting
 
-Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/GangCode rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md).
+Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/Ingress rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md).
 
 Executable mission grading requires Node 26, because submission isolation relies on
 that runtime's permission model to deny writes, private reads, child processes and

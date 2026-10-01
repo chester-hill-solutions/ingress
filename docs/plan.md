@@ -2,7 +2,7 @@
 
 This repository is the owner of RT scope/status. Stow storage release work is separate.
 The [repository boundary](realtime-repository-boundary.md) now distinguishes Stow-owned
-storage facts/durable delivery from GangCode-owned agent meaning, context and coordination.
+storage facts/durable delivery from Ingress-owned agent meaning, context and coordination.
 Notification integration follows qualified public Stow capabilities; the standalone
 observer remains available. This scope clarification changes no RT completion status.
 See [product](realtime-multiplayer-plan.md), [engineering](realtime-multiplayer-engineering.md),
@@ -30,10 +30,10 @@ The initial injection contract is in [harness context](harness-context.md).
 
 Current observations are in [CAPABILITIES](CAPABILITIES.md); all assigned diagnostics remain retained.
 
-## GangCode squad increment
+## Ingress squad increment
 
 User-directed expansion: build an unrelated Canadian history game, Canada: Crossroads,
-with five real OpenCode specialists in one shared workspace. GangCode names the crew.
+with five real OpenCode specialists in one shared workspace. Ingress names the crew.
 Four builders cover historical presentation, engine, API and interface; a separate
 integrator follows independent checks. No file claims or per-change model decisions.
 
@@ -91,9 +91,9 @@ actor to distinguish request/body and post-body settlement intervals; this run
 cannot retrospectively provide those timings.
 
 The playable artifact is examples/canada-crossroads. Run npm run play. The source
-and verification records are gangcode-game-provenance.json and
-gangcode-game-verification.json. Live/deterministic results are separate in
-gangcode-outcomes.json. Qualification of reliable benefit and larger native
+and verification records are ingress-game-provenance.json and
+ingress-game-verification.json. Live/deterministic results are separate in
+ingress-outcomes.json. Qualification of reliable benefit and larger native
 cohorts remains open.
 
 ## Native OpenCode integration investigation
@@ -125,4 +125,4 @@ Revision4 preserves model-native tool menus, observes bounded patch targets and 
 
 Revision4 completed all162 assignments:91 native completions,71 deadline outcomes,71 correct-completed and113 independently correct final artifacts. All owned processes stopped and15 runtime fingerprints verified. [Results and limits](benchmark-results.md) retain six unqualified comparison rows and every historical attempt. No consistent coordination advantage or RT-1 qualification is established. The refreshed live dashboard passed213 deterministic package tests and browser QA.
 
-The user challenged the90-second deadline and whether the fixtures constitute gang-sized missions. Both limitations are explicit in the results: this budget is operational, and two-goal fixtures with expanded4/8-role rosters measure possible oversubscription. Follow-up comparative work needs a substantial shared mission, identical acceptance criteria across solo/stock/GangCode, controlled integration/dependency changes, correctness over time and first-correct versus settlement/cost measurements over predeclared multiple budgets. No follow-up real-model study has been admitted.
+The user challenged the90-second deadline and whether the fixtures constitute many-agent missions. Both limitations are explicit in the results: this budget is operational, and two-goal fixtures with expanded4/8-role rosters measure possible oversubscription. Follow-up comparative work needs a substantial shared mission, identical acceptance criteria across solo/stock/Ingress, controlled integration/dependency changes, correctness over time and first-correct versus settlement/cost measurements over predeclared multiple budgets. No follow-up real-model study has been admitted.

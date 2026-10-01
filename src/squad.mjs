@@ -148,8 +148,8 @@ export async function runRealSquad({ profile, fixture: providedFixture, preserve
   if (buildRoot && fixtureRoot && resolve(buildRoot) !== resolve(fixtureRoot)) throw new TypeError('ambiguous_squad_root');
   const validatedFixture = providedFixture ? validateSquadFixture(providedFixture) : null;
   if (validatedFixture && maxConcurrentNative !== undefined && maxConcurrentNative > validatedFixture.tasks.length) throw Object.assign(new RangeError('squad_concurrency_exceeds_roster'), { code: 'squad_concurrency_exceeds_roster' });
-  const seed = preserveExisting ? null : providedSeed ?? runtime.seedGangCode ?? (!providedFixture ? (await import('../fixtures/gangcode.mjs')).seedGangCode : null);
-  const verify = providedVerify ?? runtime.verifyGangCode ?? (await import('../fixtures/gangcode-verifier.mjs')).verifyGangCode;
+  const seed = preserveExisting ? null : providedSeed ?? runtime.seedIngress ?? (!providedFixture ? (await import('../fixtures/ingress.mjs')).seedIngress : null);
+  const verify = providedVerify ?? runtime.verifyIngress ?? (await import('../fixtures/ingress-verifier.mjs')).verifyIngress;
   if (typeof verify !== 'function' || seed && typeof seed !== 'function') throw new TypeError('invalid_squad_callback');
   const start = runtime.startOpenCode ?? startOpenCode;
   const Client = runtime.OpenCodeClient ?? OpenCodeClient;

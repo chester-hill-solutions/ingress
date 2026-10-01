@@ -45,7 +45,7 @@ const provider = createServer(async (req, res) => {
     }
     const body = JSON.parse(text), messages = JSON.stringify(body.messages ?? []);
     const matches = [...messages.matchAll(/GANGCODE_PROBE:([a-zA-Z0-9_-]{1,160}):(\d+)/g)];
-    const header = req.headers['x-gangcode-probe-session'];
+    const header = req.headers['x-ingress-probe-session'];
     const sessionID = typeof header === 'string' && /^[a-zA-Z0-9_-]{1,160}$/.test(header) ? header : null;
     const marker = matches[0];
     providerRequests.push({ path: req.url === '/v1/chat/completions' ? req.url : 'other', sessionID,
@@ -74,15 +74,15 @@ const provider = createServer(async (req, res) => {
 });
 try {
   evidence.sourceSHA256 = createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
-  await mkdir(join(workspace, '.opencode/plugins/gangcode'), { recursive: true });
+  await mkdir(join(workspace, '.opencode/plugins/ingress'), { recursive: true });
   await writeFile(revision, '1');
   await writeFile(join(workspace, 'probe.txt'), 'deterministic fixture\n');
   // No plugin package install: the pinned Promise Plugin.define returns this object shape.
-  await writeFile(join(workspace, '.opencode/plugins/gangcode/index.ts'), `
+  await writeFile(join(workspace, '.opencode/plugins/ingress/index.ts'), `
 import {appendFileSync,readFileSync} from 'node:fs';
 let count=0;
 const receipt=value=>{if(count++<64)appendFileSync(${JSON.stringify(receipts)},JSON.stringify(value)+'\\n');};
-export default {id:'gangcode.compatibility',async setup(ctx){
+export default {id:'ingress.compatibility',async setup(ctx){
  receipt({type:'setup',version:ctx.app.version});
  await ctx.session.hook('context',event=>{
   const revision=Number(readFileSync(${JSON.stringify(revision)},'utf8'));
@@ -94,7 +94,7 @@ export default {id:'gangcode.compatibility',async setup(ctx){
  await ctx.session.hook('http.request',event=>{
   const target=readFileSync(${JSON.stringify(route)},'utf8')+'/chat/completions';
   event.request=new Request(target,event.request);
-  event.request.headers.set('x-gangcode-probe-session',event.sessionID);
+  event.request.headers.set('x-ingress-probe-session',event.sessionID);
   receipt({type:'request',sessionID:event.sessionID,kind:event.kind,loopback:new URL(event.request.url).hostname==='127.0.0.1'});
  });
  await ctx.tool.hook('execute.before',event=>receipt({type:'before',sessionID:event.sessionID,tool:event.tool}));

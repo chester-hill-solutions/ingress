@@ -32,7 +32,7 @@ const references={
     'brief.mjs': `import {rankAlerts} from './alerts.mjs';export function buildBrief(alerts){return {title:'Incident brief',items:rankAlerts(alerts),needsAction:alerts.some(a=>a.severity==='critical')};}`,
   },
 };
-async function seed(fixture,files=fixture.files){const root=await mkdtemp(join(tmpdir(),'gangcode-benchmark-test-'));for(const[path,text]of Object.entries(files)){await mkdir(dirname(join(root,path)),{recursive:true});await writeFile(join(root,path),text);}return root;}
+async function seed(fixture,files=fixture.files){const root=await mkdtemp(join(tmpdir(),'ingress-benchmark-test-'));for(const[path,text]of Object.entries(files)){await mkdir(dirname(join(root,path)),{recursive:true});await writeFile(join(root,path),text);}return root;}
 
 test('six complete bounded two-agent fixture contracts have editable dependency seams without ownership',()=>{
   assert.equal(benchmarkFixtures.length,6);assert.equal(new Set(benchmarkFixtures.map(f=>f.id)).size,6);

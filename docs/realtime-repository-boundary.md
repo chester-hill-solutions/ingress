@@ -6,7 +6,7 @@ This repository now owns the RT plan. Stow retains source evidence and a pointer
 
 ## Ownership
 
-GangCode owns native harness observation, participant presence/intentions, agent
+Ingress owns native harness observation, participant presence/intentions, agent
 read tracking, semantic dependency impact, relevant context, decisions, scheduling,
 harness adapters, controls, shared editing, UI and its evaluation apparatus. It has
 its own build, lockfile, tests, CI and release decisions.
@@ -14,10 +14,10 @@ its own build, lockfile, tests, CI and release decisions.
 Stow owns storage identity, supported guarded-save admission, saved artifacts,
 retention, transfer and recovery. Its accepted expansion also owns generic content
 reconciliation, durable storage subscriptions/replay, immutable ready reports and
-optional webhook delivery; those notification capabilities remain planned. GangCode
+optional webhook delivery; those notification capabilities remain planned. Ingress
 consumes qualified storage facts and decides what they mean for active work.
 
-The current boundary is reconciled in the [ownership/integration reference](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/gangcode-stow-boundary.md)
+The current boundary is reconciled in the [ownership/integration reference](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/ingress-stow-boundary.md)
 and Stow's [consolidated plan](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/storage-foundation-plan.md). The
 [original ADR 0014 snapshot](reference/stow-storage-boundary.md) remains dated
 provenance; later Stow ADRs 0015/0016 extend it. This boundary update schedules no
@@ -43,7 +43,7 @@ integration follows at RT-5, through a bounded storage-adapter contract.
   that import cannot cross the new package boundary. Implement/port caller-owned
   supervision with provenance and its termination tests, or use a qualified harness
   lifecycle API. Do not expose a storage-internal helper merely for migration.
-- GangCode owns the meaning and lifecycle of task, presence, context and control
+- Ingress owns the meaning and lifecycle of task, presence, context and control
   state; selected versioned artifacts may be persisted through Stow. Do not duplicate
   Stow's storage notification/save receipts or interpret its private registry.
   Provider credentials, live process handles and telemetry endpoint secrets remain

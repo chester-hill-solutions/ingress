@@ -12,19 +12,19 @@ The following table uses the same three representative families—shared-feature
 
 | Model | Configuration | Correct + completed / assigned | Correct artifacts | Deadlines | Correct-completed median (n) | Correct-artifact code lines median (n) |
 |---|---|---:|---:|---:|---|---|
-| DeepSeek V4 Flash | gang-pair | 8 / 9 | 8 | 0 | 33.9s (8) | 26 (8) |
+| DeepSeek V4 Flash | ingress-pair | 8 / 9 | 8 | 0 | 33.9s (8) | 26 (8) |
 | DeepSeek V4 Flash | stock-parallel-pair | 8 / 9 | 8 | 0 | 47.4s (8) | 25.5 (8) |
 | DeepSeek V4 Flash | stock-solo | 8 / 9 | 9 | 1 | 27.2s (8) | 30 (9) |
-| DeepSeek + Nano | gang-pair | 4 / 9 | 4 | 0 | 51.7s (4) | 35 (4) |
-| GPT-5 Nano | gang-pair | 4 / 9 | 4 | 0 | 32.9s (4) | 33 (4) |
+| DeepSeek + Nano | ingress-pair | 4 / 9 | 4 | 0 | 51.7s (4) | 35 (4) |
+| GPT-5 Nano | ingress-pair | 4 / 9 | 4 | 0 | 32.9s (4) | 33 (4) |
 | GPT-5 Nano | stock-parallel-pair | 7 / 9 | 7 | 0 | 44.8s (7) | 40 (7) |
 | GPT-5 Nano | stock-solo | 3 / 9 | 3 | 0 | 32.4s (3) | 42 (3) |
 | Space Bunny | builder-reviewer | 1 / 9 | 5 | 8 | 55.3s (1) | 30 (5) |
-| Space Bunny | gang-eight | 0 / 9 | 8 | 9 | Unknown (0) | 33.5 (8) |
-| Space Bunny | gang-four | 1 / 9 | 8 | 8 | 81.1s (1) | 35.5 (8) |
-| Space Bunny | gang-pair | 4 / 9 | 7 | 5 | 66.4s (4) | 30 (7) |
-| Space Bunny | gang-pair-slow-updates | 5 / 9 | 6 | 4 | 85.3s (5) | 26 (6) |
-| Space Bunny | gang-pair-small-context | 4 / 9 | 6 | 5 | 55.2s (4) | 19 (6) |
+| Space Bunny | ingress-eight | 0 / 9 | 8 | 9 | Unknown (0) | 33.5 (8) |
+| Space Bunny | ingress-four | 1 / 9 | 8 | 8 | 81.1s (1) | 35.5 (8) |
+| Space Bunny | ingress-pair | 4 / 9 | 7 | 5 | 66.4s (4) | 30 (7) |
+| Space Bunny | ingress-pair-slow-updates | 5 / 9 | 6 | 4 | 85.3s (5) | 26 (6) |
+| Space Bunny | ingress-pair-small-context | 4 / 9 | 6 | 5 | 55.2s (4) | 19 (6) |
 | Space Bunny | stock-parallel-pair | 3 / 9 | 5 | 6 | 62.5s (3) | 34 (5) |
 | Space Bunny | stock-solo | 5 / 9 | 6 | 4 | 49.7s (5) | 61.5 (6) |
 
@@ -32,7 +32,7 @@ The following table uses the same three representative families—shared-feature
 
 Pairs require the same fixture, repeat, model set, seed and complete work goal. Results retain unsuccessful and deadline outcomes. Coverage-qualified results are shown separately, because excluding malformed calls or non-admitted roles can introduce selection bias. Mixed-model teams have no matching mixed stock control and remain unpaired.
 
-| Model | Matched pairs | Gang wins / stock wins / ties on correct completion | Qualified pairs: wins / losses / ties | Completed-pair timing difference, Gang minus stock |
+| Model | Matched pairs | Treated wins / stock wins / ties on correct completion | Qualified pairs: wins / losses / ties | Completed-pair timing difference, treated minus stock |
 |---|---:|---|---|---|
 | GPT-5 Nano | 9 | 0 / 3 / 6 | 8: 0 / 2 / 6 | -6.5s median, n=9 |
 | Space Bunny | 18 | 6 / 4 / 8 | 18: 6 / 4 / 8 | +16.4s median, n=1 |
@@ -68,10 +68,10 @@ Each requested-model pair configuration below attempted the same three families 
 |---|---|---:|---:|---:|---:|---:|
 | gpt-5-nano | stock-parallel-pair | 98,405 | 28,776 | 121 | $0.0368 | 7 / 9 |
 | deepseek-v4-flash | stock-parallel-pair | 81,205 | 122,145 | 93 | $0.0582 | 8 / 9 |
-| gpt-5-nano | gang-pair | 289,420 | 26,515 | 92 | $0.0428 | 4 / 9 |
-| deepseek-v4-flash | gang-pair | 601,396 | 104,135 | 97 | $0.1159 | 8 / 9 |
+| gpt-5-nano | ingress-pair | 289,420 | 26,515 | 92 | $0.0428 | 4 / 9 |
+| deepseek-v4-flash | ingress-pair | 601,396 | 104,135 | 97 | $0.1159 | 8 / 9 |
 
-Nano GangCode pairs used about 2.9 times the reported input of stock pairs; DeepSeek pairs used about 7.4 times. Reported cost increased about 16% and 99%, respectively. No token-efficiency benefit is established. The measured configuration refreshes a bounded whole-context envelope at model-request boundaries. Stable initial context, compact subsequent changes, relevant peer details and actual cache/reasoning accounting are refinement candidates, not changes to this frozen run.
+Nano Ingress pairs used about 2.9 times the reported input of stock pairs; DeepSeek pairs used about 7.4 times. Reported cost increased about 16% and 99%, respectively. No token-efficiency benefit is established. The measured configuration refreshes a bounded whole-context envelope at model-request boundaries. Stable initial context, compact subsequent changes, relevant peer details and actual cache/reasoning accounting are refinement candidates, not changes to this frozen run.
 
 Stow storage operations themselves call no model. Its local [checkpoint profile](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/plan.md) measured 129 ms median for 256 files / 8 MiB and 1.74 s for 4,096 files / 64 MiB across five captures, with an 11.10 s first capture for the larger fixture. Those timings describe storage, separately from model/token spend; full-copy retention remains proportional to payload per checkpoint.
 
@@ -79,6 +79,6 @@ Stow storage operations themselves call no model. Its local [checkpoint profile]
 
 The 90-second deadline was a predeclared operational budget, not a validated adequate completion window. Predeclaration supports reproducibility but does not establish eventual completion time or inability to finish. The eight-agent result means no team settled within this budget; eight correct artifacts out of nine make the distinction material.
 
-These are small apparatus fixtures with two original functional goals, not projects with eight substantial workstreams. Expanding roles across validation and integration concerns can oversubscribe a small mission. The run verifies concurrent machinery and measures observed overhead; it is weak evidence for the value of gang-sized teams on gang-sized work.
+These are small apparatus fixtures with two original functional goals, not projects with eight substantial workstreams. Expanding roles across validation and integration concerns can oversubscribe a small mission. The run verifies concurrent machinery and measures observed overhead; it is weak evidence for the value of many-agent teams on many-agent work.
 
 The next workload should have independent substantial components, shared interfaces and integration dependencies, plus a controlled requirement/dependency change. All configurations must receive the same overall mission and acceptance criteria. Measure time to first independently verified correct immutable snapshot separately from native team settlement, correctness over time and reported token/cost to each milestone. Use several predeclared budgets (e.g. 1/3/10 minutes), maintain censored observations and isolate workload/provider contention before general speed or efficiency claims. This follow-up is proposed; no new model run has started.

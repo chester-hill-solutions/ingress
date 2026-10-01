@@ -34,7 +34,7 @@ Later causal updates use the same envelope. Native message admission, inbox deli
 and exact ID/text presence in projected conversation context are separate evidence.
 Presence does not establish that a provider consumed it or that the agent adapted.
 
-## GangCode diagnostic extension
+## Ingress diagnostic extension
 
 The Canadian-history game experiment reached sixteen simultaneous native
 OpenCode executions. The sixteen-builder phase and one later integrator are
@@ -48,9 +48,9 @@ All17 initial envelopes were delivered before the first tool event. Exact native
 projection remained observable for8;9 deadline outcomes leave projection unknown.
 39 awareness notices were admitted,31 native-delivered and8 accepted/pending.
 These counts do not establish provider consumption or comparative benefit.
-See [all assigned game outcomes](gangcode-outcomes.json),
-[source provenance](gangcode-game-provenance.json) and
-[promoted game verification](gangcode-game-verification.json).
+See [all assigned game outcomes](ingress-outcomes.json),
+[source provenance](ingress-game-provenance.json) and
+[promoted game verification](ingress-game-verification.json).
 
 The current runtime defaults to the entire declared roster concurrently, with an
 explicit lower concurrency optional. State capacity is checked before launch;

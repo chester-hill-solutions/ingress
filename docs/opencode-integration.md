@@ -1,6 +1,6 @@
 # OpenCode integration model
 
-Decision: keep GangCode as the collaboration product and integrate with native
+Decision: keep Ingress as the collaboration product and integrate with native
 OpenCode hooks. Start with one scoped native host serving multiple sessions; keep
 the execution host replaceable. A fork is not justified by the evidence so far.
 This is a design and compatibility result, not a completed squad-runtime migration.
@@ -55,7 +55,7 @@ assertions passed. These failures and earlier proof limitations remain retained.
 
 ## Product and execution boundary
 
-GangCode owns the workspace, team roster, tasks and human directions; rooms and
+Ingress owns the workspace, team roster, tasks and human directions; rooms and
 last observed locations; dependency/read evidence; subscriptions and bounded
 context; task generations; task admission policy; evidence and live view.
 OpenCode owns each session's inference loop, providers, tools, permissions,
@@ -64,11 +64,11 @@ continuations, compaction and native execution lifecycle.
 ```text
 Human controls / squad supervisor
              |
-GangCode task queue, identities, workspace state and context cache
+Ingress task queue, identities, workspace state and context cache
              |                                  ^
       one native host                    file reconciliation
              |
-     location-scoped GangCode plugin
+     location-scoped Ingress plugin
              |
      separate OpenCode sessions
        context hook -> provider request
@@ -86,7 +86,7 @@ read bases and coverage. Unknown positions stay unknown. No ownership claims.
 | Need | OpenCode seam | Qualification / remaining gap |
 | --- | --- | --- |
 | Fresh context on every primary turn | session context hook | Installed two-session continuation verified. Source also refreshes retries; retry behavior still needs adapter tests. |
-| Initial task and room information | GangCode registration plus initial envelope | Preserve the existing initial contract; the smoke uses synthetic markers, not the full production envelope. |
+| Initial task and room information | Ingress registration plus initial envelope | Preserve the existing initial contract; the smoke uses synthetic markers, not the full production envelope. |
 | Observe tool access | tool execute.before / execute.after | Installed native successful read verified. Tool call carries session, assistant-message and call IDs. Completion is not exact byte attribution. |
 | Retain awareness after compaction | separate compaction hook plus subsequent primary injection | Source-supported; untested installed behavior. Current room truth should be rebuilt, not trusted to a historical summary. |
 | Human steer / queue | native prompt delivery modes | Source-supported and existing admission receipts; active-task adaptation remains unqualified. |
@@ -127,12 +127,12 @@ listener per actor. Moving to one host removes repeated runtime/catalog/startup
 work; it does not speed provider inference. Benchmark startup, dispatch/context
 p95, queue lag, process memory and productive outcomes separately.
 
-## Controls need a GangCode admission layer
+## Controls need a Ingress admission layer
 
 Steer is consumed at the next eligible model-step boundary. It does not cancel an
 in-flight provider request or tool immediately. Queue becomes eligible at an input
 boundary; resume:false suppresses waking, but an already-running drain can still
-consume that item later. Keep future tasks in GangCode's queue until eligible for
+consume that item later. Keep future tasks in Ingress's queue until eligible for
 admission. Routine workspace awareness belongs in the context hook.
 
 Use a local control identity including workspace epoch, actor, task generation and
@@ -183,7 +183,7 @@ HTTP router with no listener. Its pinned build targets Node ESM and includes a
 Node SQLite implementation; the published dependency closure has not been imported
 or exercised here. This is an optional host implementation, not a required first
 migration. It brings OpenCode dependencies, storage choices and host failure into
-GangCode's process. Prove exact platform/runtime startup and close before adopting.
+Ingress's process. Prove exact platform/runtime startup and close before adopting.
 
 A fork needs a reproducible required contract that supported hooks, caller-side
 admission, dedicated sessions and bounded hosting cannot satisfy. Candidates

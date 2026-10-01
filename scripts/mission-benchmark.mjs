@@ -11,10 +11,10 @@ import { readMissionFile } from '../src/mission-verifier.mjs';
 import { createBlindStudy, freezeBlindSample, saveBlindJSON } from '../src/blind-review.mjs';
 
 const args = process.argv.slice(2), keys = ['--repeats=', '--parallel=', '--deadline-ms=', '--seed=', '--configs=', '--missions='];
-if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,gang-four]');
+if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,ingress-four]');
 const option = (key, fallback, min, max) => { const text = args.find(arg => arg.startsWith(key))?.slice(key.length); if (text === undefined) return fallback; const value = Number(text); if (!/^\d+$/.test(text) || !Number.isSafeInteger(value) || value < min || value > max) throw Error('invalid_mission_option'); return value; };
 const repeats = option('--repeats=',1,1,10), parallel = option('--parallel=',6,1,12), deadlineMs = option('--deadline-ms=',900000,1000,1800000), seed = option('--seed=',104729,0,4294967295);
-const configs = args.find(arg => arg.startsWith('--configs='))?.slice(10).split(',') ?? ['stock-four','gang-four'];
+const configs = args.find(arg => arg.startsWith('--configs='))?.slice(10).split(',') ?? ['stock-four','ingress-four'];
 const ids = args.find(arg => arg.startsWith('--missions='))?.slice(11).split(',');
 if (ids && (new Set(ids).size !== ids.length || ids.some(id => !missionFixtures.some(value => value.id === id)))) throw Error('unknown_mission_selection');
 const fixtures = ids ? missionFixtures.filter(value => ids.includes(value.id)) : missionFixtures;
@@ -26,7 +26,7 @@ const protocol = { purpose: 'Exploratory large-workflow benchmark and blind huma
   cutoffBasis: 'Operational safety cap including setup. Native completion and independent artifact correctness are separate; unfinished attempts are retained and rated. This cap is not a validated task-adequacy claim.',
   observationBandsMs: [60000,180000,600000].filter(value => value < deadlineMs), snapshotBasis: 'Double-collected stable content then immutable grading copy. Not an atomic filesystem snapshot; sampled success bounds first observed correctness, not exact time to completion.',
   directiveEquality: 'All files and the complete MISSION.md directive are identical across configurations. Stream allocation differs by 1/2/4/8-agent layout. Every roster runs concurrently with no exclusive file ownership.',
-  toolPolicy: 'Stock and GangCode both retain each model native file tools. No shell, packages or nested agents. Public output invocation by independent grader only; no private oracle feedback or rescue prompts.',
+  toolPolicy: 'Stock and Ingress both retain each model native file tools. No shell, packages or nested agents. Public output invocation by independent grader only; no private oracle feedback or rescue prompts.',
   blinding: 'Random labels and independent display order; authorship and measured scores/time/usage withheld until a saved human rating and explicit reveal. All attempted outputs are preserved.',
   humanDimensions: ['usefulness','completeness','clarity','coherence','overall'], automaticQuality: 'Criterion-level behavior/calculation/support checks; prose quality is assessed by humans. Lexical complexity is descriptive, not a quality score.',
   usageBasis: 'Closed native step observations only; cache/reasoning and interrupted unreported usage are not billing reconciled.',

@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {get} from 'node:http';
 import {summarizeBenchmarkView,loadBenchmarkSnapshot,startBenchmarkDashboard} from '../src/benchmark-dashboard.mjs';
 
-const evidence=()=>({status:'running',protocol:{repeats:3,parallelCohorts:12,actorsPerCohort:'1,2,4,8',deadlineMs:90000,conditions:['stock-solo','gang-pair'],models:['opencode/space-bunny-free']},results:[{id:'one',fixtureID:'dependencies',configID:'gang-pair',condition:'awareness-on',modelSet:'opencode/space-bunny-free',outcome:'running',correct:false,actors:[{id:'builder',admitted:true,outcome:'not-run',sessionID:'PRIVATE_SESSION'}],root:'/PRIVATE_WORKSPACE',context:'PRIVATE_PROMPT',password:'PRIVATE_SECRET',nativeEvents:[{text:'PRIVATE_MODEL_PROSE'}]}]});
+const evidence=()=>({status:'running',protocol:{repeats:3,parallelCohorts:12,actorsPerCohort:'1,2,4,8',deadlineMs:90000,conditions:['stock-solo','ingress-pair'],models:['opencode/space-bunny-free']},results:[{id:'one',fixtureID:'dependencies',configID:'ingress-pair',condition:'awareness-on',modelSet:'opencode/space-bunny-free',outcome:'running',correct:false,actors:[{id:'builder',admitted:true,outcome:'not-run',sessionID:'PRIVATE_SESSION'}],root:'/PRIVATE_WORKSPACE',context:'PRIVATE_PROMPT',password:'PRIVATE_SECRET',nativeEvents:[{text:'PRIVATE_MODEL_PROSE'}]}]});
 
 test('projection exposes recorded counts while withholding contexts, paths, credentials and sessions',()=>{
  const snapshot=summarizeBenchmarkView(evidence(),{now:1100,modifiedAt:1000});
@@ -31,7 +31,7 @@ test('safe role/model allocation and context capacities preserve zero without ex
  row.actors=[{id:'builder',role:'Builder',model:{providerID:'opencode',id:'space-bunny-free'},outcome:'succeeded',admitted:true,context:{maxBytes:4096,text:'PRIVATE_PROMPT'},sessionID:'PRIVATE_SESSION'},{id:'reviewer',role:'Reviewer',model:{providerID:'opencode',id:'deepseek-v4-flash'},outcome:'not-run',admitted:false}];row.modelSet='opencode/deepseek-v4-flash+opencode/space-bunny-free';
  const snapshot=summarizeBenchmarkView(value),latest=snapshot.latest[0];
  assert.deepEqual(latest.actorBrief.map(actor=>[actor.id,actor.role,actor.modelLabel]),[['builder','Builder','Space Bunny'],['reviewer','Reviewer','DeepSeek V4 Flash']]);
- assert.equal(latest.actorBrief[1].contextObservedBytes,null);assert.equal(latest.context.observedMaxBytes,4096);assert.equal(latest.context.budgetBytes,8192);assert.equal(latest.context.cacheIntervalMs,500);assert.equal(latest.title,'GangCode · two specialists');
+ assert.equal(latest.actorBrief[1].contextObservedBytes,null);assert.equal(latest.context.observedMaxBytes,4096);assert.equal(latest.context.budgetBytes,8192);assert.equal(latest.context.cacheIntervalMs,500);assert.equal(latest.title,'Ingress · two specialists');
  row.contextBytes=0;row.cacheIntervalMs=0;row.nativePlugin=false;const stock=summarizeBenchmarkView(value).latest[0];assert.equal(stock.context.budgetBytes,0);assert.equal(stock.context.cacheIntervalMs,0);assert.equal(stock.context.enabled,false);
  assert.ok(!JSON.stringify(snapshot).includes('PRIVATE_'));
 });
@@ -91,7 +91,7 @@ test('SSE supplies initial state, skips unchanged polls and publishes only sanit
 
 test('large snapshots survive several updates on the same SSE connection despite write backpressure',async()=>{
  const root=await mkdtemp(join(tmpdir(),'benchmark-large-sse-'));const path=join(root,'evidence.json'),value=evidence();
- value.results=Array.from({length:32},(_,index)=>({id:'cohort-'+index,fixtureID:'fixture',configID:'gang-config-'+index,condition:'awareness-on',modelSet:'opencode/'+('model-'.repeat(12)),outcome:'running',actors:Array.from({length:8},(_,actor)=>({id:'actor-'+actor+'-'+('x'.repeat(60)),role:'Builder '+('focus '.repeat(12)),model:{providerID:'opencode',id:'model-'.repeat(12)},outcome:'not-run',admitted:true,context:{maxBytes:8000}}))}));
+ value.results=Array.from({length:32},(_,index)=>({id:'cohort-'+index,fixtureID:'fixture',configID:'ingress-config-'+index,condition:'awareness-on',modelSet:'opencode/'+('model-'.repeat(12)),outcome:'running',actors:Array.from({length:8},(_,actor)=>({id:'actor-'+actor+'-'+('x'.repeat(60)),role:'Builder '+('focus '.repeat(12)),model:{providerID:'opencode',id:'model-'.repeat(12)},outcome:'not-run',admitted:true,context:{maxBytes:8000}}))}));
  const bytes=Buffer.byteLength(JSON.stringify(summarizeBenchmarkView(value,{modifiedAt:Date.now()})));assert.ok(bytes>64*1024,`fixture payload ${bytes} exceeds normal HTTP write highWaterMark`);assert.ok(bytes<256*1024);
  await writeFile(path,JSON.stringify(value));const view=await startBenchmarkDashboard({evidencePath:path}),abort=new AbortController();let reader,buffer='';
  const frame=async()=>{for(;;){const end=buffer.indexOf('\n\n');if(end>=0){const data=buffer.slice(0,end);buffer=buffer.slice(end+2);return JSON.parse(data.slice(6));}const chunk=await reader.read();assert.equal(chunk.done,false,'the original SSE connection must remain open');buffer+=new TextDecoder().decode(chunk.value);}};

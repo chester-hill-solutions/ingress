@@ -2,14 +2,14 @@
 
 These six bounded missions exercise eight substantive streams apiece, with integration dependencies. They are larger than the original two-goal fixtures. Research uses frozen evidence and structured entailment checks; math uses exact oracles and certificate checking; SaaS uses executable workflows, isolation, transactions, replay and rendered output. [Research](research.md), [math](math.md), and [SaaS](saas.md) describe their public contracts and limits.
 
-Every contender for a mission receives **the same complete MISSION.md directive and identical seeded files**. A solo builder receives all eight streams, two builders receive four each, four receive two each, and eight receive one each. All actors in a roster start in a single concurrent phase. These are interests and responsibilities, never exclusive file claims. Stock and GangCode rosters of the same size have identical actor assignments and the same model's native file menu. GangCode adds its bounded awareness hook. Harnesses can still overwrite each other; observation is not a write fence.
+Every contender for a mission receives **the same complete MISSION.md directive and identical seeded files**. A solo builder receives all eight streams, two builders receive four each, four receive two each, and eight receive one each. All actors in a roster start in a single concurrent phase. These are interests and responsibilities, never exclusive file claims. Stock and Ingress rosters of the same size have identical actor assignments and the same model's native file menu. Ingress adds its bounded awareness hook. Harnesses can still overwrite each other; observation is not a write fence.
 
-The full study matrix is six missions × two requested models × seven configurations × three repeats = **252 allocated cohorts / 1,044 actor assignments**. Configurations are stock solo and matched stock/GangCode rosters of two, four and eight. The first blind flight uses both models, six missions and the matched four-builder configurations once: **24 anonymous results / 96 actors**. It is a feasibility and evaluation pilot, not a repeated estimate of speedup or product benefit. A repeat consumes a new assignment and label, not a retry of a selected successful output. Source fingerprints, assignment order, seed and operational budgets are persisted before provider access.
+The full study matrix is six missions × two requested models × seven configurations × three repeats = **252 allocated cohorts / 1,044 actor assignments**. Configurations are stock solo and matched stock/Ingress rosters of two, four and eight. The first blind flight uses both models, six missions and the matched four-builder configurations once: **24 anonymous results / 96 actors**. It is a feasibility and evaluation pilot, not a repeated estimate of speedup or product benefit. A repeat consumes a new assignment and label, not a retry of a selected successful output. Source fingerprints, assignment order, seed and operational budgets are persisted before provider access.
 
 ```sh
 npm run missions:plan
 npm run missions:real
-npm run missions:plan -- --repeats=3 --configs=stock-solo,stock-two,gang-two,stock-four,gang-four,stock-eight,gang-eight
+npm run missions:plan -- --repeats=3 --configs=stock-solo,stock-two,ingress-two,stock-four,ingress-four,stock-eight,ingress-eight
 npm run missions:review -- --directory=<private flight directory>
 ```
 

@@ -14,7 +14,7 @@ test('same complete directive and seed at every roster size and treatment',()=>{
   }
 });
 test('stock and treated same-size rosters have identical assignments and only awareness settings differ',()=>{
-  for(const base of missionFixtures)for(const size of ['two','four','eight']){const stock=configureMission(base,'stock-'+size),gang=configureMission(base,'gang-'+size);assert.deepEqual(stock.tasks,gang.tasks);assert.deepEqual(stock.files,gang.files);assert.equal(stock.nativePlugin,false);assert.equal(gang.nativePlugin,true);}
+  for(const base of missionFixtures)for(const size of ['two','four','eight']){const stock=configureMission(base,'stock-'+size),treated=configureMission(base,'ingress-'+size);assert.deepEqual(stock.tasks,treated.tasks);assert.deepEqual(stock.files,treated.files);assert.equal(stock.nativePlugin,false);assert.equal(treated.nativePlugin,true);}
 });
 test('full preregistered repeat matrix contains matched stock baselines at 2,4,8 and stock solo',()=>{
   const rows=assignMissions(missionFixtures);assert.equal(rows.length,252);assert.equal(rows.reduce((n,value)=>n+value.actors.length,0),1044);

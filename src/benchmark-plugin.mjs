@@ -5,7 +5,7 @@ import { extractBenchmarkToolPaths } from './benchmark-tool-paths.mjs';
 /** Diagnostic bridge: bounded metadata only; request-local context is not a durable message. */
 export async function installBenchmarkPlugin(root, bridgeDirectory) {
   const cachePath = join(bridgeDirectory, 'context.json'), receiptPath = join(bridgeDirectory, 'receipts.jsonl');
-  await mkdir(join(root, '.opencode/plugins/gangcode-benchmark'), { recursive: true });
+  await mkdir(join(root, '.opencode/plugins/ingress-benchmark'), { recursive: true });
   await writeFile(cachePath, JSON.stringify({ revision: 0, compiledAt: Date.now(), actors: {} }), { mode: 0o600 });
   await writeFile(receiptPath, '', { mode: 0o600 });
   const source = `
@@ -22,7 +22,7 @@ async function marker(request,expected){
  text+=new TextDecoder().decode(row.value);if(text.includes(expected))found=true;text=text.slice(-128);}
  return found;}finally{void reader.cancel().catch(()=>{});reader.releaseLock();}
 }
-export default {id:'gangcode.benchmark',async setup(ctx){
+export default {id:'ingress.benchmark',async setup(ctx){
  record({type:'setup',version:ctx.app.version});
  await ctx.session.hook('context',event=>{
  const began=performance.now();let current;
@@ -48,6 +48,6 @@ export default {id:'gangcode.benchmark',async setup(ctx){
  tool:event.tool,id:event.id,messageID:event.messageID,paths:targets.paths,pathsComplete:targets.complete,status:event.status});});
  return ()=>record({type:'cleanup'});
 }};`;
-  await writeFile(join(root, '.opencode/plugins/gangcode-benchmark/index.ts'), source);
+  await writeFile(join(root, '.opencode/plugins/ingress-benchmark/index.ts'), source);
   return { cachePath, receiptPath, source };
 }

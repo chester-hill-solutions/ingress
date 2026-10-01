@@ -38,8 +38,8 @@ function snapshot() {
   return { version: 2, observation: 'fresh', lifecycle: 'active', modifiedAt: 100000, evidenceStatus: 'running',
     counts: { assigned: 8, settled: 6, running: 1, checking: 0, notRun: 1, completed: 4, deadline: 2, failed: 0, cancelled: 0, artifactCorrect: 4, correctCompleted: 2 },
     native: { assigned: 16, admitted: 12, succeeded: 6, currentRunning: null }, complianceGroups: groups,
-    protocol: { repeats: 3, parallelCohorts: 12, actorsPerCohort: '1,2,4,8', deadlineMs: 90000, models: ['model/one', 'model/two'], configs: ['gang-pair', 'stock-solo'] },
-    configurations: [config('gang-pair', 'model/one'), config('stock-solo', 'model/two')], latest: [row('one', 'gang-pair', 'model/one'), row('two', 'stock-solo', 'model/two')], omittedConfigurations: 0, omittedCohorts: 3 };
+    protocol: { repeats: 3, parallelCohorts: 12, actorsPerCohort: '1,2,4,8', deadlineMs: 90000, models: ['model/one', 'model/two'], configs: ['ingress-pair', 'stock-solo'] },
+    configurations: [config('ingress-pair', 'model/one'), config('stock-solo', 'model/two')], latest: [row('one', 'ingress-pair', 'model/one'), row('two', 'stock-solo', 'model/two')], omittedConfigurations: 0, omittedCohorts: 3 };
 }
 
 test('the emitted browser script parses and the page supplies accessible section/filter controls', () => {
@@ -105,8 +105,8 @@ test('provider-shaped strings remain text and an unknown snapshot clears scoring
 
 test('the real server projection version and schema render roles/models/results through the page controller', t => {
   const ui = harness(t);
-  const view = summarizeBenchmarkView({ status: 'running', protocol: { conditions: ['gang-pair'], models: ['opencode/gpt-5-nano'], repeats: 3 }, results: [{
-    id: 'cohort-real-schema', fixtureID: 'money', configID: 'gang-pair', condition: 'awareness-on', modelSet: 'opencode/gpt-5-nano',
+  const view = summarizeBenchmarkView({ status: 'running', protocol: { conditions: ['ingress-pair'], models: ['opencode/gpt-5-nano'], repeats: 3 }, results: [{
+    id: 'cohort-real-schema', fixtureID: 'money', configID: 'ingress-pair', condition: 'awareness-on', modelSet: 'opencode/gpt-5-nano',
     outcome: 'completed', ended: '2026-09-29T12:00:00Z', correct: true, sourceCoverage: 'live-no-replay', nativePlugin: true,
     contextBytes: 8192, cacheIntervalMs: 100, elapsedMs: 1234, validComparison: true,
     verification: { correct: true, checks: [{ name: 'money_contract', passed: true }], instructionChecks: [{ name: 'no_observed_forbidden_tool_attempts', passed: true }] },

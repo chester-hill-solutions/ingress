@@ -24,16 +24,16 @@ test('seeded within-repeat scheduling is reproducible and independent of input f
 
 test('goal and seed hashes match runner configuration exactly and remain invariant across arms',()=>{
   const fixtures=new Map(benchmarkFixtures.map(f=>[f.id,f])),rows=assignBenchmarkStudy(benchmarkFixtures,{repeats:1});
-  for(const row of rows){const base=fixtures.get(row.fixtureID),configured=configureBenchmarkFixture(base,row.configID);assert.equal(row.workGoalHash,hash(configured.canonicalGoal));assert.equal(row.seedHash,hash(JSON.stringify(base.files)));assert.equal(row.actorModels.length,configured.tasks.length);assert.deepEqual(row.phases,configured.phases);assert.equal(row.condition,configured.awareness?'awareness-on':'awareness-off');assert.equal(row.system,configured.nativePlugin?'gangcode':'stock');assert.deepEqual(row.actors.map(a=>a.id),configured.tasks.map(t=>t.id));assert.deepEqual(row.actors.map(a=>a.model),row.actorModels);}
+  for(const row of rows){const base=fixtures.get(row.fixtureID),configured=configureBenchmarkFixture(base,row.configID);assert.equal(row.workGoalHash,hash(configured.canonicalGoal));assert.equal(row.seedHash,hash(JSON.stringify(base.files)));assert.equal(row.actorModels.length,configured.tasks.length);assert.deepEqual(row.phases,configured.phases);assert.equal(row.condition,configured.awareness?'awareness-on':'awareness-off');assert.equal(row.system,configured.nativePlugin?'ingress':'stock');assert.deepEqual(row.actors.map(a=>a.id),configured.tasks.map(t=>t.id));assert.deepEqual(row.actors.map(a=>a.model),row.actorModels);}
   for(const fixtureID of fixtures.keys()){const matched=rows.filter(row=>row.fixtureID===fixtureID);assert.equal(new Set(matched.map(row=>row.workGoalHash)).size,1);assert.equal(new Set(matched.map(row=>row.seedHash)).size,1);}
 });
 
 test('homogeneous and mixed models have sorted unique identities with alternating role allocations',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures),mixed=rows.filter(row=>row.studyVariant==='mixed-pair');
   assert.equal(mixed.length,9);
-  for(const row of mixed){assert.equal(row.configID,'gang-pair');assert.equal(row.modelSet,'opencode/deepseek-v4-flash+opencode/gpt-5-nano');assert.equal(new Set(row.actorModels.map(model=>model.id)).size,2);assert.ok(row.id.includes('mixed-pair'));}
+  for(const row of mixed){assert.equal(row.configID,'ingress-pair');assert.equal(row.modelSet,'opencode/deepseek-v4-flash+opencode/gpt-5-nano');assert.equal(new Set(row.actorModels.map(model=>model.id)).size,2);assert.ok(row.id.includes('mixed-pair'));}
   const shared=mixed.filter(row=>row.fixtureID==='shared-features').sort((a,b)=>a.repeat-b.repeat);assert.notDeepEqual(shared[0].actorModels,shared[1].actorModels);assert.deepEqual(shared[0].actorModels,shared[2].actorModels);
-  const extra=rows.filter(row=>row.studyVariant==='additional-model');assert.equal(extra.length,54);assert.deepEqual([...new Set(extra.map(row=>row.modelSet))].sort(),['opencode/deepseek-v4-flash','opencode/gpt-5-nano']);assert.ok(extra.every(row=>['stock-solo','stock-parallel-pair','gang-pair'].includes(row.configID)));
+  const extra=rows.filter(row=>row.studyVariant==='additional-model');assert.equal(extra.length,54);assert.deepEqual([...new Set(extra.map(row=>row.modelSet))].sort(),['opencode/deepseek-v4-flash','opencode/gpt-5-nano']);assert.ok(extra.every(row=>['stock-solo','stock-parallel-pair','ingress-pair'].includes(row.configID)));
 });
 
 test('baseline choice distinguishes matched pairs, practical alternatives and unmatched mixed arms',()=>{
@@ -77,7 +77,7 @@ test('additional candidates are explicit bounded distinct models without alias r
 
 test('each additional-model pair has an otherwise identical same-model stock parallel control',()=>{
   const rows=assignBenchmarkStudy(benchmarkFixtures);
-  const pairs=rows.filter(row=>row.studyVariant==='additional-model'&&row.configID==='gang-pair');
+  const pairs=rows.filter(row=>row.studyVariant==='additional-model'&&row.configID==='ingress-pair');
   assert.equal(pairs.length,18);
   for(const candidate of pairs){
     const control=rows.find(row=>row.repeat===candidate.repeat&&row.fixtureID===candidate.fixtureID&&row.modelSet===candidate.modelSet&&row.configID==='stock-parallel-pair');

@@ -15,8 +15,8 @@ if (concurrencyArg !== undefined && (!/^[1-9][0-9]*$/.test(concurrencyArg) || !N
 const scenario = args.find(arg => arg.startsWith('--fixture='))?.slice('--fixture='.length);
 const existingRoot = args.find(arg => arg.startsWith('--root='))?.slice('--root='.length);
 if ((scenario !== undefined && scenario !== 'extensions') || (existingRoot !== undefined && !isAbsolute(existingRoot)) || Boolean(scenario) !== Boolean(existingRoot)) throw new Error(usage);
-const fixture = scenario === 'extensions' ? validateSquadFixture((await import('../fixtures/gangcode-extensions.mjs')).extensionFixture()) : undefined;
-const verify = scenario === 'extensions' ? (await import('../fixtures/gangcode-extension-verifier.mjs')).verifyGangCodeExtensions : undefined;
+const fixture = scenario === 'extensions' ? validateSquadFixture((await import('../fixtures/ingress-extensions.mjs')).extensionFixture()) : undefined;
+const verify = scenario === 'extensions' ? (await import('../fixtures/ingress-extension-verifier.mjs')).verifyIngressExtensions : undefined;
 if (fixture && maxConcurrentNative !== undefined && maxConcurrentNative > fixture.tasks.length) throw new Error('squad_concurrency_exceeds_roster');
 const abort = new AbortController();
 const stop = () => abort.abort(new Error('squad_cancelled'));
@@ -27,7 +27,7 @@ const view = { phase: 'Connecting Canada: Crossroads squad', state: null, events
 const dashboard = args.includes('--serve') ? await startDashboard(() => view) : null;
 if (dashboard) console.log(`Live squad view: ${dashboard.url}`);
 const root = resolve(import.meta.dirname, '..');
-const fingerprintPaths = ['scripts/squad.mjs', ...(await readdir(join(root, 'src'))).filter(name => name.endsWith('.mjs')).sort().map(name => `src/${name}`), 'fixtures/gangcode.mjs', 'fixtures/gangcode-verifier.mjs', 'fixtures/canadian-history.json', ...(scenario === 'extensions' ? ['fixtures/gangcode-extensions.mjs', 'fixtures/gangcode-extension-verifier.mjs'] : [])];
+const fingerprintPaths = ['scripts/squad.mjs', ...(await readdir(join(root, 'src'))).filter(name => name.endsWith('.mjs')).sort().map(name => `src/${name}`), 'fixtures/ingress.mjs', 'fixtures/ingress-verifier.mjs', 'fixtures/canadian-history.json', ...(scenario === 'extensions' ? ['fixtures/ingress-extensions.mjs', 'fixtures/ingress-extension-verifier.mjs'] : [])];
 const sourceFingerprints = Object.fromEntries(await Promise.all(fingerprintPaths.map(async path => [path, createHash('sha256').update(await readFile(join(root, path))).digest('hex')])));
 const evidence = { version: 1, kind: 'real-native-squad-build', date: new Date().toISOString(), plannedRoster: fixture ? [...fixture.tasks.map(task => task.id), ...(fixture.integrationTask ? [fixture.integrationTask.id] : [])] : null, fixture: scenario ?? 'base-game', maxConcurrentNative: maxConcurrentNative ?? null, concurrencyPolicy: maxConcurrentNative === undefined ? 'entire_roster_simultaneously' : 'explicit_limit', sourceFingerprints, result: null };
 const evidencePath = join(output, 'squad-evidence.json');

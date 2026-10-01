@@ -1,6 +1,6 @@
 # Canada: Crossroads
 
-GangCode is the collaborating squad name. Build Canada: Crossroads, a playful Canadian history exploration game, with Node built-ins, ES modules and browser APIs only. Use native file tools; the harness executes and verifies. No dependencies, remote assets, services or credentials. Files are preferred focus, not claims: cross-module edits are allowed when needed. Inspect live peer contracts.
+Ingress is the collaborating squad name. Build Canada: Crossroads, a playful Canadian history exploration game, with Node built-ins, ES modules and browser APIs only. Use native file tools; the harness executes and verifies. No dependencies, remote assets, services or credentials. Files are preferred focus, not claims: cross-module edits are allowed when needed. Inspect live peer contracts.
 
 ## Canonical content
 

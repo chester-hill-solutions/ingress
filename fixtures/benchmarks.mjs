@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { join, resolve, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-const manifest = '{"name":"gangcode-benchmark","private":true,"type":"module"}\n';
+const manifest = '{"name":"ingress-benchmark","private":true,"type":"module"}\n';
 const task = (id, text, dependencies) => ({ id, text, dependencies });
 const edge = (producerPath, consumerPath) => ({ producerPath, consumerPath });
 function fixture(id, title, files, tasks, criteria, protectedPaths = []) {

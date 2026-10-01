@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { verifyCanadaCrossroads, verifyGangCode } from '../fixtures/gangcode-verifier.mjs';
+import { verifyCanadaCrossroads, verifyIngress } from '../fixtures/ingress-verifier.mjs';
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'crossroads-verifier-'));
@@ -25,7 +25,7 @@ test('unimplemented seed fails independent behavior checks without exposing impl
     assert.equal(result.checks.find(check => check.name === 'http-server-start').passed, false);
     assert.ok(result.checks.every(check => Object.keys(check).sort().join(',') === 'name,passed'));
     assert.ok(!JSON.stringify(result).includes('Sensitive'));
-    assert.equal(verifyGangCode, verifyCanadaCrossroads);
+    assert.equal(verifyIngress, verifyCanadaCrossroads);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
