@@ -240,7 +240,52 @@ whole-context envelope refreshed at every model-request boundary, and awareness 
 what fills it. So the addressable cost is the awareness section specifically, which is
 what this table isolates.
 
-### What Gate 0 does not establish
+### Refuted: the claim ledger cannot be attributed on this data
+
+A ledger that names an actor and re-verifies their work needs every claim to
+point at something only its author owns. Measured on the recorded 17-actor run,
+it does not:
+
+| Measure | Result |
+| --- | --- |
+| `file.observed` events carrying an actor id | **0 of 35** |
+| Observations joinable to an actor via the tool stream | 33 of 35 |
+| Checks attributable to exactly one actor | 15 of 58 |
+| Checks attributable to nobody | 32 |
+
+Two independent causes, and the second is the one that matters.
+
+The observation stream is unowned: all 35 events are `{elapsedMs, path, revision,
+source}`. Attribution is recoverable from the 99 `session.tool.success` events
+that carry both `actor` and `path`, so that gap is fixable.
+
+But the missions declare overlapping scopes. `configureMission` computes
+`perActor = workstreams.length / agentCount` and slices, so:
+
+- at 17 actors over 8 workstreams, `perActor` is 0.47 and **9 of 17 actors
+  receive an empty slice** — they are given no workstream and no paths at all;
+- across the 8 workstreams there are only 4 distinct path sets, with
+  `outputs/report.md` claimed by four of them.
+
+That is why the recorded run shows 8 successes and 9 deadline outcomes: the nine
+were not slow, they had nothing declared to do, and they spent their budget
+producing nothing. Instrumentation would have made attribution mechanical and
+still left it meaningless.
+
+Across the six real missions, three share output paths and three are fully
+disjoint, so this is a property of particular missions rather than of the
+harness.
+
+**Correction to an earlier reading.** That result was initially taken as evidence
+that coordination was wasteful and net-negative. It is not. Coordination was
+never the variable; the roster was larger than the work could be divided into.
+The token cost measured in Gate 0 stands, but it is not what caused the recorded
+deadline outcomes.
+
+The instrumentable failure is narrower and is now built: see the
+[roster preflight](roster-preflight.md).
+
+## What Gate 0 does not establish
 
 It prices the coordination signal. It says nothing about whether a 154-token claim
 record is *adequate* for an agent to make the same decision the 976-token peer section

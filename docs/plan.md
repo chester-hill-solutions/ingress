@@ -12,9 +12,11 @@ See [product](realtime-multiplayer-plan.md), [engineering](realtime-multiplayer-
 The [Cloudflare platform plan](cloudflare-platform-plan.md) records the platform primitives
 this repository qualifies as a host and scopes a separate competition entry; it advances
 no RT status. The [claim protocol](claim-protocol.md) proposes replacing agent-to-agent
-conversation with materialized claim records, and is the current design direction.
-The [rename record](rename-to-ingress.md) is prior provenance for the
-product name.
+conversation with materialized claim records; its attribution mechanism was
+refuted against recorded data and that correction is recorded there.
+The [roster preflight](roster-preflight.md) is implemented and gates roster
+construction. The [rename record](rename-to-ingress.md) is prior provenance for
+the product name.
 
 ## Current work
 
