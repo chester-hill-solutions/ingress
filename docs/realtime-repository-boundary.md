@@ -32,10 +32,12 @@ integration follows at RT-5, through a bounded storage-adapter contract.
 
 - Use Stow's documented CLI or public package exports, including
   `@chester-hill-solutions/stow-s3/workspace`, for supported storage operations.
-- Pin the consumed version/artifact. The current 0.3.0 candidate is unpublished;
-  development may install an explicitly built/packed artifact without assuming
-  registry availability. Do not depend on sibling checkout layout or `src`/`dist`
-  internal paths at runtime.
+- Pin the consumed version/artifact. v0.2.0 is tagged and published to public npmjs
+  with all four platform carriers; a clean install of it has not been verified end to
+  end, so treat it as installable but not certified. The 0.3.0 working tree is a
+  development candidate and unpublished; development may install an explicitly
+  built/packed artifact without assuming registry availability. Do not depend on
+  sibling checkout layout or `src`/`dist` internal paths at runtime.
 - Keep harness process supervision in the collaboration product. The existing
   `examples/opencode/server.mjs` imports internal `dist/start.js` for `stopChild`;
   that import cannot cross the new package boundary. Implement/port caller-owned
@@ -53,6 +55,12 @@ integration follows at RT-5, through a bounded storage-adapter contract.
 - The current native object MCP profile protects participating object saves, not
   native workspace filesystem edits. Guarded code editing needs a qualified tool
   path and workspace/document semantics; attaching MCP supplies no automatic guard.
+- Stow's embedded/WASM TypeScript binding accepts `ifMatch`/`ifNoneMatch` on
+  `putObject` and refuses with `conditional_write_unsupported` when the host lacks
+  the capability. That qualifies *object* conditional writes, not the richer
+  managed-save contract: there are still no `ReadForSave`/`SaveObject` resource
+  observations, and no committed/not-committed/unknown outcomes available to this
+  product. Routing native `write`/`edit` through it would still not be conflict-safe.
 
 No new generic harness package, plugin publication, hosted service or language
 migration is required to establish this repository boundary.
