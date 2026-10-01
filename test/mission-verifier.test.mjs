@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, symlink, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { verifyMission, readMissionFile } from '../src/mission-verifier.mjs';
+import { verifyMission, readMissionFile, missionIsolationAvailable } from '../src/mission-verifier.mjs';
 import { gradeMissionSnapshot } from '../src/mission-snapshots.mjs';
 
 async function setup(t, source='export async function run(x){return {value:x*2}}') {
@@ -19,6 +19,18 @@ test('submission sees only public invocation input; private oracle remains in pa
 });
 test('missing criterion cannot silently produce a passing grade',async t=>{
   const {root,fixture}=await setup(t);const result=await verifyMission(fixture,root,async({check})=>check('other',()=>{}));assert.equal(result.correct,false);assert.equal(result.checks.find(v=>v.name==='behavior').passed,false);
+});
+test('a missing isolation capability is a harness fact, not a wrong submission',async t=>{
+  // Without the Node 26 permission model there is no isolation to test, so a
+  // correct submission would otherwise be graded exactly like an incorrect one
+  // and the recorded evidence would blame the model for the host's runtime.
+  const {root,fixture}=await setup(t);
+  const result=await verifyMission(fixture,root,async({invoke,check})=>{const value=await invoke('work.mjs','run',[3]);await check('behavior',()=>assert.deepEqual(value,{value:6}));});
+  assert.equal(missionIsolationAvailable(),Number(process.versions.node.split('.')[0])>=26);
+  assert.equal(result.correct,missionIsolationAvailable(),'a correct submission grades correct only where isolation actually ran');
+  assert.equal(result.isolationRefused,!missionIsolationAvailable());
+  assert.equal(result.checks.some(v=>v.name==='evaluator_refused_isolation_unavailable'),!missionIsolationAvailable(),'the refusal is named in the evidence rather than hidden as a generic evaluator failure');
+  if(missionIsolationAvailable())assert.equal(result.checks.some(v=>v.name==='evaluator_completed'),false);
 });
 test('submission cannot write protected bytes, read private oracle files or spawn processes',async t=>{
   const {root,fixture}=await setup(t,`import {writeFile,readFile} from 'node:fs/promises';import {spawnSync} from 'node:child_process';export async function run(){const out={};try{await writeFile('inputs.json','changed');out.write=true}catch{out.write=false}try{await readFile(${JSON.stringify(import.meta.filename)});out.read=true}catch{out.read=false}try{spawnSync(process.execPath,['-e','']);out.spawn=true}catch{out.spawn=false}return out}`);

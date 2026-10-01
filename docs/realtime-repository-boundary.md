@@ -61,6 +61,14 @@ integration follows at RT-5, through a bounded storage-adapter contract.
   managed-save contract: there are still no `ReadForSave`/`SaveObject` resource
   observations, and no committed/not-committed/unknown outcomes available to this
   product. Routing native `write`/`edit` through it would still not be conflict-safe.
+- Stow now enforces resource ACLs per operation, consulting a policy revision on
+  each decision so a revocation is effective when issued rather than at restart,
+  and a workspace is addressable as a policy resource. **This is landed in Stow
+  but not reachable from here.** The machinery lives in `internal/policy` and
+  `internal/policystore`, and it is absent from the public `pkg/stow` API and the
+  CLI, so there is no public artifact to depend on and nothing to consume yet.
+  Record it as a future seam, not as an available capability; do not reach into
+  Stow internals to obtain it.
 
 No new generic harness package, plugin publication, hosted service or language
 migration is required to establish this repository boundary.

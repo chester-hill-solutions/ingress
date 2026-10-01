@@ -7,7 +7,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Submission isolation relies on the Node 26 permission model, so the
+          # isolation tests are real only here. Node 22 could not have passed
+          # them: it would have failed, or worse, reported a refusal as a grade.
+          node-version: '26'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test

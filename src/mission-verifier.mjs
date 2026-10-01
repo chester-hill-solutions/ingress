@@ -6,6 +6,15 @@ import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 
 export const missionBounds = Object.freeze({ fileBytes: 1048576, totalBytes: 16777216, files: 128, invocationBytes: 1048576, invocations: 16, invocationMs: 3500, evaluatorMs: 30000 });
+
+/**
+ * Submission isolation needs the Node 26 permission model: it is what denies
+ * writes, private reads, child processes and network without trusting the
+ * submission. Without it there is no isolation to test, so a refusal here is a
+ * missing harness capability, never evidence about the submission.
+ */
+export const missionIsolationRefusal = 'mission_invocation_requires_node_26_network_permissions';
+export function missionIsolationAvailable() { return Number(process.versions.node.split('.')[0]) >= 26; }
 export function missionPath(path) {
   if (typeof path !== 'string' || !path || path.length > 512 || path.includes('\\') || /[\u0000-\u001f\u007f]/.test(path) || path.startsWith('/') || path.split('/').some(p => !p || p === '.' || p === '..')) throw Error('invalid_mission_path');
   return path;
@@ -28,7 +37,7 @@ export async function readMissionFile(root, path) {
 
 // Submission code receives inputs only. Assertions and expected values stay in the parent.
 async function invokeSubmission(root, path, exportName, args, timeoutMs) {
-  if (Number(process.versions.node.split('.')[0]) < 26) throw Error('mission_invocation_requires_node_26_network_permissions');
+  if (!missionIsolationAvailable()) throw Error(missionIsolationRefusal);
   if (!/^[a-zA-Z_$][a-zA-Z0-9_$]{0,100}$/.test(exportName) || !Array.isArray(args)) throw Error('invalid_mission_invocation');
   const payload = JSON.stringify({ url: pathToFileURL(join(root, path)).href, exportName, args });
   if (Buffer.byteLength(payload) > missionBounds.invocationBytes) throw Error('mission_invocation_bounds');
@@ -87,11 +96,19 @@ export async function verifyMission(fixture, root, evaluate) {
     await readText(path);
     return invokeSubmission(canonical, path, exportName, args, Math.min(missionBounds.invocationMs, remaining));
   };
+  let isolationRefused = false;
   if (scopeValid && instructionChecks.every(value => value.passed)) {
     try { await evaluate({ readText, readJSON: async path => JSON.parse(await readText(path)), invoke, check }); }
-    catch { checks.push({ name: 'evaluator_completed', passed: false }); }
+    catch (error) {
+      // A missing isolation capability is a harness fact. Recorded as its own
+      // check rather than a generic evaluator failure, because otherwise a
+      // perfect submission on an unsupported runtime is indistinguishable from
+      // a wrong one, and the evidence would blame the model for the host.
+      isolationRefused = error?.message === missionIsolationRefusal;
+      checks.push({ name: isolationRefused ? 'evaluator_refused_isolation_unavailable' : 'evaluator_completed', passed: false });
+    }
   }
   for (const criterion of fixture.criteria) if (!checks.some(value => value.name === criterion.id)) checks.push({ name: criterion.id, passed: false });
   for (const item of instructionChecks.filter(value => value.name.startsWith('protected:'))) item.passed &&= (await protectedCheck(item.name.slice(10))).passed;
-  return { correct: checks.length > 0 && checks.every(value => value.passed) && instructionChecks.every(value => value.passed), checks, instructionChecks };
+  return { correct: !isolationRefused && checks.length > 0 && checks.every(value => value.passed) && instructionChecks.every(value => value.passed), isolationRefused, checks, instructionChecks };
 }

@@ -77,7 +77,14 @@ activity stays unknown; filters apply to the bounded comparison/activity views.
 
 ## Large missions and blind tasting
 
-Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/GangCode rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md). Executable mission grading requires Node 26.
+Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/GangCode rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md).
+
+Executable mission grading requires Node 26, because submission isolation relies on
+that runtime's permission model to deny writes, private reads, child processes and
+network without trusting the submission. On an older runtime the grader reports
+`isolationRefused` and an `evaluator_refused_isolation_unavailable` check rather than
+a grade, because an unrunnable grade and a wrong submission must not look alike in
+retained evidence.
 
 ```sh
 npm run missions:plan
