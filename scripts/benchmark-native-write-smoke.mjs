@@ -44,7 +44,7 @@ const provider = createServer(async (req, res) => {
       text += chunk;
     }
     const body = JSON.parse(text), messages = JSON.stringify(body.messages ?? []);
-    const matches = [...messages.matchAll(/GANGCODE_PROBE:([a-zA-Z0-9_-]{1,160}):(\d+)/g)];
+    const matches = [...messages.matchAll(/INGRESS_PROBE:([a-zA-Z0-9_-]{1,160}):(\d+)/g)];
     const header = req.headers['x-ingress-probe-session'];
     const sessionID = typeof header === 'string' && /^[a-zA-Z0-9_-]{1,160}$/.test(header) ? header : null;
     const marker = matches[0];
@@ -86,7 +86,7 @@ export default {id:'ingress.compatibility',async setup(ctx){
  receipt({type:'setup',version:ctx.app.version});
  await ctx.session.hook('context',event=>{
   const revision=Number(readFileSync(${JSON.stringify(revision)},'utf8'));
-  event.system.push({type:'text',text:'GANGCODE_PROBE:'+event.sessionID+':'+revision});
+  event.system.push({type:'text',text:'INGRESS_PROBE:'+event.sessionID+':'+revision});
   for(const name of Object.keys(event.tools))if(name!=='write')delete event.tools[name];
   receipt({type:'context',sessionID:event.sessionID,revision});
  });

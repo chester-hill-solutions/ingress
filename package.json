@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Native workspace awareness and bounded agent coordination experiment",
+  "description": "Ingress: snapshot-isolated workspaces where concurrent agents never share bytes",
   "engines": {
     "node": ">=26"
   },
@@ -18,5 +18,10 @@
     "missions:plan": "node scripts/mission-benchmark.mjs --plan",
     "missions:real": "node scripts/mission-benchmark.mjs --real",
     "missions:review": "node scripts/blind-review.mjs"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chester-hill-solutions/ingress"
   }
 }

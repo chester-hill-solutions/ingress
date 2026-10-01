@@ -52,13 +52,15 @@ Submissions and video are retained for up to 180 days.
 
 ## Blocking gaps
 
-**1. The repository is private.** `chester-hill-solutions/gangcode` reports
-`visibility: PRIVATE`. The form requires an open source repository URL and
+**1. The repository was private.** `chester-hill-solutions/gangcode` reported
+`visibility: PRIVATE`. Renamed to `chester-hill-solutions/ingress` and made public
+on 2026-10-01. The form requires an open source repository URL and
 Section 9 obliges the entrant to provide Sponsor access to the complete source
 code in order to administer and judge the contest. This must be made public
 before submission and is the single hardest gate.
 
 **2. `package.json` has no `license` field** and is marked `"private": true`.
+   The latter only affects npm publishing and is not a rule violation.
 The `private` flag only affects npm publishing, so it is not itself a rule
 violation, but it contradicts the submission and should be corrected for
 consistency with the `LICENSE` file.
@@ -114,7 +116,8 @@ optional rather than assumed.
 
 Recommended order, so nothing is discovered late:
 
-1. Make the repository public and rename the remote off `gangcode`.
+1. ~~Make the repository public and rename the remote off `gangcode`.~~ Done
+   2026-10-01: `chester-hill-solutions/ingress`, public.
 2. Push the review branch.
 3. Produce the video and verify it is under 2 GiB.
 4. Write the run instructions and confirm they work from a clean checkout.

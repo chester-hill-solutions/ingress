@@ -65,10 +65,10 @@ test('unknown fixture is explicitly rejected rather than silently reported as a 
 
 test('verifier child receives no ambient secrets and cannot write protected workspace data',async()=>{
   const fixture=benchmarkFixtures[0],root=await seed(fixture,{...fixture.files,...references.money});
-  const prior=process.env.GANGCODE_VERIFIER_TEST_SECRET;process.env.GANGCODE_VERIFIER_TEST_SECRET='SYNTHETIC_NOT_A_CREDENTIAL';
-  try{await writeFile(join(root,'currency.mjs'),"if(process.env.GANGCODE_VERIFIER_TEST_SECRET)throw Error('ambient_environment_leaked');"+references.money['currency.mjs']);assert.equal((await verifyBenchmark(fixture.id,root)).correct,true);
+  const prior=process.env.INGRESS_VERIFIER_TEST_SECRET;process.env.INGRESS_VERIFIER_TEST_SECRET='SYNTHETIC_NOT_A_CREDENTIAL';
+  try{await writeFile(join(root,'currency.mjs'),"if(process.env.INGRESS_VERIFIER_TEST_SECRET)throw Error('ambient_environment_leaked');"+references.money['currency.mjs']);assert.equal((await verifyBenchmark(fixture.id,root)).correct,true);
     await writeFile(join(root,'currency.mjs'),"import {writeFileSync} from 'node:fs';writeFileSync('catalog.json','tampered');"+references.money['currency.mjs']);const result=await verifyBenchmark(fixture.id,root);assert.equal(result.correct,false);assert.ok(result.instructionChecks.every(c=>c.passed));assert.equal(await readFile(join(root,'catalog.json'),'utf8'),fixture.files['catalog.json']);assert.equal(JSON.stringify(result).includes('SYNTHETIC'),false);
-  }finally{if(prior===undefined)delete process.env.GANGCODE_VERIFIER_TEST_SECRET;else process.env.GANGCODE_VERIFIER_TEST_SECRET=prior;await rm(root,{recursive:true,force:true});}
+  }finally{if(prior===undefined)delete process.env.INGRESS_VERIFIER_TEST_SECRET;else process.env.INGRESS_VERIFIER_TEST_SECRET=prior;await rm(root,{recursive:true,force:true});}
 });
 
 test('nonterminating generated module is bounded and a missing workspace preserves failed checks',async()=>{
