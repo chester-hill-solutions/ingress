@@ -1,7 +1,8 @@
 # Cloudflare platform plan and the next Git competition entry
 
-**Date:** 2026-10-01. **Status:** proposed. No API is built, no cloud resource is
-provisioned and no deployment is certified by this document.
+**Date:** 2026-10-01. **Status:** proposed. Step 1 has since been executed — see
+[the Artifacts spike report](artifacts-spike-report.md). No Worker is deployed and no
+deployment is certified by either document.
 
 This plan does two things. It records which Cloudflare platform primitives Ingress
 qualifies as a host, and it scopes a competition entry for *"Build the next GitHub"*
@@ -81,7 +82,7 @@ step lists what would make it fail.
 
 | # | Step | Days | Failure mode |
 | --- | --- | --- | --- |
-| 1 | Artifacts spike: create, fork, push, subscribe, read | 1 | Open beta is broken or quota-blocked; the whole entry moves to a local substrate |
+| 1 | Artifacts spike: create, fork, push, subscribe, read | 1 | **Done.** Failure mode did not fire; see [spike report](artifacts-spike-report.md). `fork` naming remains untested from the binding |
 | 2 | Durable `WorkspaceState` behind a Durable Object | 2 | `ingest()` dedup and `liveSequence` stop being correct across restarts |
 | 3 | Artifacts as observation source, replacing `file-observer` | 2 | Event lag exceeds agent turn latency; observation is useless in time |
 | 4 | Cross-host resumption: a second Durable Object adopts a dead agent's cut | 1 | Cut adoption needs live process state we cannot serialize |
