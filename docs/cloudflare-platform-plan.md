@@ -84,14 +84,16 @@ step lists what would make it fail.
 | --- | --- | --- | --- |
 | 1 | Artifacts spike: create, fork, push, subscribe, read | 1 | **Done.** Failure mode did not fire; see [spike report](artifacts-spike-report.md). `fork` naming remains untested from the binding |
 | 2 | Durable `WorkspaceState` behind a Durable Object | 2 | `ingest()` dedup and `liveSequence` stop being correct across restarts |
-| 3 | Artifacts as observation source, replacing `file-observer` | 2 | Event lag exceeds agent turn latency; observation is useless in time |
-| 4 | Cross-host resumption: a second Durable Object adopts a dead agent's cut | 1 | Cut adoption needs live process state we cannot serialize |
+| 3 | Artifacts as observation source, plus the claim ref as a second source | 2 | Event lag exceeds agent turn latency; observation is useless in time. The spike measured 162–277 ms, so this failure mode did not fire |
+| 4 | Cross-host resumption from an open claim, its basis and its branch | 1 | The interrupted agent left no durable record, so there is nothing to resume from |
 | 5 | Clef behind the deterministic decision boundary | 1 | New-model roughness; the deterministic lane already stands alone |
 | 6 | Ratchets with falsification tests | 1 | A ratchet that cannot go red is deleted, not shipped |
 | 7 | Evidence-trail view and `make demo` | 2 | Scope creep into a product UI instead of a receipt |
 
 Step 4 is the scene that wins the entry: an agent dies mid-task, and a different host
-resumes its intention and read basis. Neither git nor a local filesystem can do this.
+resumes from a durable claim record — its stated intent, the revision it read, and the
+branch it was on. Neither git nor a local filesystem can do this, because neither
+records that anyone intended anything.
 
 Step 7's `make demo` runs headless against a seeded fixture so the run instructions are
 one command and the video is not the only proof the system works.
@@ -118,11 +120,23 @@ explains them rather than in place of one.
 
 ### Explicitly out of scope
 
-- Semantic merge or automatic conflict resolution.
-- File claims, exclusive ownership, or refusing native writes.
+- Semantic merge, or any claim that a merged result is *correct*.
+- **Exclusive** ownership, file locking, or refusing native writes.
 - Remote multiplayer, CRDT convergence, shared editing.
 - Hosted control plane, multi-tenant product surface.
 - Any speed or cost-reduction claim.
+
+Two of these were narrowed on 2026-10-01 rather than removed. **Non-exclusive claims
+now enter scope** as materialized claim records — durable, evidenced, and placed on
+the read path — per the [claim protocol](claim-protocol.md). A claim record is not a
+lock: it does not block a write, it makes the situation visible before one. Refusing
+native writes remains out of scope and no gate may assert it.
+
+**Automatic 3-way merge is now in scope** where it is textually clean, because the
+spike established that Artifacts accepts a push resolving a divergence and that a true
+conflict fails locally in the agent's own checkout before any push. What stays out is
+the semantic claim: a clean merge means the bytes combine, not that the program is
+correct.
 
 ### Dependency order
 

@@ -11,7 +11,9 @@ See [product](realtime-multiplayer-plan.md), [engineering](realtime-multiplayer-
 [evaluation](realtime-collaboration-evaluation.md) and [review](realtime-multiplayer-plan-review.md).
 The [Cloudflare platform plan](cloudflare-platform-plan.md) records the platform primitives
 this repository qualifies as a host and scopes a separate competition entry; it advances
-no RT status. The [rename record](rename-to-ingress.md) is prior provenance for the
+no RT status. The [claim protocol](claim-protocol.md) proposes replacing agent-to-agent
+conversation with materialized claim records, and is the current design direction.
+The [rename record](rename-to-ingress.md) is prior provenance for the
 product name.
 
 ## Current work
@@ -20,8 +22,9 @@ product name.
 - RT-0: in progress; deterministic foundation passes, live stream and initial context projection observed; comparative qualification remains open; native OpenCode observations, current state, truthful join/intention metadata, bounded shadow decisions, two-agent diagnostic probe.
 - RT-1: not qualified; real comparative benefit/active steering and user reuse remain separate gates.
 - RT-2–RT-6: deferred conditional expansion; no guarded-edit safety or remote multiplayer claim.
-- Cloudflare platform: proposed and unscoped by RT; Artifacts spike is the next action and
-  gates the durable-state and cross-host steps in that plan.
+- Cloudflare platform: proposed and unscoped by RT; Artifacts spike is complete and its
+  failure mode did not fire. Durable-state and claim-record work follow the
+  [claim protocol](claim-protocol.md).
 
 ## First increment
 
