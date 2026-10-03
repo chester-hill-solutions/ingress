@@ -94,6 +94,30 @@ function issueToken(data, participantId) {
   return token;
 }
 
+/**
+ * Take a write lease on every path in a commit, then commit it.
+ *
+ * Every commit in this file goes through here, because a commit without a write
+ * lease is refused with `lease_required`. That refusal is the product working:
+ * holding a lease has to be what authorises a write, or the lease layer is the
+ * advisory protocol this repository has learned not to trust.
+ */
+async function commitWithLease(base, data, participantId, files) {
+  const paths = files.map(file => file.path);
+  const lease = await post(base, '/lease/checkout', { participantId, paths, mode: 'write' });
+  assert.equal(
+    lease.status,
+    200,
+    `lease for ${participantId} on ${paths.join(', ')} was refused: ${JSON.stringify(lease.body)}`
+  );
+
+  return post(base, '/internal/commit', {
+    participantId,
+    token: issueToken(data, participantId),
+    ...manifest(participantId, files),
+  });
+}
+
 /** A manifest as the in-container launcher would produce. */
 function manifest(participantId, files, exit = 0) {
   return {
@@ -124,11 +148,7 @@ test('the workspace fences a stale write over real HTTP', async () => {
   assert.equal((await asJSON(await post(call, '/write', { participantId: 'builder', path: 'ui.mjs' }))).admitted, true);
 
   // The human changes what the builder was working from.
-  await post(call, '/internal/commit', {
-    participantId: 'integrator',
-    token: issueToken(data, 'integrator'),
-    ...manifest('integrator', [await entry('engine.mjs', 'v2')]),
-  });
+  await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
 
   const blocked = await asJSON(await post(call, '/write', { participantId: 'builder', path: 'other.mjs' }));
   assert.equal(blocked.admitted, false);
@@ -146,8 +166,7 @@ test('a re-read clears the refusal and the same write is admitted', async () => 
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
   await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
 
-  const token = issueToken(data, 'other');
-  await post(call, '/internal/commit', { participantId: 'other', token, ...manifest('other', [await entry('engine.mjs', 'v2')]) });
+  await commitWithLease(call, data, 'other', [await entry('engine.mjs', 'v2')]);
 
   assert.equal((await asJSON(await post(call, '/write', { participantId: 'builder', path: 'ui.mjs' }))).admitted, false);
   await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
@@ -161,8 +180,7 @@ test('the workspace survives a reload of its stored state', async () => {
   await join(call, 'someone', 'human', []);
   await bootstrap(call, [await entry('x.mjs', 'v1')]);
   await post(call, '/read', { participantId: 'a', path: 'x.mjs' });
-  const token = issueToken(data, 'someone');
-  await post(call, '/internal/commit', { participantId: 'someone', token, ...manifest('someone', [await entry('x.mjs', 'v2')]) });
+  await commitWithLease(call, data, 'someone', [await entry('x.mjs', 'v2')]);
 
   // A cold instance over the *same* storage. This is what a DO eviction looks
   // like: the ledger is rebuilt from durable state, not carried in memory.
@@ -247,11 +265,7 @@ test('a commit of real content is admitted and the bytes are retrievable', async
   await join(call, 'builder', 'agent', []);
   const token = issueToken(data, 'builder');
 
-  const response = await post(call, '/internal/commit', {
-    participantId: 'builder',
-    token,
-    ...manifest('builder', [await entry('hello.txt', 'the actual bytes')]),
-  });
+  const response = await commitWithLease(call, data, 'builder', [await entry('hello.txt', 'the actual bytes')]);
   const body = await asJSON(response);
   assert.equal(response.status, 200);
   assert.equal(body.admitted, true);
@@ -286,18 +300,10 @@ test('a stale commit is refused in full and stores nothing', async () => {
   await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
 
   const otherToken = issueToken(data, 'integrator');
-  await post(call, '/internal/commit', {
-    participantId: 'integrator',
-    token: otherToken,
-    ...manifest('integrator', [await entry('engine.mjs', 'v2')]),
-  });
+  await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
 
   const builderToken = issueToken(data, 'builder');
-  const response = await post(call, '/internal/commit', {
-    participantId: 'builder',
-    token: builderToken,
-    ...manifest('builder', [await entry('mine.mjs', 'my work'), await entry('also-mine.mjs', 'more work')]),
-  });
+  const response = await commitWithLease(call, data, 'builder', [await entry('mine.mjs', 'my work'), await entry('also-mine.mjs', 'more work')]);
 
   assert.equal(response.status, 409);
   const body = await asJSON(response);
@@ -319,16 +325,8 @@ test('a refusal is retained as a receipt, because an audit trail of successes on
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
   await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
 
-  await post(call, '/internal/commit', {
-    participantId: 'integrator',
-    token: issueToken(data, 'integrator'),
-    ...manifest('integrator', [await entry('engine.mjs', 'v2')]),
-  });
-  await post(call, '/internal/commit', {
-    participantId: 'builder',
-    token: issueToken(data, 'builder'),
-    ...manifest('builder', [await entry('mine.mjs', 'my work')]),
-  });
+  await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
+  await commitWithLease(call, data, 'builder', [await entry('mine.mjs', 'my work')]);
 
   const { receipts } = await asJSON(await call('https://x/receipts?participant=builder'));
   assert.equal(receipts.length, 1);
@@ -342,6 +340,7 @@ test('the participant exit code is retained, so a crashed participant is visible
   const { call, data } = mountDO();
   await join(call, 'p', 'agent', []);
   const token = issueToken(data, 'p');
+  await post(call, '/lease/checkout', { participantId: 'p', paths: ['partial.txt'], mode: 'write' });
   const response = await post(call, '/internal/commit', {
     participantId: 'p',
     token,
@@ -417,11 +416,7 @@ test('the client drives the workspace end to end', async () => {
 
   // A peer commits, which invalidates what the builder was working from.
   await join(call, 'peer', 'human', []);
-  await post(call, '/internal/commit', {
-    participantId: 'peer',
-    token: issueToken(data, 'peer'),
-    ...manifest('peer', [await entry('engine.mjs', 'moved-on')]),
-  });
+  await commitWithLease(call, data, 'peer', [await entry('engine.mjs', 'moved-on')]);
 
   assert.equal((await builder.tryWrite({ path: 'ui.mjs' })).admitted, false,
     'the builder is stale without re-reading');
@@ -444,8 +439,7 @@ test('a refusal throws WriteRefused with the evidence attached', async () => {
     fetch: fetchImpl,
   });
 
-  const token = issueToken(data, 'x');
-  await post(call, '/internal/commit', { participantId: 'x', token, ...manifest('x', [await entry('dep.mjs', 'v2')]) });
+  await commitWithLease(call, data, 'x', [await entry('dep.mjs', 'v2')]);
 
   await assert.rejects(
     () => client.write({ path: 'out.mjs' }),
@@ -464,8 +458,7 @@ test('the demo participant recovers from a refusal without special-casing', asyn
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
   await join(call, 'other', 'human', []);
 
-  const token = issueToken(data, 'other');
-  await post(call, '/internal/commit', { participantId: 'other', token, ...manifest('other', [await entry('engine.mjs', 'v2')]) });
+  await commitWithLease(call, data, 'other', [await entry('engine.mjs', 'v2')]);
 
   const result = await demoParticipant({
     baseUrl: 'https://workspace.invalid',

@@ -29,13 +29,14 @@ import { WorkspaceLedger } from './fence.mjs';
 import { verifyCommit, evaluateCommit, applyCommit } from './commit.mjs';
 import { parseManifest, summariseManifest, MANIFEST_VERSION } from './manifest.mjs';
 import { launcherScript } from './launcher.mjs';
+import { LeaseTable, LeaseConflict, expandClosure, DEFAULT_LEASE_MS } from './lease.mjs';
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_COMMIT_BODY = 12 * 1024 * 1024;
 
-const contentKey = path => `content:${path}`;
 const tokenKey = participantId => `token:${participantId}`;
 const commitKey = participantId => `commit:${participantId}`;
+const contentKey = path => `content:${path}`;
 
 export class WorkspaceAgent {
   /**
@@ -87,6 +88,24 @@ export class WorkspaceAgent {
 
     if (url.pathname === '/internal/commit' && request.method === 'POST') {
       return this.handleCommit(request, ledger);
+    }
+    if (url.pathname === '/lease/checkout' && request.method === 'POST') {
+      return this.handleCheckout(request, ledger);
+    }
+    if (url.pathname === '/lease/heartbeat' && request.method === 'POST') {
+      return this.handleHeartbeat(request);
+    }
+    if (url.pathname === '/lease/release' && request.method === 'POST') {
+      return this.handleRelease(request);
+    }
+    if (url.pathname === '/lease/retrieve' && request.method === 'POST') {
+      return this.handleRetrieve(request, ledger);
+    }
+    if (url.pathname === '/leases' && request.method === 'GET') {
+      // The snapshot is already `{leases, waits}`; wrapping it again produced
+      // `{leases: {leases: [...]}}`, which is the kind of shape nobody reading the
+      // response would guess.
+      return json(200, (await this.leases()).snapshot());
     }
     if (url.pathname === '/internal/gate-log' && request.method === 'POST') {
       const entry = await readJSON(request);
@@ -328,6 +347,43 @@ export class WorkspaceAgent {
     }
 
     const verified = await verifyCommit({ participantId, files: manifest.files });
+
+    // A commit must be authorised by a write lease on every file it touches.
+    //
+    // This is the line that makes leases load-bearing rather than decorative. A
+    // lease that participants merely *hold* is a protocol, and this repository has
+    // a long record of protocols that agents route around — the MCP probe made 16
+    // native tool calls and zero mediated ones. If the commit did not check the
+    // lease, holding one would change nothing and the whole layer would be
+    // advisory in the way everything else here has been.
+    //
+    // Checked before the fence and refused as a whole, for the same reason the
+    // commit is atomic: a participant with no lease has not earned the right to
+    // land bytes, so nothing lands, not even the files it did have leases for.
+    const table = await this.leases();
+    table.sweep(Date.now());
+    const now = Date.now();
+    const held = table.leasesFor(participantId, { now });
+    const unleased = verified.files
+      .filter(file => !held.some(lease => lease.mode === 'write' && lease.paths.has(file.path)))
+      .map(file => file.path);
+
+    if (unleased.length > 0) {
+      const writable = held.filter(lease => lease.mode === 'write').flatMap(lease => [...lease.paths]);
+      const refusal = {
+        admitted: false,
+        reason: 'lease_required',
+        participantExit: exitCode,
+        unleasedPaths: unleased,
+        detail: held.length === 0
+          ? 'no write lease is held'
+          : `write leases cover ${[...new Set(writable)].sort().join(', ') || 'nothing'}; these were not leased for writing`,
+        hint: `POST /lease/checkout with ${JSON.stringify(unleased)} before committing`,
+      };
+      await this.state.storage.put(commitKey(participantId), refusal);
+      return json(409, { ...refusal, participantId });
+    }
+
     const decision = evaluateCommit(ledger, verified);
 
     if (!decision.admitted) {
@@ -384,6 +440,189 @@ export class WorkspaceAgent {
     await this.state.storage.put(commitKey(participantId), outcome);
     return json(200, { ...outcome, participantId });
   }
+// --- leases ---------------------------------------------------------------
+
+/**
+ * The lease table, kept beside the ledger.
+ *
+ * Same Durable Object, same turn. That is not tidiness: a lease grant and the
+ * commit decision it authorises must not be separated by anything, or a file
+ * could be granted to one participant and written by another.
+ */
+async leases() {
+  const stored = await this.state.storage.get('leases');
+  this.leaseTable = LeaseTable.fromJSON(stored);
+  return this.leaseTable;
+}
+
+async saveLeases() {
+  await this.state.storage.put('leases', this.leaseTable.toJSON());
+}
+
+/**
+ * Grant a lease, and hand over the content.
+ *
+ * Returning the content is the entire point. It is what makes a read
+ * verifiable: the workspace is the one giving the file over, so "this
+ * participant has read `engine.mjs`" stops being a claim it made about itself.
+ *
+ * Dependencies are included in the same grant. A participant that declared
+ * `engine.mjs` gets it whether or not it asked, because a lease on a file whose
+ * dependencies were not granted is a lease on a lie.
+ */
+async handleCheckout(request, ledger) {
+  const body = await readJSON(request);
+  const { participantId, mode = 'read' } = body;
+  const participant = ledger.require(participantId);
+
+  const requested = Array.isArray(body.paths) ? body.paths : [];
+  const table = await this.leases();
+  const now = Date.now();
+
+  // Dependencies join a *read* grant, never a write grant.
+  //
+  // Reading a dependency and writing your own file are different claims. Folding
+  // declared dependencies into a write request means you cannot touch your own new
+  // file while anyone holds a dependency exclusively — which is the common case,
+  // and it serialises the workspace into a queue. The dependency check that
+  // matters at write time is the fence's own `dependency_moved`, which compares
+  // the revision you read against the revision now there.
+  const declared = mode === 'read' ? [...(participant.dependencies ?? [])] : [];
+  const closure = expandClosure({ requested, declaredDependencies: declared });
+
+  let granted;
+  try {
+    granted = table.checkout({
+      participantId,
+      paths: closure,
+      mode,
+      now,
+      leaseMs: body.leaseMs ?? DEFAULT_LEASE_MS,
+    });
+  } catch (error) {
+    if (!(error instanceof LeaseConflict)) throw error;
+    // The wait edge is recorded even on refusal. That is what makes a cycle
+    // findable on the *next* attempt instead of only after the second party has
+    // already committed to waiting.
+    table.noteBlocked(participantId, error.blockedOn);
+    await this.saveLeases();
+    return json(409, {
+      granted: false,
+      reason: 'lease_conflict',
+      conflicts: error.conflicts,
+      blockedOn: error.blockedOn,
+      cycle: error.cycle ?? null,
+      detail: error.detail,
+    });
+  }
+
+  await this.saveLeases();
+
+  const files = [];
+  for (const path of closure) {
+    const record = ledger.files.get(path) ?? null;
+    const stored = await this.state.storage.get(contentKey(path));
+    files.push({
+      path,
+      // A path nobody has written has no content and no revision. It is
+      // reported as absent rather than as an empty file, so a caller can tell
+      // "does not exist" from "exists and is empty".
+      exists: record != null,
+      revision: record?.revision ?? null,
+      author: record?.author ?? null,
+      contentBase64: stored?.contentBase64 ?? null,
+      contentHash: record?.contentHash ?? null,
+    });
+  }
+
+  return json(200, {
+    granted: true,
+    leaseId: granted.lease.leaseId,
+    participantId,
+    mode,
+    expiresAt: granted.lease.expiresAt,
+    requested,
+    includedDependencies: closure.filter(path => !requested.includes(path)),
+    reclaimedFrom: granted.reclaimedFrom,
+    files,
+    fingerprint: ledger.decisionCut(participantId).fingerprint,
+  });
+}
+
+async handleHeartbeat(request) {
+  const body = await readJSON(request);
+  const table = await this.leases();
+  const result = table.heartbeat({
+    leaseId: body.leaseId,
+    participantId: body.participantId,
+    now: Date.now(),
+    leaseMs: body.leaseMs ?? DEFAULT_LEASE_MS,
+  });
+  await this.saveLeases();
+  return json(result.alive ? 200 : 409, result);
+}
+
+async handleRelease(request) {
+  const body = await readJSON(request);
+  const table = await this.leases();
+  const result = table.release({
+    leaseId: body.leaseId,
+    participantId: body.participantId,
+    paths: body.paths ?? null,
+    now: Date.now(),
+  });
+  await this.saveLeases();
+  return json(200, result);
+}
+
+/**
+ * Take over paths whose holder stopped heartbeating.
+ *
+ * The same guard as `/lease/checkout`, expressed separately because the audit
+ * question afterwards is different: "why did you take this?" rather than "why
+ * was this refused?".
+ */
+async handleRetrieve(request, ledger) {
+  const body = await readJSON(request);
+  const { participantId } = body;
+  ledger.require(participantId);
+
+  const table = await this.leases();
+  let granted;
+  try {
+    granted = table.retrieve({
+      participantId,
+      paths: Array.isArray(body.paths) ? body.paths : [],
+      now: Date.now(),
+      leaseMs: body.leaseMs ?? DEFAULT_LEASE_MS,
+    });
+  } catch (error) {
+    if (!(error instanceof LeaseConflict)) throw error;
+    return json(409, {
+      retrieved: false,
+      reason: 'lease_conflict',
+      conflicts: error.conflicts,
+      detail: error.detail,
+    });
+  }
+  await this.saveLeases();
+
+  const files = [];
+  for (const path of granted.lease.paths) {
+    const stored = await this.state.storage.get(contentKey(path));
+    files.push({ path, contentBase64: stored?.contentBase64 ?? null });
+  }
+
+  return json(200, {
+    retrieved: true,
+    leaseId: granted.lease.leaseId,
+    participantId,
+    expiresAt: granted.lease.expiresAt,
+    reclaimedFrom: granted.reclaimedFrom,
+    files,
+  });
+}
+
 }
 
 function containerExitFrom(manifests) {
