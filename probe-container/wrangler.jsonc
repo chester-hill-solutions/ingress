@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ingress-container-probe",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "6b149553c5075c79bbc132c481f387fe",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "containers": [
+    {
+      "class_name": "ProbeAgent",
+      "image": "registry.cloudflare.com/6b149553c5075c79bbc132c481f387fe/agentbox-agentboxcontainer@sha256:f97de164cd51f6a825ef6ec7c5b5c883c4b900f0409f46675bb372e806119da8",
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "PROBE", "class_name": "ProbeAgent" }]
+  },
+  "services": [
+    { "binding": "GATE", "service": "ingress-container-probe", "entrypoint": "GateProbe" }
+  ],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ProbeAgent"] }]
+}
