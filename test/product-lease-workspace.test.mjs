@@ -20,13 +20,36 @@ async function entry(path, content) {
   return { path, contentBase64: b64(content), contentHash: await sha256Hex(Buffer.from(content, 'utf8')) };
 }
 
+/**
+ * A DurableObjectState stand-in.
+ *
+ * Shaped like the real thing, including the multi-key form of
+ * `storage.get(keys)`. A shim that only supported the single-key form let a
+ * batched-read change ship with the whole suite red, which is the shim's fault
+ * rather than the code's.
+ */
+/**
+ * A DurableObjectState stand-in.
+ *
+ * Deliberately faithful on the two places a shim is tempted to be convenient:
+ *
+ *   - `storage.get(keys)` returns a **Map**, not an array, because that is what
+ *     workerd returns. A shim that returned an array agreed with a bug in the
+ *     workspace and hid it behind a green suite.
+ *   - `storage.put(map)` takes an object of key/value pairs, not a Map.
+ */
 function memoryStorage(data) {
   return {
     storage: {
       async get(key) {
+        if (Array.isArray(key)) return new Map(key.map(k => [k, data.get(k)]));
         return data.get(key);
       },
       async put(key, value) {
+        if (typeof key === 'object' && key !== null && !Array.isArray(key)) {
+          for (const [k, v] of Object.entries(key)) data.set(k, structuredClone(v));
+          return;
+        }
         data.set(key, structuredClone(value));
       },
     },

@@ -38,6 +38,30 @@ const tokenKey = participantId => `token:${participantId}`;
 const commitKey = participantId => `commit:${participantId}`;
 const contentKey = path => `content:${path}`;
 
+/**
+ * Compare two tokens without leaking where they diverge.
+ *
+ * `expected !== token` short-circuits on the first differing character, which is a
+ * timing channel on a route with no authentication in front of it. Comparing
+ * fixed-length digests of both closes the character-by-character leak — the one an
+ * attacker could actually use — at the cost of one hash per commit.
+ *
+ * This is not a claim of perfect constant-time behaviour, and it does not need to
+ * be: the goal is that a wrong token reveals nothing about how wrong it is.
+ */
+async function tokensMatch(a, b) {
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(String(a))),
+    crypto.subtle.digest('SHA-256', encoder.encode(String(b))),
+  ]);
+  const leftBytes = new Uint8Array(left);
+  const rightBytes = new Uint8Array(right);
+  let diff = 0;
+  for (let i = 0; i < leftBytes.length; i++) diff |= leftBytes[i] ^ rightBytes[i];
+  return diff === 0;
+}
+
 export class WorkspaceAgent {
   /**
    * @param {object} state  DurableObjectState
@@ -114,7 +138,10 @@ export class WorkspaceAgent {
       return json(200, { logged: true, count: existing.length + 1 });
     }
     if (url.pathname === '/gate-log' && request.method === 'GET') {
-      return json(200, { entries: (await this.state.storage.get('gate-log')) ?? [] });
+      // Was public. Removed: an unauthenticated route on a public worker that
+      // exposes per-workspace participant ids and traffic. The gate writes the
+      // log; nothing outside needs to read it.
+      return json(404, { error: 'route_not_found' });
     }
     if (url.pathname === '/bootstrap' && request.method === 'POST') {
       return this.handleBootstrap(request, ledger);
@@ -305,7 +332,7 @@ export class WorkspaceAgent {
     const { participantId, token } = body;
 
     const expected = await this.state.storage.get(tokenKey(participantId));
-    if (!expected || expected !== token) {
+    if (!expected || !(await tokensMatch(expected, token))) {
       return json(403, {
         admitted: false,
         error: 'refused',
@@ -418,13 +445,17 @@ export class WorkspaceAgent {
     }
 
     const { summary, files } = applyCommit(ledger, decision);
-    for (const file of files) {
-      const source = verified.files.find(f => f.path === file.path);
-      await this.state.storage.put(contentKey(file.path), {
-        contentBase64: encodeBase64(source.bytes),
-        contentHash: file.contentHash,
-      });
-    }
+    // `verified.files` is already sorted; index it once rather than scanning it
+    // per file. The old `.find` inside the loop was quadratic.
+    const bytesByPath = new Map(verified.files.map(file => [file.path, file.bytes]));
+    await this.state.storage.put(
+      Object.fromEntries(
+        files.map(file => [
+          contentKey(file.path),
+          { contentBase64: encodeBase64(bytesByPath.get(file.path)), contentHash: file.contentHash },
+        ])
+      )
+    );
     await this.save();
 
     const outcome = {
@@ -518,11 +549,19 @@ async handleCheckout(request, ledger) {
 
   await this.saveLeases();
 
-  const files = [];
-  for (const path of closure) {
+  // One batched read, not one per file. A 40-path dependency closure was 40
+  // sequential storage round-trips inside a single request.
+  //
+  // The multi-key form of `storage.get` returns a **Map**, not an array. An
+  // earlier version indexed it as an array, and the test shim was written to
+  // agree with that mistake — so 421 tests passed while every live checkout
+  // returned null content. The shim was the bug, and it was hiding a real one.
+  const stored = await this.state.storage.get(closure.map(contentKey));
+
+  const files = closure.map(path => {
     const record = ledger.files.get(path) ?? null;
-    const stored = await this.state.storage.get(contentKey(path));
-    files.push({
+    const entry = stored.get(contentKey(path)) ?? null;
+    return {
       path,
       // A path nobody has written has no content and no revision. It is
       // reported as absent rather than as an empty file, so a caller can tell
@@ -530,10 +569,10 @@ async handleCheckout(request, ledger) {
       exists: record != null,
       revision: record?.revision ?? null,
       author: record?.author ?? null,
-      contentBase64: stored?.contentBase64 ?? null,
+      contentBase64: entry?.contentBase64 ?? null,
       contentHash: record?.contentHash ?? null,
-    });
-  }
+    };
+  });
 
   return json(200, {
     granted: true,

@@ -13,6 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { WorkspaceAgent } from '../src/product/workspace-agent.mjs';
 import { WorkspaceClient, WriteRefused, demoParticipant } from '../src/product/workspace-client.mjs';
 import { sha256Hex } from '../src/product/commit.mjs';
@@ -24,13 +25,36 @@ async function entry(path, content) {
   return { path, contentBase64: b64(content), contentHash: await sha256Hex(Buffer.from(content, 'utf8')) };
 }
 
+/**
+ * A DurableObjectState stand-in.
+ *
+ * Shaped like the real thing, including the multi-key form of
+ * `storage.get(keys)`. A shim that only supported the single-key form let a
+ * batched-read change ship with the whole suite red, which is the shim's fault
+ * rather than the code's.
+ */
+/**
+ * A DurableObjectState stand-in.
+ *
+ * Deliberately faithful on the two places a shim is tempted to be convenient:
+ *
+ *   - `storage.get(keys)` returns a **Map**, not an array, because that is what
+ *     workerd returns. A shim that returned an array agreed with a bug in the
+ *     workspace and hid it behind a green suite.
+ *   - `storage.put(map)` takes an object of key/value pairs, not a Map.
+ */
 function memoryStorage(data) {
   return {
     storage: {
       async get(key) {
+        if (Array.isArray(key)) return new Map(key.map(k => [k, data.get(k)]));
         return data.get(key);
       },
       async put(key, value) {
+        if (typeof key === 'object' && key !== null && !Array.isArray(key)) {
+          for (const [k, v] of Object.entries(key)) data.set(k, structuredClone(v));
+          return;
+        }
         data.set(key, structuredClone(value));
       },
     },
@@ -483,4 +507,37 @@ test('two humans in one workspace are fenced against each other too', async () =
 
   assert.equal(bobsAttempt.admitted, false);
   assert.equal(bobsAttempt.reason, 'write_base_stale', 'a human edit invalidates a human peer just as it does an agent');
+});
+// --- the surface must not lie ---------------------------------------------
+
+test('the gate log is not readable from outside', async () => {
+  const { call } = mountDO();
+  const response = await call('https://x/gate-log');
+  assert.equal(response.status, 404,
+    'an unauthenticated route that exposes per-workspace participant ids must not exist');
+});
+
+test('the client offers no way to report a write', () => {
+  // There was a `WorkspaceClient.observe` that called `POST /observe` — a route
+  // letting any caller describe any write by any author. It was removed from the
+  // server and the client kept advertising it, so the front door of the product
+  // named the exact vulnerability it had eliminated and every caller got a 404.
+  const client = new WorkspaceClient({ baseUrl: 'https://x', participantId: 'p' });
+  assert.equal(typeof client.observe, 'undefined', 'the method must be gone, not deprecated');
+  assert.equal(typeof WorkspaceClient.observe, 'undefined');
+  assert.equal('observe' in WorkspaceClient, false);
+});
+
+test('the client never names a route the workspace does not serve', async () => {
+  // A cheap structural guard against the class of bug above: every route string
+  // in the client must be one the Durable Object actually routes.
+  const source = readFileSync(new URL('../src/product/workspace-client.mjs', import.meta.url), 'utf8');
+  const routes = [...source.matchAll(/request\(`(\/[^`$]*)/g)].map(match => match[1]);
+  assert.ok(routes.length > 0, 'found some routes to check');
+
+  const agent = new WorkspaceAgent(memoryStorage(new Map()));
+  for (const route of routes) {
+    const response = await makeCall(agent)(`https://x${route}`);
+    assert.notEqual(response.status, 404, `the client calls ${route}, which the workspace does not serve`);
+  }
 });

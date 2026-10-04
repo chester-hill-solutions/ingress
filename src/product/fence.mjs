@@ -19,10 +19,27 @@
 /** Terminal states cannot receive new instructions or writes. */
 const TERMINAL = new Set(['stopped', 'interrupted', 'completed', 'failed']);
 
-/** Cap the work a single decision may do, so a large workspace cannot stall it. */
+/**
+ * Caps on what a workspace will hold.
+ *
+ * Files, dependencies, reads and receipts all grow with use, and an unbounded
+ * one is a storage-cost and latency problem long before it is a correctness one:
+ * `toJSON` copies the whole ledger on every request, so every retained receipt is
+ * paid for on every subsequent write.
+ *
+ * The retention cap is the interesting one. Receipts are an audit trail, and
+ * trimming them destroys evidence — but an audit trail that silently stops
+ * recording is worse than one that admits it stopped. So the trim is counted and
+ * the count is retained: `receiptsTrimmed` says how many decisions this workspace
+ * no longer remembers.
+ */
 const MAX_FILES = 512;
 const MAX_DEPENDENCIES = 64;
 const MAX_PATH_BYTES = 512;
+/** A participant's declared dependencies cap at 64; reads are generous past that. */
+const MAX_READS = 4096;
+/** Retained receipts. Oldest are dropped first. */
+const MAX_RECEIPTS = 5000;
 
 export class FenceRefusal extends Error {
   constructor(reason, detail) {
@@ -87,6 +104,7 @@ export class WorkspaceLedger {
     this.reads = new Map();
     this.intents = new Map();
     this.receipts = [];
+    this.receiptsTrimmed = 0;
 
     for (const participant of participants) this.register(participant);
     for (const file of files) this.recordWrite({ path: file.path, ...file, actorId: null, synthetic: true });
@@ -145,6 +163,12 @@ export class WorkspaceLedger {
   recordRead({ participantId, path }) {
     const participant = this.require(participantId);
     path = declaredPath(path);
+    // Refuse rather than evict. Dropping the oldest read would silently turn a
+    // tracked read back into `readBasis: 'unknown'`, which is safe — but the
+    // caller would not know its evidence had just been discarded.
+    if (this.reads.size >= MAX_READS && !this.reads.has(`${participant.participantId}:${path}`)) {
+      throw new FenceRefusal('read_cap', { participantId, cap: MAX_READS });
+    }
     const file = this.files.get(path);
     this.reads.set(`${participant.participantId}:${path}`, {
       participantId: participant.participantId,
@@ -153,6 +177,23 @@ export class WorkspaceLedger {
       contentHash: file?.contentHash ?? null,
       atSequence: this.receipts.length,
     });
+  }
+
+  /**
+   * Append a receipt, trimming oldest-first past the retention cap.
+   *
+   * Every caller records through here so the trim count cannot be forgotten. A
+   * trim that does not increment `receiptsTrimmed` would leave the workspace
+   * reporting a complete history it no longer has.
+   */
+  retain(receipt) {
+    this.receipts.push(receipt);
+    if (this.receipts.length > MAX_RECEIPTS) {
+      const excess = this.receipts.length - MAX_RECEIPTS;
+      this.receipts.splice(0, excess);
+      this.receiptsTrimmed += excess;
+    }
+    return receipt;
   }
 
   setIntent(participantId, text) {
@@ -233,8 +274,7 @@ export class WorkspaceLedger {
         fingerprint: this.decisionCut(participantId).fingerprint,
         ...detail,
       };
-      this.receipts.push(receipt);
-      return receipt;
+      return this.retain(receipt);
     };
 
     if (TERMINAL.has(participant.status)) {
@@ -292,7 +332,7 @@ export class WorkspaceLedger {
       contentHash,
       fingerprint: cut.fingerprint,
     };
-    this.receipts.push(receipt);
+    this.retain(receipt);
     this.recordWrite({ path, revision: nextRevision, actorId: participantId, contentHash });
     return receipt;
   }
@@ -357,6 +397,7 @@ export class WorkspaceLedger {
       reads: [...this.reads.values()].map(read => ({ ...read })),
       intents: [...this.intents.values()].map(intent => ({ ...intent })),
       receipts: this.receipts.map(receipt => ({ ...receipt })),
+      receiptsTrimmed: this.receiptsTrimmed,
     };
   }
 
@@ -369,6 +410,7 @@ export class WorkspaceLedger {
     ledger.reads = new Map((value.reads ?? []).map(r => [`${r.participantId}:${r.path}`, { ...r }]));
     ledger.intents = new Map((value.intents ?? []).map(i => [i.participantId, { ...i }]));
     ledger.receipts = (value.receipts ?? []).map(r => ({ ...r }));
+    ledger.receiptsTrimmed = value.receiptsTrimmed ?? 0;
     return ledger;
   }
 
@@ -378,6 +420,7 @@ export class WorkspaceLedger {
       participants: [...this.participants.values()].map(p => ({ ...p, dependencies: [...p.dependencies] })),
       files: [...this.files.values()].map(f => ({ ...f })),
       receipts: this.receipts.length,
+      receiptsTrimmed: this.receiptsTrimmed,
     };
   }
 }

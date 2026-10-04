@@ -130,23 +130,16 @@ export class WorkspaceClient {
     return this.request('/state');
   }
 
-  /**
-   * Report bytes that moved outside this client — a container diff, a teammate's
-   * editor, a git hook.
-   *
-   * `actorId` is what the workspace can actually establish. Leave it null when
-   * you do not know; the workspace will record the write as unattributed rather
-   * than guess, and downstream decisions will show that honestly.
-   */
-  static async observe(baseUrl, writes, fetchImpl = globalThis.fetch) {
-    const response = await fetchImpl(`${String(baseUrl).replace(/\/+$/, '')}/observe`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ writes }),
-    });
-    if (!response.ok) throw new Error(`observe failed with status ${response.status}`);
-    return response.json();
-  }
+  // There is deliberately no `observe` method here.
+  //
+  // There was one, and it called `POST /observe` — a route that let any caller
+  // describe any write by any author. It was the hole this whole layer exists to
+  // close, and it was removed. The client kept advertising it, so the front door
+  // of the product named the exact vulnerability it had eliminated, and every
+  // caller got a 404.
+  //
+  // Bytes enter through `commit`, and only through the gate. If you find yourself
+  // wanting to add a reporting method back, that is the signal to read this again.
 }
 
 /**
@@ -156,7 +149,7 @@ export class WorkspaceClient {
  * declaring, reading and fenced-writing takes more than a screen, the product is
  * not usable and no amount of evidence behind it matters.
  */
-export async function demoParticipant({ baseUrl, participantId, kind, dependency, watchFor = 1, pollMs = 500, fetch: fetchImpl }) {
+export async function demoParticipant({ baseUrl, participantId, kind, dependency, fetch: fetchImpl }) {
   const client = new WorkspaceClient({ baseUrl, participantId, kind, dependencies: [dependency], fetch: fetchImpl });
   const envelope = await client.join();
   await client.declareIntent(`inspecting ${dependency}`);

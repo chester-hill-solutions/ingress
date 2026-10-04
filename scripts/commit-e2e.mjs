@@ -48,6 +48,16 @@ const asEntry = async (path, content) => ({
 
 const step = message => console.log(`\n--- ${message}`);
 
+// A commit requires a write lease on every file it touches, so every run below
+// leases first. Leases are short-lived by default; these run within seconds.
+const leaseFor = async (participantId, paths, mode = 'write') => {
+  const response = await post('/lease/checkout', { participantId, paths, mode, leaseMs: 300000 });
+  if (response.status !== 200) {
+    throw new Error(`lease for ${participantId} on ${paths.join(', ')} refused: ${JSON.stringify(response.body)}`);
+  }
+  return response.body;
+};
+
 console.log(`workspace: ${url('')}`);
 
 
@@ -67,6 +77,7 @@ await fetch(`${BASE}/w/${WORKSPACE}/join?name=A&kind=agent&dependencies=engine.m
   .then(e => console.log('A joined; sees', e.participants.length, 'peer(s)'));
 await post('/read', { participantId: 'A', path: 'engine.mjs' });
 {
+  await leaseFor('A', ['from-a.txt']);
   const { status, body } = await post('/start', {
     participantId: 'A',
     kind: 'agent',
@@ -93,6 +104,7 @@ await post('/read', { participantId: 'C', path: 'engine.mjs' });
 step('4. participant B rewrites engine.mjs from inside a container');
 await fetch(`${BASE}/w/${WORKSPACE}/join?name=B&kind=human&dependencies=`).then(r => r.json());
 {
+  await leaseFor('B', ['engine.mjs']);
   const { status, body } = await post('/start', {
     participantId: 'B',
     kind: 'human',
@@ -108,6 +120,7 @@ console.log('files now:', stateAfterB.body.files.map(f => `${f.path}@r${f.revisi
 // --- 5. participant C commits from a stale read: REFUSED ---------------
 step('5. participant C commits from a stale read');
 {
+  await leaseFor('C', ['from-c.txt']);
   const { status, body } = await post('/start', {
     participantId: 'C',
     kind: 'agent',
@@ -129,6 +142,7 @@ console.log("C's file landed?", cContent.status === 200 ? 'YES (fence failed)' :
 step('6. C re-reads and commits again');
 await post('/read', { participantId: 'C', path: 'engine.mjs' });
 {
+  await leaseFor('C', ['from-c.txt']);
   const { status, body } = await post('/start', {
     participantId: 'C',
     kind: 'agent',

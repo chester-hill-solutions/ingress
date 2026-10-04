@@ -191,3 +191,58 @@ test('a participant cannot declare an unbounded dependency list', () => {
   const tooMany = Array.from({ length: 65 }, (_, i) => `f${i}.mjs`);
   assert.throws(() => ledger.register({ participantId: 'p', dependencies: tooMany }), /too_many_dependencies/);
 });
+// --- retention ------------------------------------------------------------
+
+test('the read ledger is bounded, and the bound refuses rather than evicts', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'p' });
+  // Fill the read cap. Each read is a distinct path, so each is a new entry.
+  for (let i = 0; i < 4096; i++) ledger.recordRead({ participantId: 'p', path: `f${i}.mjs` });
+  assert.equal(ledger.reads.size, 4096);
+
+  assert.throws(
+    () => ledger.recordRead({ participantId: 'p', path: 'one-too-many.mjs' }),
+    /read_cap/
+  );
+
+  // Re-reading something already tracked is still fine: it is not growth.
+  assert.doesNotThrow(() => ledger.recordRead({ participantId: 'p', path: 'f0.mjs' }));
+  assert.equal(ledger.reads.size, 4096);
+});
+
+test('the receipt trail is capped, and the trim is counted', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'p', dependencies: [] });
+  ledger.register({ participantId: 'q', dependencies: [] });
+
+  for (let i = 0; i < 5200; i++) {
+    ledger.admit({ participantId: 'p', path: `f${i % 400}.mjs`, contentHash: `h${i}` });
+  }
+
+  assert.ok(ledger.receipts.length <= 5000, `expected the trail to be capped, got ${ledger.receipts.length}`);
+  // The invariant that matters: retained + trimmed must account for every
+  // decision ever made. If this drifts, the workspace is silently losing
+  // evidence it claims to hold.
+  assert.equal(ledger.receipts.length, 5000);
+  assert.equal(ledger.receiptsTrimmed, 200, '5200 decisions, 5000 retained, 200 dropped and counted');
+  assert.equal(ledger.receipts.length + ledger.receiptsTrimmed, 5200);
+});
+
+test('the trim count survives persistence, so a restarted workspace does not forget it', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'p', dependencies: [] });
+  for (let i = 0; i < 5100; i++) ledger.admit({ participantId: 'p', path: `f${i % 400}.mjs`, contentHash: `h${i}` });
+
+  const revived = WorkspaceLedger.fromJSON(JSON.parse(JSON.stringify(ledger.toJSON())));
+  assert.equal(revived.receiptsTrimmed, ledger.receiptsTrimmed);
+  assert.ok(revived.receiptsTrimmed > 0, 'a restart must not turn a partial history into a complete-looking one');
+});
+
+test('the snapshot reports what it retained and what it dropped', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'p', dependencies: [] });
+  ledger.admit({ participantId: 'p', path: 'a.mjs', contentHash: 'h1' });
+  const snapshot = ledger.snapshot();
+  assert.equal(snapshot.receipts, 1);
+  assert.equal(snapshot.receiptsTrimmed, 0);
+});
