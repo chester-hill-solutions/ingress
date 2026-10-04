@@ -121,9 +121,12 @@ export class WorkspaceAgent {
     const url = new URL(request.url);
     const method = request.method;
 
-    // --- the gate: the only route that admits bytes ---
+    // --- the gate: the only routes that reach a participant ---
     if (url.pathname === '/internal/commit' && method === 'POST') {
       return commitHandler.commit(this.ctx, request);
+    }
+    if (url.pathname === '/internal/seed' && method === 'POST') {
+      return commitHandler.seed(this.ctx, request);
     }
     if (url.pathname === '/internal/gate-log' && method === 'POST') {
       return this.recordGateLog(request);

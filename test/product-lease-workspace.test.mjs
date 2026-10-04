@@ -472,3 +472,87 @@ test('leases survive a cold restart of the workspace', async () => {
   const response = await post(revivedCall, '/lease/checkout', { participantId: 'B', paths: ['a.mjs'], mode: 'write' });
   assert.equal(response.status, 409, 'the lease outlived the instance');
 });
+// --- seeding --------------------------------------------------------------
+
+test('a participant is handed the tree it is entitled to, and nothing else', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'A', 'agent', ['engine.mjs']);
+  await join(call, 'B', 'agent', []);
+  await seed(call, [await entry('engine.mjs', 'v1'), await entry('secret.txt', 'not yours')]);
+
+  // A leases only engine.mjs for reading. B leases nothing.
+  const lease = await asJSON(await post(call, '/lease/checkout', { participantId: 'A', paths: ['engine.mjs'], mode: 'read' }));
+  assert.ok(lease.leaseId);
+
+  const result = await asJSON(await post(call, '/internal/seed', {
+    participantId: 'A',
+    token: token(data, 'A'),
+  }));
+
+  assert.deepEqual(result.leasedPaths, ['engine.mjs']);
+  assert.equal(result.files.length, 1, 'the seed is not a way to read the whole workspace');
+  assert.equal(result.files[0].revision, 1);
+  assert.equal(Buffer.from(result.files[0].contentBase64, 'base64').toString('utf8'), 'v1');
+  assert.deepEqual(result.revisions, { 'engine.mjs': 1 },
+    'the starting revision is what makes baseRevision possible');
+
+  // B holds nothing, so B is handed nothing.
+  const nothing = await asJSON(await post(call, '/internal/seed', { participantId: 'B', token: token(data, 'B') }));
+  assert.deepEqual(nothing.files, []);
+  assert.equal(nothing.fingerprint, null);
+});
+
+test('a seed covers read and write leases alike, and the union of both', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'A', 'agent', ['dep.mjs']);
+  await seed(call, [await entry('dep.mjs', 'dep'), await entry('mine.mjs', 'original')]);
+
+  await post(call, '/lease/checkout', { participantId: 'A', paths: ['mine.mjs'], mode: 'write' });
+  await post(call, '/lease/checkout', { participantId: 'A', paths: ['dep.mjs'], mode: 'read' });
+
+  const result = await asJSON(await post(call, '/internal/seed', { participantId: 'A', token: token(data, 'A') }));
+  assert.deepEqual(result.leasedPaths, ['dep.mjs', 'mine.mjs']);
+});
+
+test('the seed refuses a caller with no token, and a caller with the wrong one', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'A', 'agent', []);
+  await seed(call, [await entry('a.txt', 'a')]);
+
+  assert.equal((await post(call, '/internal/seed', { participantId: 'A' })).status, 403);
+  assert.equal((await post(call, '/internal/seed', { participantId: 'A', token: 'wrong' })).status, 403);
+
+  // And a participant nobody has issued a token to cannot read a workspace it
+  // never joined.
+  await join(call, 'ghost', 'agent', []);
+  const ghost = await asJSON(await post(call, '/internal/seed', { participantId: 'ghost', token: 'anything' }));
+  assert.equal(ghost.reason, 'no_token_issued');
+});
+
+test('the seed never serves a participant another workspace participant is editing', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'A', 'agent', []);
+  await join(call, 'B', 'agent', []);
+  await seed(call, [await entry('shared.txt', 'v1')]);
+
+  await post(call, '/lease/checkout', { participantId: 'B', paths: ['shared.txt'], mode: 'write' });
+  // A holds nothing, so A cannot read a file B is in the middle of changing.
+  const aSeed = await asJSON(await post(call, '/internal/seed', { participantId: 'A', token: token(data, 'A') }));
+  assert.deepEqual(aSeed.files, []);
+});
+
+test('an absent path is seeded as absent, not as an empty file', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'A', 'agent', []);
+  await seed(call, [await entry('exists.txt', 'content')]);
+  await post(call, '/lease/checkout', { participantId: 'A', paths: ['exists.txt', 'never-written.txt'], mode: 'read' });
+
+  const result = await asJSON(await post(call, '/internal/seed', { participantId: 'A', token: token(data, 'A') }));
+  const known = result.files.find(file => file.path === 'exists.txt');
+  const unknown = result.files.find(file => file.path === 'never-written.txt');
+
+  assert.equal(known.exists, true);
+  assert.equal(unknown.exists, false);
+  assert.equal(unknown.contentBase64, null, 'materialising this would destroy a file it never saw');
+  assert.equal(unknown.revision, null);
+});

@@ -33,16 +33,21 @@ export class CommitGate extends WorkerEntrypoint {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // Everything that is not a commit is refused. A participant has no business
-    // reaching any other endpoint from inside, and discovering that cheaply is
-    // better than discovering it later.
-    if (url.pathname !== '/commit') {
+    // Two routes, and only two. The container has no internet and this gate is
+    // its only exit, so anything not listed is refused rather than left to chance.
+    //
+    // `/seed` is a read, added because a participant that cannot see the workspace
+    // is working blind: it could commit changes built on nothing, and the fence
+    // would be judging work against a tree it never received. It serves only the
+    // paths the caller holds a lease on, so it is not a way around the lease layer.
+    if (url.pathname !== '/commit' && url.pathname !== '/seed') {
       return new Response(
-        JSON.stringify({ error: 'refused', reason: 'not_a_commit_route', path: url.pathname }),
+        JSON.stringify({ error: 'refused', reason: 'not_a_permitted_route', path: url.pathname }),
         { status: 409, headers: { 'content-type': 'application/json' } },
       );
     }
-    if (request.method !== 'POST') {
+    const expectedMethod = url.pathname === '/seed' ? 'GET' : 'POST';
+    if (request.method !== expectedMethod) {
       return new Response('method_not_allowed', { status: 405 });
     }
 
@@ -63,14 +68,32 @@ export class CommitGate extends WorkerEntrypoint {
       outcome: 'received',
     });
 
-    // A commit with no claimed identity is refused here, before the workspace is
+    // A request with no claimed identity is refused here, before the workspace is
     // even resolved. Falling back to a default workspace would let a
-    // misconfigured container write somewhere arbitrary.
+    // misconfigured container read or write somewhere arbitrary.
     if (!workspace || !participantId || !token) {
       return json(400, {
         error: 'refused',
-        reason: 'unidentified_commit',
+        reason: 'unidentified_request',
         detail: `headers required: ${WORKSPACE}, ${PARTICIPANT}, ${TOKEN}`,
+      });
+    }
+
+    const stub = this.env.WORKSPACE.get(this.env.WORKSPACE.idFromName(workspace));
+
+    if (url.pathname === '/seed') {
+      // The Durable Object checks the token against what it issued when it started
+      // this container, and serves only leased paths. The gate cannot verify
+      // anything itself: it has no memory of who it started.
+      const response = await stub.fetch('https://workspace.internal/internal/seed', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ participantId, token }),
+      });
+      await this.record({ workspace, participantId, outcome: 'seeded', status: response.status });
+      return new Response(response.body, {
+        status: response.status,
+        headers: { 'content-type': 'application/json', 'x-ingress-gate': 'seed' },
       });
     }
 
@@ -97,7 +120,6 @@ export class CommitGate extends WorkerEntrypoint {
       });
     }
 
-    const stub = this.env.WORKSPACE.get(this.env.WORKSPACE.idFromName(workspace));
     // The Durable Object checks the token against what it issued when it started
     // this container. The gate cannot: it has no memory of who it started.
     const response = await stub.fetch('https://workspace.internal/internal/commit', {

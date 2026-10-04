@@ -187,3 +187,59 @@ export async function list(ctx) {
   // response would guess.
   return json(200, (await ctx.leases()).snapshot());
 }
+/**
+ * The tree a participant is entitled to start from.
+ *
+ * The union of every path it currently holds a live lease on, at the revision the
+ * workspace admitted. Deliberately *not* the whole workspace:
+ *
+ *   - Least privilege. A participant gets what it checked out and nothing else,
+ *     so the seed cannot become a read channel around the lease layer.
+ *   - The seed and the lease agree. If a lease is what authorises a write, the
+ *     files handed over must be exactly the ones it authorises, or the two
+ *     disagree about what the participant is working on.
+ *
+ * A declared dependency the participant holds a read lease on is included, because
+ * that is what makes its reads verifiable rather than asserted.
+ */
+export async function seed(ctx, participantId) {
+  const ledger = await ctx.getLedger();
+  const table = await ctx.leases();
+  const now = Date.now();
+  table.sweep(now);
+
+  const paths = [...new Set(
+    table.leasesFor(participantId, { now }).flatMap(lease => [...lease.paths])
+  )].sort();
+
+  if (paths.length === 0) {
+    return { participantId, files: [], revisions: {}, fingerprint: null, leasedPaths: [] };
+  }
+
+  const content = await readContentMap(ctx.state.storage, paths);
+  const files = paths.map(path => {
+    const record = ledger.files.get(path) ?? null;
+    const entry = content.get(path);
+    return {
+      path,
+      // Absent is reported as absent. A participant must be able to tell "does not
+      // exist" from "exists and is empty", or it will write over a file it never saw.
+      exists: record != null,
+      revision: record?.revision ?? null,
+      author: record?.author ?? null,
+      contentBase64: entry?.contentBase64 ?? null,
+      contentHash: record?.contentHash ?? null,
+    };
+  });
+
+  return {
+    participantId,
+    files,
+    // The revision the participant starts from, per path. The reporter attaches
+    // these to the commit, which is what makes the base-revision check live: it
+    // compares what the participant started from against what is there now.
+    revisions: Object.fromEntries(files.map(file => [file.path, file.revision])),
+    fingerprint: ledger.decisionCut(participantId).fingerprint,
+    leasedPaths: paths,
+  };
+}

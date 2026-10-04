@@ -18,6 +18,7 @@ import {
   tokensMatch,
   encodeBase64,
 } from '../keys.mjs';
+import * as leaseHandler from './leases.mjs';
 
 export async function commit(ctx, request) {
   const body = await readJSON(request, MAX_COMMIT_BODY);
@@ -183,4 +184,35 @@ async function recordManifestRun(ctx, participantId, exitCode, manifest) {
 export async function lastContainerExit(state) {
   const manifests = await state.storage.get(manifestsKey);
   return manifests?.length ? manifests[manifests.length - 1].exitCode : null;
+}
+/**
+ * Serve a participant the tree it is entitled to start from.
+ *
+ * Gate-only, token-checked, and limited to leased paths. Without it a
+ * participant's container is sealed: the gate accepted writes but offered nothing
+ * to read, so the participant built its work against an empty directory and the
+ * fence was judging changes made against a tree it never received.
+ *
+ * Refuses rather than returning an empty seed, because an empty seed and a
+ * legitimate "you hold nothing" must not look alike to the launcher.
+ */
+export async function seed(ctx, request) {
+  const body = await readJSON(request, MAX_COMMIT_BODY);
+  const { participantId, token } = body;
+
+  const expected = await ctx.state.storage.get(tokenKey(participantId));
+  if (!expected || !(await tokensMatch(expected, token))) {
+    return json(403, {
+      error: 'refused',
+      reason: expected ? 'token_mismatch' : 'no_token_issued',
+      participantId: participantId ?? null,
+    });
+  }
+
+  // `ledger.require` so an unknown participant is an error rather than an empty
+  // seed that looks like a workspace with no files.
+  (await ctx.getLedger()).require(participantId);
+
+  const result = await leaseHandler.seed(ctx, participantId);
+  return json(200, result);
 }

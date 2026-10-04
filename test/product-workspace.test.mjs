@@ -566,6 +566,7 @@ test('every routed path is reachable and none of them crash the object', async (
     ['POST', '/lease/release'],
     ['POST', '/lease/retrieve'],
     ['POST', '/internal/commit'],
+    ['POST', '/internal/seed'],
     ['POST', '/internal/gate-log'],
     ['POST', '/bootstrap'],
     ['POST', '/start'],
