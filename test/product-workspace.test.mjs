@@ -541,3 +541,60 @@ test('the client never names a route the workspace does not serve', async () => 
     assert.notEqual(response.status, 404, `the client calls ${route}, which the workspace does not serve`);
   }
 });
+
+// --- the routing stays wired ----------------------------------------------
+
+test('every routed path is reachable and none of them crash the object', async () => {
+  // The concern handlers were split into separate modules, and the only thing
+  // holding them together is the route table. A handler wired to the wrong
+  // function, or a route that dispatches and then throws, would still pass every
+  // behaviour test written against one concern.
+  const { call } = mountDO();
+  await join(call, 'p', 'agent', []);
+  await bootstrap(call, [await entry('seed.txt', 'seeded')]);
+
+  const probes = [
+    ['GET', '/state'],
+    ['GET', '/leases'],
+    ['GET', '/content?path=seed.txt'],
+    ['GET', '/receipts?participant=p'],
+    ['POST', '/intent'],
+    ['POST', '/read'],
+    ['POST', '/write'],
+    ['POST', '/lease/checkout'],
+    ['POST', '/lease/heartbeat'],
+    ['POST', '/lease/release'],
+    ['POST', '/lease/retrieve'],
+    ['POST', '/internal/commit'],
+    ['POST', '/internal/gate-log'],
+    ['POST', '/bootstrap'],
+    ['POST', '/start'],
+  ];
+
+  for (const [method, path] of probes) {
+    const response = await call(`https://x${path}`, {
+      method,
+      body: method === 'GET' ? undefined : JSON.stringify({ participantId: 'p', path: 'seed.txt', paths: [] }),
+    });
+    assert.notEqual(response.status, 404, `${method} ${path} is routed nowhere`);
+    // 501 is the documented "no container binding" answer, not a crash.
+    assert.ok(
+      response.status < 500 || response.status === 501,
+      `${method} ${path} returned ${response.status}, which means it threw`
+    );
+  }
+});
+
+test('the durable object holds no domain logic, only routing', async () => {
+  // A structural guard against the file regrowing into what it just was: 699
+  // lines carrying routing, tokens, containers, leases and commit decisions in one
+  // place. Asserting on line count is brittle; asserting that the commit decision
+  // and the lease table are not *defined* here is not.
+  const source = readFileSync(new URL('../src/product/workspace-agent.mjs', import.meta.url), 'utf8');
+  assert.equal(/function\s+evaluateCommit|\bapplyCommit\s*\(/.test(source), false,
+    'the commit decision belongs in handlers/commit.mjs');
+  assert.equal(/class\s+LeaseTable/.test(source), false,
+    'the lease table belongs in lease.mjs');
+  assert.equal(/snapshotContainer|container\.start\(/.test(source), false,
+    'container lifecycle belongs in handlers/container.mjs');
+});
