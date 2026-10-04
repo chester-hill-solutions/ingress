@@ -115,7 +115,7 @@ const workspace = process.env.INGRESS_WORKSPACE;
 const participantId = process.env.INGRESS_PARTICIPANT;
 const token = process.env.INGRESS_TOKEN;
 
-const REVISIONS_PATH = '.ingress/revisions.json';
+const REVISIONS_PATH = '/tmp/ingress-revisions.json';
 
 function headers() {
   return {
@@ -155,8 +155,8 @@ async function seed() {
     written += 1;
   }
 
-  fs.mkdirSync(path.join(workDir, '.ingress'), { recursive: true });
-  fs.writeFileSync(path.join(workDir, REVISIONS_PATH), JSON.stringify(revisions));
+  fs.mkdirSync(path.dirname(REVISIONS_PATH), { recursive: true });
+  fs.writeFileSync(REVISIONS_PATH, JSON.stringify(revisions));
   console.log('INGRESS-SEED ' + JSON.stringify({
     leased: (payload.leasedPaths || []).length,
     written: written,
@@ -198,9 +198,17 @@ async function commit() {
   // What the participant started from, per path. Absent for a path it was never
   // seeded with, which is exactly right: it has no base to claim.
   let revisions = {};
+  let baseKnown = true;
   try {
-    revisions = JSON.parse(fs.readFileSync(path.join(workDir, REVISIONS_PATH), 'utf8'));
-  } catch {}
+    revisions = JSON.parse(fs.readFileSync(REVISIONS_PATH, 'utf8'));
+  } catch {
+    // Loud, because this is the difference between the fence judging a change
+    // against what the participant started from and judging it against nothing.
+    // The lease still gates the write either way — but a silent loss of the base
+    // is exactly the class of degradation this project keeps finding.
+    baseKnown = false;
+    console.log('INGRESS-BASE-UNKNOWN the revisions file is missing; committing without declared base revisions');
+  }
 
   const files = walk(workDir, '', []);
   for (const file of files) {
@@ -213,6 +221,7 @@ async function commit() {
     manifestVersion: process.env.INGRESS_MANIFEST_VERSION,
     participantId: participantId,
     participantExit: participantExit,
+    baseKnown: baseKnown,
     files: files,
   });
 

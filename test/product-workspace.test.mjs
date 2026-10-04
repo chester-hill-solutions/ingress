@@ -599,3 +599,19 @@ test('the durable object holds no domain logic, only routing', async () => {
   assert.equal(/snapshotContainer|container\.start\(/.test(source), false,
     'container lifecycle belongs in handlers/container.mjs');
 });
+
+test('the gate enforces its body bound by streaming, not by trusting a header', () => {
+  // `CommitGate extends WorkerEntrypoint`, which cannot be constructed off-runtime,
+  // so this is a structural guard rather than a behavioural one and says so.
+  //
+  // It exists because the previous version read `content-length`, which is absent
+  // on a chunked request: the fallback was `0`, which passed, so the 12 MB limit was
+  // advisory for exactly the clients that did not volunteer the header.
+  const source = readFileSync(new URL('../src/product/gate.mjs', import.meta.url), 'utf8');
+  assert.match(source, /readJSON\(request, MAX_COMMIT_BODY\)/,
+    'the gate must bound the body as it streams');
+  assert.equal(/request\.json\(\)/.test(source), false,
+    'request.json() is unbounded and would reintroduce the hole');
+  assert.equal(/headers\.get\(['"]content-length['"]\)/.test(source), false,
+    'the header is absent on chunked requests, so it cannot be the bound');
+});

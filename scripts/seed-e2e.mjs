@@ -34,7 +34,10 @@ async function post(suffix, body) {
   });
   return { status: response.status, body: await response.json() };
 }
-const get = async suffix => (await fetch(url(suffix))).json();
+const get = async suffix => {
+  const response = await fetch(url(suffix));
+  return { status: response.status, body: await response.json() };
+};
 
 const b64 = text => Buffer.from(text, 'utf8').toString('base64');
 const { sha256Hex } = await import('../src/product/commit.mjs');
@@ -92,7 +95,7 @@ step('3. the participant reads what it was given, and lists what it was not');
   // The gate log records what the container asked for, which is how we confirm the
   // seed was actually fetched rather than assumed.
   const state = await get('/state');
-  console.log('  ledger:', state.files.map(f => `${f.path}@r${f.revision} by ${f.author}`).join(', '));
+  console.log('  ledger:', state.body.files.map(f => `${f.path}@r${f.revision} by ${f.author}`).join(', '));
 }
 
 step('4. the participant edits the file it was actually given');
@@ -110,7 +113,7 @@ step('4. the participant edits the file it was actually given');
   console.log('  landed: ', JSON.stringify(verdict?.landed ?? []));
   ok('the edit was admitted', verdict?.admitted === true);
 
-  const content = await get(`/content?path=${LEASED}`);
+  const content = (await get(`/content?path=${LEASED}`)).body;
   const text = Buffer.from(content.contentBase64, 'base64').toString('utf8');
   console.log('  admitted content:');
   for (const line of text.trim().split('\n')) console.log('    |', line);
@@ -175,8 +178,8 @@ step('5. a participant whose lease lapses mid-run is caught by the base revision
 }
 
 const finalState = await get('/state');
-console.log('\nfinal ledger:', finalState.files.map(f => `${f.path}@r${f.revision} by ${f.author}`).join(', '));
+console.log('\nfinal ledger:', finalState.body.files.map(f => `${f.path}@r${f.revision} by ${f.author}`).join(', '));
 
-const unLeased = await get(`/content?path=${NOT_LEASED}`);
+const unLeased = (await get(`/content?path=${NOT_LEASED}`)).body;
 console.log(`un-leased file unchanged: ${Buffer.from(unLeased.contentBase64, 'base64').toString('utf8').trim() === NOT_LEASED_CONTENT.trim()}`);
-console.log(`seed revisions carried baseRevision: ${finalState.receipts > 0 ? 'commit path exercised' : 'no receipts'}`);
+console.log(`seed revisions carried baseRevision: ${finalState.body.receipts > 0 ? 'commit path exercised' : 'no receipts'}`);

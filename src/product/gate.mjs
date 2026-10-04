@@ -19,8 +19,7 @@
  */
 
 import { WorkerEntrypoint } from 'cloudflare:workers';
-
-const MAX_COMMIT_BODY = 12 * 1024 * 1024;
+import { readJSON, MAX_COMMIT_BODY } from './http.mjs';
 
 /** Headers the launcher sets. Anything else arriving here is refused. */
 const WORKSPACE = 'x-ingress-workspace';
@@ -99,12 +98,16 @@ export class CommitGate extends WorkerEntrypoint {
 
     let payload;
     try {
-      const declared = Number(request.headers.get('content-length') ?? '0');
-      if (declared > MAX_COMMIT_BODY) {
-        return json(413, { error: 'refused', reason: 'commit_too_large', bytes: declared });
+      // Enforced while reading the stream, not from the `content-length` header.
+      //
+      // The header is absent on a chunked request and the fallback was `0`, which
+      // passes — so the limit was advisory for exactly the clients that did not
+      // volunteer it. `readJSON` counts bytes as they arrive and stops.
+      payload = await readJSON(request, MAX_COMMIT_BODY);
+    } catch (error) {
+      if (error?.message === 'body_bounds') {
+        return json(413, { error: 'refused', reason: 'commit_too_large', limitBytes: MAX_COMMIT_BODY });
       }
-      payload = await request.json();
-    } catch {
       return json(400, { error: 'refused', reason: 'malformed_commit' });
     }
 

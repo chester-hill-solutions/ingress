@@ -556,3 +556,73 @@ test('an absent path is seeded as absent, not as an empty file', async () => {
   assert.equal(unknown.contentBase64, null, 'materialising this would destroy a file it never saw');
   assert.equal(unknown.revision, null);
 });
+
+// --- the caps actually reach what they protect ---------------------------
+
+test('a seed over its byte budget is refused whole, never truncated', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'big', 'agent', []);
+  // Ten files at the per-file cap: 5 MiB raw, ~6.8 MiB base64-encoded. The per-file
+  // and per-lease caps are each satisfied; only a budget over the whole response
+  // catches this, which is the point.
+  const chunk = 'x'.repeat(512 * 1024);
+  const paths = Array.from({ length: 10 }, (_, i) => `f${i}.bin`);
+  await seed(call, await Promise.all(paths.map(path => entry(path, chunk))));
+  await post(call, '/lease/checkout', { participantId: 'big', paths, mode: 'read' });
+
+  const response = await post(call, '/internal/seed', { participantId: 'big', token: token(data, 'big') });
+  assert.equal(response.status, 413, 'a truncated seed is worse than none: the participant would believe it holds files it only partly has');
+
+  const body = await asJSON(response);
+  assert.equal(body.refused, true);
+  assert.equal(body.reason, 'seed_too_large');
+  assert.equal(body.files, undefined, 'no partial file list is offered');
+  assert.ok(body.exceedingPaths.length > 0);
+  assert.match(body.detail, /release some paths/);
+});
+
+test('a seed inside the budget is served whole', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'ok', 'agent', []);
+  await seed(call, [await entry('small.txt', 'tiny')]);
+  await post(call, '/lease/checkout', { participantId: 'ok', paths: ['small.txt'], mode: 'read' });
+
+  const body = await asJSON(await post(call, '/internal/seed', { participantId: 'ok', token: token(data, 'ok') }));
+  assert.equal(body.refused, false);
+  assert.equal(body.files.length, 1);
+  assert.ok(body.bytes > 0, 'the seed reports what it cost');
+});
+
+test('a closure over the path cap is refused with a reason that names the cause', async () => {
+  const { call } = mountDO();
+  // 60 declared dependencies plus a 200-path request is a 260-path closure.
+  const dependencies = Array.from({ length: 60 }, (_, i) => `dep${i}.mjs`);
+  await join(call, 'greedy', 'agent', dependencies);
+  const many = Array.from({ length: 200 }, (_, i) => `f${i}.mjs`);
+
+  const response = await post(call, '/lease/checkout', { participantId: 'greedy', paths: many, mode: 'read' });
+  assert.equal(response.status, 409);
+  const body = await asJSON(response);
+
+  assert.equal(body.reason, 'closure_too_large');
+  assert.equal(body.requestedPaths, 200, 'the request size is reported');
+  assert.equal(body.declaredDependencies, 60, 'and the dependency count that pushed it over');
+  assert.equal(body.closurePaths, 260);
+  assert.match(body.detail, /asked for 200 path\(s\) and declared 60 dependency/,
+    'the refusal must name the cause, or the caller is pointed at the wrong number');
+  assert.ok(body.hint);
+});
+
+test('a write grant is not inflated by declared dependencies', async () => {
+  const { call } = mountDO();
+  const dependencies = Array.from({ length: 60 }, (_, i) => `dep${i}.mjs`);
+  await join(call, 'writer', 'agent', dependencies);
+  await seed(call, [await entry('mine.mjs', 'x')]);
+
+  // A write grant covers only what was asked for, so this is one path, not 61.
+  const response = await post(call, '/lease/checkout', { participantId: 'writer', paths: ['mine.mjs'], mode: 'write' });
+  assert.equal(response.status, 200);
+  const body = await asJSON(response);
+  assert.deepEqual(body.files.map(f => f.path), ['mine.mjs']);
+  assert.deepEqual(body.includedDependencies, [], 'no dependency is dragged into a write grant');
+});

@@ -1,5 +1,5 @@
 /**
- * Leases: checkout, heartbeat, release, retrieve.
+ * Leases: checkout, heartbeat, release, retrieve, and the seed they authorise.
  *
  * Split out of the Durable Object because leases are a self-contained concern.
  * They share storage and the ledger with the commit path, and nothing else — the
@@ -12,9 +12,21 @@
  * `this` happens to carry.
  */
 
-import { LeaseConflict, expandClosure, DEFAULT_LEASE_MS } from '../lease.mjs';
+import { LeaseConflict, expandClosure, DEFAULT_LEASE_MS, MAX_LEASE_PATHS } from '../lease.mjs';
 import { json, readJSON } from '../http.mjs';
 import { readContentMap } from '../keys.mjs';
+
+/**
+ * Byte budget for a seed response.
+ *
+ * The per-path and per-file caps are each defensible alone and catastrophic
+ * together: 256 leased paths x 512 KiB is ~171 MB of base64 in a single JSON
+ * response, which the worker has to serialise and the container has to parse.
+ *
+ * The budget is spent over the *encoded* length, because that is what actually
+ * crosses the wire and what actually occupies memory in the reader.
+ */
+export const MAX_SEED_BYTES = 4 * 1024 * 1024;
 
 /**
  * Grant a lease, and hand over the content.
@@ -43,6 +55,26 @@ export async function checkout(ctx, request) {
   // the revision you read against the revision now there.
   const declared = mode === 'read' ? [...(participant.dependencies ?? [])] : [];
   const closure = expandClosure({ requested, declaredDependencies: declared });
+
+  // The closure is what gets granted, so the closure is what the cap applies to.
+  // Checked here rather than inside `checkout` so the refusal can name the cause: a
+  // participant at the path cap refused with "at most 256 paths" is pointed at the
+  // wrong number when their own request was small and their declared dependencies
+  // were what pushed it over.
+  if (closure.length > MAX_LEASE_PATHS) {
+    return json(409, {
+      granted: false,
+      reason: 'closure_too_large',
+      requestedPaths: requested.length,
+      declaredDependencies: declared.length,
+      closurePaths: closure.length,
+      cap: MAX_LEASE_PATHS,
+      detail: requested.length + declared.length > MAX_LEASE_PATHS
+        ? `asked for ${requested.length} path(s) and declared ${declared.length} dependency(ies); together they exceed the ${MAX_LEASE_PATHS}-path grant`
+        : `the grant would cover ${closure.length} paths, over the ${MAX_LEASE_PATHS}-path cap`,
+      hint: 'release a dependency, or check out fewer paths at a time',
+    });
+  }
 
   let granted;
   try {
@@ -187,6 +219,7 @@ export async function list(ctx) {
   // response would guess.
   return json(200, (await ctx.leases()).snapshot());
 }
+
 /**
  * The tree a participant is entitled to start from.
  *
@@ -213,28 +246,54 @@ export async function seed(ctx, participantId) {
   )].sort();
 
   if (paths.length === 0) {
-    return { participantId, files: [], revisions: {}, fingerprint: null, leasedPaths: [] };
+    return { refused: false, participantId, files: [], revisions: {}, fingerprint: null, leasedPaths: [] };
   }
 
   const content = await readContentMap(ctx.state.storage, paths);
-  const files = paths.map(path => {
+
+  const files = [];
+  let bytes = 0;
+  const oversized = [];
+
+  for (const path of paths) {
     const record = ledger.files.get(path) ?? null;
     const entry = content.get(path);
-    return {
+    const encoded = entry?.contentBase64 ?? null;
+    bytes += encoded ? encoded.length : 0;
+    if (bytes > MAX_SEED_BYTES) oversized.push(path);
+    files.push({
       path,
       // Absent is reported as absent. A participant must be able to tell "does not
       // exist" from "exists and is empty", or it will write over a file it never saw.
       exists: record != null,
       revision: record?.revision ?? null,
       author: record?.author ?? null,
-      contentBase64: entry?.contentBase64 ?? null,
+      contentBase64: encoded,
       contentHash: record?.contentHash ?? null,
+    });
+  }
+
+  // Refuse rather than truncate. A truncated seed is worse than none: the
+  // participant would believe it holds files it only partly has, and commit against
+  // a base it never really saw. Failing loudly leaves it working on what it does
+  // hold, which is true.
+  if (oversized.length > 0) {
+    return {
+      refused: true,
+      reason: 'seed_too_large',
+      participantId,
+      budgetBytes: MAX_SEED_BYTES,
+      requestedPaths: paths.length,
+      exceedingPaths: oversized.slice(0, 32),
+      detail: `the leased tree needs more than ${MAX_SEED_BYTES} bytes; release some paths and check them out again`,
     };
-  });
+  }
 
   return {
+    refused: false,
     participantId,
     files,
+    bytes,
     // The revision the participant starts from, per path. The reporter attaches
     // these to the commit, which is what makes the base-revision check live: it
     // compares what the participant started from against what is there now.

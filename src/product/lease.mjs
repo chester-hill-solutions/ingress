@@ -153,10 +153,12 @@ export class LeaseTable {
    * the wall clock directly, which meant it silently disagreed with the rest of
    * the table under an injected clock — and a disagreement about whether a lease
    * is live is exactly the kind of bug that hands two participants one file.
+   *
+   * There was a `leaseFor` that returned only the first of these. It was dead in
+   * production and it was the direct cause of a participant holding a read lease on
+   * a dependency and a write lease on its own file being told it had neither, so it
+   * is gone rather than kept as a convenience.
    */
-  leaseFor(participantId, { includeExpired = false, now = Date.now() } = {}) {
-    return this.leasesFor(participantId, { includeExpired, now })[0] ?? NO_HOLDER;
-  }
 
   /**
    * Every live lease a participant holds.

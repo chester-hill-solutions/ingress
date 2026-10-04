@@ -193,21 +193,61 @@ test('a participant cannot declare an unbounded dependency list', () => {
 });
 // --- retention ------------------------------------------------------------
 
-test('the read ledger is bounded, and the bound refuses rather than evicts', () => {
+test('the read ledger is bounded per participant, so one cannot lock out the rest', () => {
   const ledger = new WorkspaceLedger({ epoch: 'e1' });
-  ledger.register({ participantId: 'p' });
-  // Fill the read cap. Each read is a distinct path, so each is a new entry.
-  for (let i = 0; i < 4096; i++) ledger.recordRead({ participantId: 'p', path: `f${i}.mjs` });
-  assert.equal(ledger.reads.size, 4096);
+  ledger.register({ participantId: 'greedy' });
+  ledger.register({ participantId: 'polite' });
 
+  // One participant exhausts their own budget.
+  for (let i = 0; i < 512; i++) ledger.recordRead({ participantId: 'greedy', path: `g${i}.mjs` });
+  assert.equal(ledger.reads.size, 512);
   assert.throws(
-    () => ledger.recordRead({ participantId: 'p', path: 'one-too-many.mjs' }),
-    /read_cap/
+    () => ledger.recordRead({ participantId: 'greedy', path: 'one-too-many.mjs' }),
+    error => error.reason === 'read_cap' && error.scope === 'participant'
   );
 
-  // Re-reading something already tracked is still fine: it is not growth.
-  assert.doesNotThrow(() => ledger.recordRead({ participantId: 'p', path: 'f0.mjs' }));
-  assert.equal(ledger.reads.size, 4096);
+  // The other participant is unaffected. A shared budget made this a denial of
+  // service with no authorisation required.
+  assert.doesNotThrow(() => ledger.recordRead({ participantId: 'polite', path: 'p0.mjs' }));
+  assert.ok(ledger.reads.has('polite:p0.mjs'));
+
+  // Re-reading something already tracked is not growth.
+  assert.doesNotThrow(() => ledger.recordRead({ participantId: 'greedy', path: 'g0.mjs' }));
+  assert.equal(ledger.reads.size, 513);
+});
+
+test('the workspace-wide read cap still applies, and says so', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  // 16 participants at 512 each exactly fills 8192, so the next read trips it.
+  for (let i = 0; i < 17; i++) ledger.register({ participantId: `p${i}` });
+  for (let i = 0; i < 16; i++) {
+    for (let j = 0; j < 512; j++) ledger.recordRead({ participantId: `p${i}`, path: `f${j}.mjs` });
+  }
+  assert.equal(ledger.reads.size, 8192, 'nobody hit a per-participant cap');
+
+  assert.throws(
+    () => ledger.recordRead({ participantId: 'p16', path: 'one.mjs' }),
+    error => {
+      assert.equal(error.reason, 'read_cap');
+      // The scope is what tells a caller whether to wait or to give up on the
+      // workspace, so a refusal that does not say which cap it hit is half an answer.
+      assert.equal(error.scope, 'workspace');
+      return true;
+    }
+  );
+});
+
+test('the per-participant read count survives persistence', () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'p' });
+  for (let i = 0; i < 512; i++) ledger.recordRead({ participantId: 'p', path: `f${i}.mjs` });
+
+  const revived = WorkspaceLedger.fromJSON(JSON.parse(JSON.stringify(ledger.toJSON())));
+  assert.throws(
+    () => revived.recordRead({ participantId: 'p', path: 'another.mjs' }),
+    /read_cap/,
+    'a restart must not hand the same participant a fresh read budget'
+  );
 });
 
 test('the receipt trail is capped, and the trim is counted', () => {

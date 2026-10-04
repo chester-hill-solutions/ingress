@@ -70,7 +70,7 @@ test('a grant is atomic over the closure: one blocked path refuses them all', ()
   );
 
   assert.equal(leases.holdersOf('ui.mjs').length, 0, 'ui.mjs must NOT be granted');
-  assert.equal(leases.leaseFor('B'), null);
+  assert.deepEqual(leases.leasesFor('B', { now: NOW }), []);
 });
 
 test('a lease is finite, so a dead holder cannot block anyone forever', () => {
@@ -118,7 +118,7 @@ test('a heartbeat cannot revive an expired lease', () => {
   const beat = leases.heartbeat({ leaseId: lease.leaseId, participantId: 'A', now: at(6000) });
   assert.equal(beat.alive, false);
   assert.equal(beat.reason, 'lease_expired');
-  assert.ok(leases.leaseFor('B', { now: at(6000) }), 'B still holds it: no double grant');
+  assert.equal(leases.leasesFor('B', { now: at(6000) }).length, 1, 'B still holds it: no double grant');
 });
 
 test('a heartbeat for someone else\'s lease is refused', () => {
@@ -211,7 +211,7 @@ test('a blocked participant that gets in stops blocking others', () => {
   }
   assert.deepEqual([...leases.waits.get('B')], ['A']);
 
-  const released = leases.release({ leaseId: leases.leaseFor('A', { now: NOW }).leaseId, participantId: 'A', now: NOW });
+  const released = leases.release({ leaseId: leases.leasesFor('A', { now: NOW })[0].leaseId, participantId: 'A', now: NOW });
   assert.deepEqual(released.woken, ['B'], 'release wakes the waiter: the workspace is the broker');
   assert.equal(leases.waits.has('B'), false, 'and the stale edge is cleared, so no phantom cycle later');
 });
@@ -288,7 +288,7 @@ test('the table survives a round trip through storage', () => {
   }
 
   const revived = LeaseTable.fromJSON(JSON.parse(JSON.stringify(leases.toJSON())));
-  assert.deepEqual([...revived.leaseFor('A', { now: NOW }).paths].sort(), ['a.mjs', 'b.mjs']);
+  assert.deepEqual([...revived.leasesFor('A', { now: NOW })[0].paths].sort(), ['a.mjs', 'b.mjs']);
   assert.deepEqual([...revived.waits.get('C')], ['A']);
   assert.throws(() => revived.checkout({ participantId: 'C', paths: ['a.mjs'], mode: 'write', now: NOW }), LeaseConflict);
 });

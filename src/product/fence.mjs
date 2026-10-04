@@ -32,12 +32,19 @@ const TERMINAL = new Set(['stopped', 'interrupted', 'completed', 'failed']);
  * recording is worse than one that admits it stopped. So the trim is counted and
  * the count is retained: `receiptsTrimmed` says how many decisions this workspace
  * no longer remembers.
+ *
+ * Reads are capped twice, and the per-participant cap is the one that matters.
+ * A single workspace-wide cap was a denial of service with no authorisation
+ * required: one participant calling `/read` in a loop exhausted the budget, and
+ * every other participant then failed their first read with `read_cap`.
  */
 const MAX_FILES = 512;
 const MAX_DEPENDENCIES = 64;
 const MAX_PATH_BYTES = 512;
-/** A participant's declared dependencies cap at 64; reads are generous past that. */
-const MAX_READS = 4096;
+/** Reads one participant may hold. Their declared dependencies cap at 64. */
+const MAX_READS_PER_PARTICIPANT = 512;
+/** Reads across the whole workspace. Generous past the per-participant cap. */
+const MAX_READS_TOTAL = 8192;
 /** Retained receipts. Oldest are dropped first. */
 const MAX_RECEIPTS = 5000;
 
@@ -102,6 +109,8 @@ export class WorkspaceLedger {
     this.files = new Map();
     /** @type {Map<string, object>} `${participantId}:${path}` -> read record */
     this.reads = new Map();
+    /** participantId -> how many reads it holds, so the cap is per participant. */
+    this.readCounts = new Map();
     this.intents = new Map();
     this.receipts = [];
     this.receiptsTrimmed = 0;
@@ -163,20 +172,45 @@ export class WorkspaceLedger {
   recordRead({ participantId, path }) {
     const participant = this.require(participantId);
     path = declaredPath(path);
+    const key = `${participant.participantId}:${path}`;
+
     // Refuse rather than evict. Dropping the oldest read would silently turn a
     // tracked read back into `readBasis: 'unknown'`, which is safe — but the
     // caller would not know its evidence had just been discarded.
-    if (this.reads.size >= MAX_READS && !this.reads.has(`${participant.participantId}:${path}`)) {
-      throw new FenceRefusal('read_cap', { participantId, cap: MAX_READS });
+    if (this.reads.has(key)) {
+      this.reads.set(key, this.readRecord(participant, path));
+      return;
     }
+
+    const mine = this.readCounts.get(participant.participantId) ?? 0;
+    if (mine >= MAX_READS_PER_PARTICIPANT) {
+      throw new FenceRefusal('read_cap', {
+        participantId,
+        cap: MAX_READS_PER_PARTICIPANT,
+        scope: 'participant',
+      });
+    }
+    if (this.reads.size >= MAX_READS_TOTAL) {
+      throw new FenceRefusal('read_cap', {
+        participantId,
+        cap: MAX_READS_TOTAL,
+        scope: 'workspace',
+      });
+    }
+
+    this.reads.set(key, this.readRecord(participant, path));
+    this.readCounts.set(participant.participantId, mine + 1);
+  }
+
+  readRecord(participant, path) {
     const file = this.files.get(path);
-    this.reads.set(`${participant.participantId}:${path}`, {
+    return {
       participantId: participant.participantId,
       path,
       revision: file?.revision ?? null,
       contentHash: file?.contentHash ?? null,
       atSequence: this.receipts.length,
-    });
+    };
   }
 
   /**
@@ -395,6 +429,7 @@ export class WorkspaceLedger {
       })),
       files: [...this.files.values()].map(file => ({ ...file })),
       reads: [...this.reads.values()].map(read => ({ ...read })),
+      readCounts: [...this.readCounts],
       intents: [...this.intents.values()].map(intent => ({ ...intent })),
       receipts: this.receipts.map(receipt => ({ ...receipt })),
       receiptsTrimmed: this.receiptsTrimmed,
@@ -408,6 +443,7 @@ export class WorkspaceLedger {
     ledger.participants = new Map((value.participants ?? []).map(p => [p.participantId, { ...p, dependencies: new Set(p.dependencies) }]));
     ledger.files = new Map((value.files ?? []).map(f => [f.path, { ...f }]));
     ledger.reads = new Map((value.reads ?? []).map(r => [`${r.participantId}:${r.path}`, { ...r }]));
+    ledger.readCounts = new Map(value.readCounts ?? []);
     ledger.intents = new Map((value.intents ?? []).map(i => [i.participantId, { ...i }]));
     ledger.receipts = (value.receipts ?? []).map(r => ({ ...r }));
     ledger.receiptsTrimmed = value.receiptsTrimmed ?? 0;

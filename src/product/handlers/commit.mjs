@@ -214,5 +214,11 @@ export async function seed(ctx, request) {
   (await ctx.getLedger()).require(participantId);
 
   const result = await leaseHandler.seed(ctx, participantId);
+  if (result.refused) {
+    // 413 rather than 200-with-a-refusal-in-it. The container's launcher treats a
+    // non-2xx as "no seed", so this has to be a status and not a field it has to
+    // know to look for.
+    return json(413, result);
+  }
   return json(200, result);
 }
