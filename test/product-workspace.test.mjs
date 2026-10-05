@@ -107,6 +107,23 @@ function memoryStorage(data) {
       // Exposed so a test can reach in and age a lease rather than sleeping through its
       // expiry. Only ever read by tests; nothing in the product uses it.
       data,
+      /**
+       * Optimistic-concurrency transactions, serialised.
+       *
+       * A real Durable Object transaction retries on conflict; this queues instead, which is
+       * the same guarantee by a different mechanism — the body runs to completion before the
+       * next one starts, so two of them cannot both read the same revision.
+       *
+       * It queues rather than throwing on overlap because that is what the runtime does, and
+       * a shim that rejected the second caller would make the concurrency test pass by
+       * refusing to run rather than by not losing anything.
+       */
+      transaction(fn) {
+        const previous = data.get('__transactionQueue') ?? Promise.resolve();
+        const next = previous.then(() => fn(), () => fn());
+        data.set('__transactionQueue', next.catch(() => {}));
+        return next;
+      },
     },
   };
 }
@@ -801,9 +818,62 @@ function mountCapped(maxStarts, maxRunSeconds) {
     // No `stop`, deliberately: that is the shape of this runtime, and `waitBounded` has to
     // cope with it. A stub that provided one would test the other branch.
   };
+
+  /**
+   * An executor stub.
+   *
+   * `/start` no longer boots a container itself — it delegates to a separate Durable Object,
+   * because `ctx.container` is one container per object. So a shim without an executor is
+   * testing a deployment that cannot start anything, and answering 409 for every start for
+   * exactly the wrong reason.
+   */
+  const runs = [];
+  const EXECUTOR = {
+    idFromName: name => ({ name }),
+    get: id => ({
+      fetch: async (_url, init) => {
+        runs.push(JSON.parse(init.body));
+        return new Response(JSON.stringify({ timedOut: false, stopAvailable: false, stopError: null, containerError: null }), {
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    }),
+  };
+  env.EXECUTOR = EXECUTOR;
+
   const agent = new WorkspaceAgent(memoryStorage(data), env, container);
-  return { instance: agent, call: makeCall(agent), data, container };
+  return { instance: agent, call: makeCall(agent), data, container, env, runs };
 }
+
+test('concurrent increments do not lose any of them', async () => {
+  // The lost update, asserted.
+  //
+  // Every counter used to be folded as `saveUsage(recordX(await usage()))` — read the cached
+  // record, build a replacement, store it. Two of those interleaving on an `await` both read
+  // revision 0, both compute revision 1, and one increment vanishes with no error anywhere.
+  //
+  // It was found by the first live concurrent run, where five starts were counted as four.
+  // Nothing in the single-threaded suite could have caught it, because one request at a time
+  // never loses anything.
+  const { instance } = mountCapped(100, 60_000);
+  const ctx = instance.ctx;
+
+  // Interleaved the way a Durable Object actually interleaves: each increment reads the
+  // record, and all of them read it *before* any of them writes.
+  const reads = await Promise.all(Array.from({ length: 25 }, () => ctx.usage()));
+  await Promise.all(reads.map(() => ctx.addUsage({ commitsRefused: 1 })));
+
+  // `ctx.usage()` returns the record, not a Response — so it is read directly. Wrapping it in
+  // `asResult` is the same wrong-level mistake as elsewhere this session, and it threw rather
+  // than silently comparing undefined, which is the better of the two failure modes.
+  const usage = await ctx.usage();
+  assert.equal(usage.commitsRefused, 25,
+    `every increment must land; ${usage.commitsRefused} of 25 did`);
+
+  // And it survives a cold read, so the transaction really wrote rather than only caching.
+  const stored = (await storageOf(instance)).get('usage');
+  assert.equal(stored.commitsRefused, 25);
+});
 
 test('usage is visible, and it starts empty with the ceiling attached', async () => {
   const { call } = mountCapped(5, 600);

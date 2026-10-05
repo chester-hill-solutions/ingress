@@ -38,7 +38,8 @@ import { WorkspaceLedger } from './fence.mjs';
 import { LeaseTable } from './lease.mjs';
 import { json, readJSON, MAX_BODY_BYTES } from './http.mjs';
 import { contentKey, ledgerKey, leasesKey, gateLogKey, usageKey, GATE_LOG_HISTORY } from './keys.mjs';
-import { usageFrom, usageSnapshot, ceilingFromEnv } from './usage.mjs';
+import { usageFrom, usageSnapshot, ceilingFromEnv, applyDelta } from './usage.mjs';
+import { executorName } from './slots.mjs';
 import * as commitHandler from './handlers/commit.mjs';
 import * as leaseHandler from './handlers/leases.mjs';
 import * as containerHandler from './handlers/container.mjs';
@@ -77,8 +78,12 @@ export class WorkspaceAgent {
       leases: () => this.getLeases(),
       saveLeases: () => this.saveLeases(),
       usage: () => this.getUsage(),
-      saveUsage: next => this.saveUsage(next),
+      addUsage: delta => this.addUsage(delta),
       ceiling: () => this.ceiling(),
+      // How to reach an executor. A function rather than a stub, because which executor a
+      // start uses is decided per start (the slot) — so the arbiter asks for one by number
+      // and the naming lives in `slots.mjs`, where the mapping is defined and tested.
+      executor: (workspaceName, slot) => this.executor(workspaceName, slot),
     };
   }
 
@@ -124,14 +129,60 @@ export class WorkspaceAgent {
     return this.usage;
   }
 
-  async saveUsage(next) {
-    this.usage = next;
-    await this.state.storage.put(usageKey, next);
+  /**
+   * Add to the counters, atomically.
+   *
+   * `saveUsage(recordX(await usage()))` — which is what every call site used to do, and which was a
+   * **lost update** the moment anything runs concurrently, and it fails silently. The usage
+   * helpers return a new object built from the cached one, so two interleaved starts both
+   * read revision 0, both compute revision 1, and one increment disappears. That is not a
+   * theoretical concern: it was found by the first live concurrent run, where five starts
+   * were counted as four.
+   *
+   * It is worth being precise about why the other state does not have this bug, because the
+   * contrast is the reason this one was easy to miss. The ledger and the lease table are
+   * mutated **in place** on a shared instance, so two interleaved callers accumulate on one
+   * object and the last save writes the union. Usage was written as immutable transforms,
+   * which is tidier and is exactly what made it unsafe.
+   *
+   * The whole read-modify-write therefore has to happen inside a storage transaction. Doing
+   * it in two awaits outside one is the same bug with more steps.
+   */
+  async addUsage(delta) {
+    const storage = this.state.storage;
+    const apply = async () => {
+      const current = usageFrom(await storage.get(usageKey));
+      const next = applyDelta(current, delta);
+      await storage.put(usageKey, next);
+      return next;
+    };
+
+    // The cache is refreshed from what was written, so a later `getUsage()` in the same
+    // request sees the increment rather than the value it read before.
+    this.usage = storage.transaction ? await storage.transaction(apply) : await apply();
+    return this.usage;
   }
 
   /** The bounds, read from the environment on every use so a change needs no redeploy state. */
   ceiling() {
     return ceilingFromEnv(this.env ?? {});
+  }
+
+  /**
+   * The executor object for one slot, wrapped so a handler asks for a slot and gets a
+   * `run()`, rather than assembling an object name and a request at a call site.
+   */
+  executor(workspaceName, slot) {
+    const name = executorName(workspaceName, slot);
+    const stub = this.env.EXECUTOR.get(this.env.EXECUTOR.idFromName(name));
+    return {
+      name,
+      run: run => stub.fetch('https://executor.internal/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(run),
+      }).then(async response => ({ status: response.status, outcome: await response.json() })),
+    };
   }
 
   async fetch(request) {

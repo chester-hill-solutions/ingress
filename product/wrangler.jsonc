@@ -8,13 +8,27 @@
   "observability": { "enabled": true },
   "containers": [
     {
+      // The arbiter. Holds the ledger, the leases, the tokens and the usage counters, and
+      // makes every decision. It has a container binding for historical reasons but must not
+      // boot one — see `product/slots.mjs` for why the two roles are separate objects.
       "class_name": "WorkspaceAgent",
+      "image": "registry.cloudflare.com/6b149553c5075c79bbc132c481f387fe/agentbox-agentboxcontainer@sha256:f97de164cd51f6a825ef6ec7c5b5c883c4b900f0409f46675bb372e806119da8",
+      "instance_type": "standard-1"
+    },
+    {
+      // The executor. One container per object, no ledger, no decisions. A workspace runs
+      // `INGRESS_MAX_CONCURRENT_STARTS` of these at once, which is what makes a swarm a
+      // swarm; the same image is required because the launcher expects this filesystem.
+      "class_name": "Executor",
       "image": "registry.cloudflare.com/6b149553c5075c79bbc132c481f387fe/agentbox-agentboxcontainer@sha256:f97de164cd51f6a825ef6ec7c5b5c883c4b900f0409f46675bb372e806119da8",
       "instance_type": "standard-1"
     }
   ],
   "durable_objects": {
-    "bindings": [{ "name": "WORKSPACE", "class_name": "WorkspaceAgent" }]
+    "bindings": [
+      { "name": "WORKSPACE", "class_name": "WorkspaceAgent" },
+      { "name": "EXECUTOR", "class_name": "Executor" }
+    ]
   },
   "services": [
     { "binding": "GATE", "service": "ingress-workspace", "entrypoint": "CommitGate" }
@@ -32,7 +46,13 @@
   //   cf workers secrets update WORKSPACE_TOKEN --worker ingress-workspace --text "$T"
   //
   // It is written to no file and read by no log. Do not add it to `vars`.
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorkspaceAgent"] }],
+  // v2 adds the Executor class. The workspace object keeps its storage and its role; the new
+  // class is separate so that a workspace's concurrency is bounded by executor slots rather
+  // than by the one-container-per-object limit on the object that holds the ledger.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["WorkspaceAgent"] },
+    { "tag": "v2", "new_sqlite_classes": ["Executor"] }
+  ],
   "workers_dev": true,
   "preview_urls": true
 }

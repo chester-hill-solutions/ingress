@@ -158,42 +158,61 @@ export function startRefusal(usage, ceiling, { runMs = 0 } = {}) {
 }
 
 /**
- * Fold one start into the record.
+ * What one start adds.
  *
- * `runSeconds` is what was *requested*, not what was used, because the request is the thing
- * that decides the cost — `waitBounded` returns as soon as the command exits, and measuring
- * the difference would need a second clock in a place that has no reason to have one.
+ * A delta rather than a replacement. The alternative — a function that takes the current
+ * record and returns the next one — is tidier and is **unsafe the moment anything runs
+ * concurrently**: two callers both read the cached record, both build a replacement, and one
+ * increment vanishes with no error anywhere. That was not theoretical. It was found by the
+ * first live run with more than one participant, where five starts were counted as four.
+ *
+ * So the intent lives in these three, they return arithmetic, and there is exactly one place
+ * that mutates a record (`applyDelta`). The rounding rule stays here rather than at four call
+ * sites for the same reason.
+ *
+ * `runSeconds` is what was *requested*, not what was used: the request is what decides the
+ * cost, and measuring the difference would need a second clock in a place with no reason to
+ * have one.
  */
-export function recordStart(usage, { runMs = 0, now = Date.now() } = {}) {
-  const next = usageFrom(usage, now);
-  next.starts += 1;
-  next.runSecondsRequested += Math.ceil(runMs / 1000);
-  next.lastSeenAt = new Date(now).toISOString();
-  return next;
+export function startDelta({ runMs = 0 } = {}) {
+  return { starts: 1, runSecondsRequested: Math.ceil(Math.max(0, runMs) / 1000) };
 }
 
-/** Fold one commit verdict into the record. `admitted: null` means there was no verdict. */
-export function recordCommit(usage, { admitted = null, bytes = 0, now = Date.now() } = {}) {
+/**
+ * What one commit verdict adds.
+ *
+ * Three outcomes, counted separately. A container that produced nothing to commit is not a
+ * refusal, and a workspace whose participants all exit without writing anything is a usage
+ * signal in itself — lumping it with a refusal would make the two indistinguishable in the
+ * one place someone looks to tell them apart.
+ */
+export function commitDelta({ admitted = null, bytes = 0 } = {}) {
+  if (admitted === true) return { commitsAdmitted: 1, bytesAdmitted: Number(bytes) || 0 };
+  if (admitted === false) return { commitsRefused: 1 };
+  return { commitsEmpty: 1 };
+}
+
+/** What one refused lease grant adds. */
+export function leaseConflictDelta() {
+  return { leaseConflicts: 1 };
+}
+
+/**
+ * Apply a delta to a record.
+ *
+ * The single mutator. A delta must be applied inside a storage transaction to be safe; the
+ * transaction belongs to the caller (`WorkspaceAgent.addUsage`) and this is the operation it
+ * applies. Applying one to a stale snapshot is the same lost update under a shorter name.
+ *
+ * Unknown keys are ignored rather than written, so a typo cannot grow the stored record with
+ * a field nothing reads.
+ */
+export function applyDelta(usage, delta = {}, now = Date.now()) {
   const next = usageFrom(usage, now);
-  if (admitted === true) {
-    next.commitsAdmitted += 1;
-    next.bytesAdmitted += Number(bytes) || 0;
-  } else if (admitted === false) {
-    next.commitsRefused += 1;
-  } else if (admitted === null) {
-    // A container that produced nothing to commit. Counted, because a workspace whose
-    // participants all exit without writing is a usage signal in itself — and lumped
-    // separately from a refusal so the two are not confused for each other.
-    next.commitsEmpty += 1;
+  for (const field of USAGE_FIELDS) {
+    const amount = Number(delta[field]);
+    if (Number.isFinite(amount) && amount !== 0) next[field] += amount;
   }
-  next.lastSeenAt = new Date(now).toISOString();
-  return next;
-}
-
-/** Fold one refused lease grant into the record. */
-export function recordLeaseConflict(usage, { now = Date.now() } = {}) {
-  const next = usageFrom(usage, now);
-  next.leaseConflicts += 1;
   next.lastSeenAt = new Date(now).toISOString();
   return next;
 }

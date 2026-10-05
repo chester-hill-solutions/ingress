@@ -39,7 +39,7 @@ code-hygiene tier.
 | 10 | Model workspace ownership | P3 | M | done — **buys attribution, not squat prevention**; see the item |
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
-| 13 | Make the fence survive a swarm | P0 | M | **scoping done and verified live** (`e2e:swarm`); concurrency and merge still open — see below |
+| 13 | Make the fence survive a swarm | P0 | M | **leg 1 scoping done** (`e2e:swarm` 18/18); **leg 2 concurrency done** (`e2e:concurrency` 15/15, four 30s commands in 33s); **leg 3 merge open** — see below |
 
 ## Already recorded as a limit
 
@@ -1113,24 +1113,95 @@ re-read and retry" from "find out what A did".
   the first version of the scoping did nothing and every commit fell back to the coarse path.
   Caught by a test asserting `per_file` and receiving `participant_declared`.
 
-**What is still open, and both are structural:**
+#### Leg 2 — concurrency
 
-1. **Concurrency.** One container per workspace, so the swarm is sequential. This is the
-   binding constraint on the actual use case, and it is a genuine conflict: the fence needs
-   one Durable Object to decide in a single turn against current state, and the container
-   needs exclusive use of that same object. The way out is visible in code that already
-   exists — the gate resolves a workspace by name from a header, so a container started from
-   *any* object routes into the one that decides. Shard execution across N objects, keep one
-   arbiter.
-2. **No merge.** `contentKey(path)` holds one version per path, so the base *content* is gone
-   and a 3-way merge is impossible. Two agents editing different parts of one file conflict
-   where git would merge cleanly. Content-per-revision is the prerequisite.
+**What was wrong.** One container per workspace, so the swarm was sequential. This was the
+binding constraint on the actual use case, and it was a genuine conflict rather than an
+oversight: the fence needs one Durable Object to decide in a single turn against current
+state, and `ctx.container` is one container per Durable Object. Buying both from one object
+means paying for serialisation with the same coin as safety — and serialisation is the thing
+that stops a swarm from being a swarm.
+
+**The fix.** Split the two roles.
+
+- The **workspace** object is the **arbiter**. It holds the ledger, the leases, the tokens and
+  the usage counters, and it makes every decision. It boots no container.
+- An **executor** object (`src/product/executor.mjs`) owns exactly one container and makes no
+  decision. It is handed a token the arbiter minted and a lease the arbiter granted, and it
+  cannot widen either.
+
+`/start` decides everything — bounds, ceiling, lease grant, token mint, slot allocation — in
+one object in one turn, then awaits the executor. Awaiting a stub releases the arbiter's input
+gate, so it can decide a concurrent `/commit` while a start is in flight. The gate already
+resolved a workspace by name from a header, so a container started from *any* executor still
+reports to the one arbiter that holds the ledger.
+
+After the split there is still **exactly one place where a commit is decided**. That is the
+property worth having; "we made it concurrent" is not a safety property on its own.
+
+Cap is `INGRESS_MAX_CONCURRENT_STARTS`, default 4 — enough that a swarm is a swarm, small
+enough that the concurrency is visible in the cost ceiling. Slots are `{slot, expiresAt}`
+records allocated by `allocateSlot`, which is pure and tested; the old format was a bare array
+of expiries and its entries are pruned rather than interpreted, because inventing a slot number
+is how two starts get handed the same executor.
+
+**Observed on the deployment** (`npm run e2e:concurrency`, 15/15):
+
+```
+a: 200 admitted=true   b: 409 too_many_concurrent_starts
+c: 200 admitted=true   d: 200 admitted=true
+e: 200 admitted=true
+settled in 33s (sequential would be 150s)
+```
+
+**The 33s is the claim.** Four 30-second commands settling in 33 seconds is overlap. Capacity
+alone does not show it: four *instant* commands finish just as fast whether they overlapped or
+ran in sequence, which is why the first version of this check proved nothing — it printed
+"each with a 60s sleep" while the commands contained no sleep at all, and the log line was the
+only thing claiming concurrency.
+
+**Two live bugs found by turning concurrency on. Neither was reachable while execution was
+serial:**
+
+- **A lost update on every counter.** Usage was folded as
+  `saveUsage(recordX(await usage()))` — read the cached record, build a replacement, store it.
+  Two of those interleaving on an `await` both read revision 0 and both wrote revision 1, and
+  one increment vanished with no error anywhere. Five starts were counted as four.
+  The contrast is why it was easy to miss: the ledger and the lease table are mutated **in
+  place** on a shared instance, so interleaved callers accumulate on one object and the last
+  save writes the union. Usage was written as immutable transforms, which is tidier and is
+  exactly what made it unsafe. Now `addUsage` does the whole read-modify-write inside a
+  storage transaction, and the three named helpers return *deltas* so intent stays at the call
+  site, the `Math.ceil` rounding rule stays in one place, and there is exactly one mutator.
+- **Slot release by expiry timestamp.** Two starts issued in the same millisecond shared an
+  expiry, so finishing either freed both. Slots are now identified by number.
+
+**One configuration fault reported as contention.** A missing `EXECUTOR` binding threw, and the
+same handler caught that as a platform refusal — so a deployment that could start nothing at
+all answered `409 container_busy`, and an operator would have gone looking at slots and waits
+instead of at their own config. Found by a test shim with no executor, which answered 409 for
+every start while appearing to test the caps. Now `501 no_executor`, naming the binding.
+
+**Three tests were checking the wrong thing.** `product-start.test.mjs` compared the *positions
+of substrings* in the handler — `decideStart(` before `crypto.randomUUID()` before
+`container.start(` — which asserts that a file's text has a shape, not that a route behaves.
+All three broke on the split for reasons unrelated to what they claimed. Replaced with
+behavioural versions: a refused start mints no token, registers no participant, takes no slot
+and delegates to no executor; a completed start leaves no slot; a deployment with no executor
+answers 501.
+
+#### What is still open
+
+**No merge.** `contentKey(path)` holds one version per path, so the base *content* is gone and
+a 3-way merge is impossible. Two agents editing different parts of one file conflict where git
+would merge cleanly. Content-per-revision is the prerequisite, and it is the last structural
+thing standing between what the product is for and what it does.
 
 ## Verification gates per tier
 
 | Tier | Gate before closing the last item |
 | --- | --- |
-| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface. **Superseded:** the interface question, because the threat model was wrong — a trusted swarm, not a stranger with the token — and item 13's scoping is now the P0 work that matters. |
+| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface. **Superseded:** the interface question, because the threat model was wrong — a trusted swarm, not a stranger with the token — so item 13 is the P0 work that matters, and two of its three legs are done. **Remaining:** content-per-revision, without which a swarm still collides where git would merge. |
 | P1 | No write path admits without a lease check; no path exists by which a caller asserts its own read; the documented guarantee matches the mechanism. **P1 is complete.** |
 | P2 | A participant command longer than the default lease commits successfully; a manifest-contract break fails without an account. **P2 is complete** — items 7 and 8, both observed on the deployment. |
 | P3 | A clean clone installs the client and deploys without reading `product/wrangler.jsonc`; the cost ceiling refuses at its bound. **The second half is met** — the ceiling refused at its bound on the deployment, and `/usage` is visible on an authenticated route. Item 11 is open. |

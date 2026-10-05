@@ -1,80 +1,88 @@
 /**
- * Container lifecycle: start a participant, issue its token, report the verdict.
+ * Container lifecycle: decide everything here, run it somewhere else.
+ *
+ * This file is the **arbiter**. It holds no container and never boots one. Every decision a
+ * start involves is made here, in one object, in one turn:
+ *
+ *   is the request well formed, is there budget, is there a slot
+ *   does this participant get the lease it asked for
+ *   what token is it acting under
+ *   what is counted against its cost ceiling
+ *
+ * The container itself runs in an **executor** object — a different Durable Object, because
+ * `ctx.container` is one container per object and a workspace that could only ever run one
+ * participant was not a swarm. The split is safe because it is asymmetric on purpose: the
+ * executor holds no ledger, no lease table and no token store, so it cannot admit a commit or
+ * mint an identity. It is handed a token the arbiter minted and a lease the arbiter granted,
+ * and it reports what happened.
+ *
+ * After the split there is still exactly one place where a commit is decided. "We made it
+ * concurrent" is not a safety property; that is.
  */
 
-import { MANIFEST_VERSION } from '../manifest.mjs';
-import { launcherScript } from '../launcher.mjs';
 import { json, readJSON } from '../http.mjs';
 import { tokenKey, commitKey, startsKey } from '../keys.mjs';
 import { lastContainerExit } from './commit.mjs';
-import {
-  decideStart,
-  waitBounded,
-  StartRefusal,
-  EXIT_GRACE_MS,
-  KILL_GRACE_SECONDS,
-  TIMEOUT_EXIT_STATUS,
-} from '../start.mjs';
+import { decideStart, waitBounded, StartRefusal, EXIT_GRACE_MS, TIMEOUT_EXIT_STATUS } from '../start.mjs';
 import { LeaseConflict, DEFAULT_LEASE_MS, RENEW_INTERVAL_MS } from '../lease.mjs';
-import { startRefusal, usageSnapshot, recordStart, recordLeaseConflict } from '../usage.mjs';
+import { startRefusal, usageSnapshot, startDelta, leaseConflictDelta } from '../usage.mjs';
+import { allocateSlot, SlotRefusal, maxConcurrentStarts, executorName, SLOT_TTL_MS } from '../slots.mjs';
 import * as leaseHandler from './leases.mjs';
 
 /**
- * Start a container for a participant and issue it a token.
+ * Start a participant: decide, delegate, report.
  *
- * The token is the identity binding. It is minted here, handed to exactly one
- * container, and checked on every commit — so a participant can act as itself and
- * cannot act as anyone else, even though it holds the token in its own environment
- * and is free to read it.
- *
- * What this route costs
- *
- * It boots a container and runs a caller-supplied command as root inside it. Three
- * bounds apply, all decided in `../start.mjs` before anything is created: the command
- * must be short, it must terminate, and the workspace must have a free slot. A
- * command that overruns is stopped and reported as a timeout rather than waited on.
- *
- * What it deliberately does not do is restrict *what* the command may be. Holding the
- * workspace credential means holding the right to run code here; the caps bound how
- * much, not whether. Narrowing that is a product decision — see
- * `docs/product-hardening-plan.md` item 3 — and not something to smuggle in here.
+ * The token is the identity binding. It is minted here, handed to exactly one container, and
+ * checked on every commit by this same object — so a participant can act as itself and cannot
+ * act as anyone else, even though it holds the token in its own environment and is free to
+ * read it. The executor is handed the token; it cannot create one.
  */
 export async function start(ctx, request, workspaceName) {
   const body = await readJSON(request);
 
   // Checked before anything is created. A refusal must not have minted a token,
-  // registered a participant, or booted anything.
+  // registered a participant, or delegated anything.
+  const cap = maxConcurrentStarts(ctx.env ?? {});
   let decision;
+  let slot;
   try {
-    decision = decideStart(body, await activeStarts(ctx));
+    decision = decideStart(body, []);
+    ({ slot } = allocateSlot(await activeStarts(ctx), cap));
   } catch (error) {
-    if (!(error instanceof StartRefusal)) throw error;
-    // Named fields rather than `...error`: spreading an Error copies its own
-    // enumerable properties, which includes the internal `name` and leaks the class
-    // name into an HTTP response. Only the diagnostic fields the caller can act on.
-    const { reason, participantId, workDir, limitBytes, bytes, limitMs, requested, running, cap, detail } = error;
+    if (!(error instanceof StartRefusal) && !(error instanceof SlotRefusal)) throw error;
+    // Named fields rather than `...error`: spreading an Error copies its own enumerable
+    // properties, which includes the internal `name` and leaks the class name into an HTTP
+    // response. Only the diagnostic fields the caller can act on.
+    const { reason, participantId, workDir, limitBytes, bytes, limitMs, requested, running, detail } = error;
     return json(409, {
       error: 'refused',
       reason,
       participantId: participantId ?? null,
       ...(limitBytes === undefined ? {} : { limitBytes, bytes }),
       ...(limitMs === undefined ? {} : { limitMs, requested }),
-      ...(cap === undefined ? {} : { running, cap }),
+      ...(running === undefined ? {} : { running, cap }),
       ...(workDir === undefined ? {} : { workDir }),
       ...(detail === undefined ? {} : { detail }),
     });
   }
   const { participantId, command, workDir, runMs } = decision;
 
-  const container = ctx.container;
-  if (!container) {
-    return json(501, {
-      error: 'no_container',
-      detail: 'this deployment has no container binding; commits cannot be admitted',
-    });
-  }
   if (!workspaceName) {
     return json(400, { error: 'unknown_workspace', detail: 'x-ingress-workspace header required' });
+  }
+
+  // The executor binding missing is a deployment misconfiguration, not contention.
+  //
+  // Without this check the failure surfaced as `container_busy` — the exception below catches
+  // reaching an undefined binding and cannot tell it apart from a platform refusal — so a
+  // deployment that could start nothing at all would be answering 409 about slots and waits,
+  // and an operator would have been sent to look at the wrong thing. Found by a test shim
+  // with no executor, which answered 409 for every start while appearing to test the caps.
+  if (!ctx.env?.EXECUTOR) {
+    return json(501, {
+      error: 'no_executor',
+      detail: 'the EXECUTOR durable object binding is not configured; participants cannot be started',
+    });
   }
 
   const ledger = await ctx.getLedger();
@@ -136,7 +144,7 @@ export async function start(ctx, request, workspaceName) {
       // else is the most informative conflict there is — it is a caller that believes it owns
       // a file — and counting only the public path would report a workspace as having no
       // conflicts while it was being refused one per start.
-      await ctx.saveUsage(recordLeaseConflict(await ctx.usage()));
+      await ctx.addUsage(leaseConflictDelta());
       return json(409, {
         error: 'refused',
         reason: 'lease_conflict',
@@ -158,82 +166,86 @@ export async function start(ctx, request, workspaceName) {
   // recorded before the container boots because a boot that then fails at the platform is
   // still a start — the account was charged for the attempt, and a counter that only counted
   // successes would under-report cost by exactly the number of failures.
-  await ctx.saveUsage(recordStart(usage, { runMs: decision.runMs }));
+  await ctx.addUsage(startDelta({ runMs: decision.runMs }));
 
-  const token = crypto.randomUUID();
+const token = crypto.randomUUID();
   await ctx.state.storage.put(tokenKey(participantId), token);
 
-  // The slot is taken before the container starts, not after. Taking it afterwards
-  // leaves a window in which two concurrent starts both see a free slot.
-  await ctx.state.storage.put(startsKey, decision.releasedAt ? [...decision.released, decision.releasedAt] : []);
+  // The slot is taken before anything is delegated, not after. Taking it afterwards leaves a
+  // window in which two concurrent starts both see it free and pick the same executor — which
+  // surfaces as the platform's "already running" error with no cause attached.
+  const occupied = await activeStarts(ctx);
+  await ctx.state.storage.put(startsKey, [
+    ...occupied.filter(entry => entry.expiresAt > Date.now()),
+    { slot, expiresAt: Date.now() + SLOT_TTL_MS },
+  ]);
 
-  // Interception first. There must be no moment in which the container is running
-  // and unmediated.
-  await container.interceptAllOutboundHttp(ctx.env.GATE);
+  // Delegate the running. The executor is told what to run and under which token, and is given
+  // no ledger, no lease and no authority — it boots one container and reports.
+  //
+  // Awaiting a stub releases this object's input gate, so the arbiter can decide a concurrent
+  // `/commit` while this start is in flight. That is the property the split exists to create,
+  // and it is why this is an await rather than a poll loop: polling would hold the gate for
+  // the same duration without releasing it.
+  let outcome;
   try {
-    container.start({
-      entrypoint: ['/bin/sh', '-c', launcherScript({ participantCommand: command })],
-      enableInternet: false,
-      env: {
-        INGRESS_WORKSPACE: workspaceName,
-        INGRESS_PARTICIPANT: participantId,
-        INGRESS_TOKEN: token,
-        INGRESS_PARTICIPANT_COMMAND: command,
-        INGRESS_WORK_DIR: workDir,
-        INGRESS_MANIFEST_VERSION: String(MANIFEST_VERSION),
-        // Empty rather than absent when no lease was issued. The launcher reads these
-        // unconditionally and branches on the lease id, so a missing variable and an empty
-        // one must not mean different things — see `launcherScript`.
-        INGRESS_LEASE_ID: startLease?.leaseId ?? '',
-        // The duration it was granted, not the default. A heartbeat computes
-        // `expiresAt = now + leaseMs`, so sending the default here would *shorten* a lease
-        // that was granted longer, and the container would lose it mid-run.
-        INGRESS_LEASE_MS: String(startLease?.leaseMs ?? DEFAULT_LEASE_MS),
-        INGRESS_RENEW_INTERVAL_MS: String(RENEW_INTERVAL_MS),
-        // The participant command's own bound, in whole seconds, rounded **up**.
-        //
-        // Rounded up deliberately: `timeout` takes seconds, and rounding down would give the
-        // command less time than the caller asked for — the bound would be slightly tighter
-        // than the number in the request, which is the platform quietly changing the terms.
-        INGRESS_RUN_SECONDS: String(Math.ceil(runMs / 1000)),
-        INGRESS_KILL_GRACE_SECONDS: String(KILL_GRACE_SECONDS),
-      },
+    const response = await ctx.executor(workspaceName, slot).run({
+      workspace: workspaceName,
+      participantId,
+      token,
+      command,
+      workDir,
+      // The lease as granted. The executor cannot widen it, and the container renews at the
+      // duration it was issued with rather than the default.
+      leaseId: startLease?.leaseId ?? '',
+      leaseMs: startLease?.leaseMs ?? DEFAULT_LEASE_MS,
+      renewIntervalMs: RENEW_INTERVAL_MS,
+      // Past `runMs`, not at it: the launcher kills the command at `runMs` measured from when
+      // *it* starts, which is after container boot, so the container outlives `runMs` by the
+      // boot duration. The executor waits the grace period too, so this object stops watching
+      // only once the container has certainly exited — see `EXIT_GRACE_MS`.
+      runMs: runMs + EXIT_GRACE_MS,
     });
+    // A refusal from the executor is an *answer*, not a throw — and reading it as success is
+    // worse than crashing. The first version took `response.outcome` unconditionally, so a
+    // 409 from the executor came back as `{error, reason}` with no `timedOut`, and `/start`
+    // answered 200 reporting a container that had never started. The status is checked here
+    // so that shape cannot recur.
+    if (response.status !== 200) {
+      await releaseStart(ctx, slot);
+      if (startLease) await releaseStartLease(ctx, participantId, startLease.leaseId);
+      return json(409, {
+        error: 'refused',
+        reason: 'container_busy',
+        participantId,
+        detail: response.outcome?.reason ?? 'the executor refused to start a container',
+        // The executor's own account of what it received. Carried through rather than
+        // flattened into the detail string, because "launcherScript requires a
+        // participantCommand" three objects away says nothing about whether the field was
+        // never sent or stripped in transit — and that is exactly the question.
+        ...(response.outcome?.received ? { executorReceived: response.outcome.received } : {}),
+        ...(response.outcome?.commandBytes !== undefined ? { executorCommandBytes: response.outcome.commandBytes } : {}),
+        hint: `every executor slot in this workspace is in use (cap ${cap}); wait for one to exit`,
+      });
+    }
+    outcome = response.outcome;
   } catch (error) {
-    // The platform refused, and `MAX_CONCURRENT_STARTS` did not catch it in time.
-    //
-    // `ctx.container` is one container per Durable Object, so a start arriving while a
-    // previous container is still running — including one this workspace timed out and
-    // could not stop — is refused here with a 500. Turning that into a 409 with a reason
-    // costs four lines and is the difference between a caller reading "busy, wait" and a
-    // caller reading a platform error string.
-    //
-    // The slot and the lease are released on this path for the same reason they are after
-    // a normal exit: this start has created nothing it is going to use.
-    await releaseStart(ctx, decision.releasedAt);
+    // The platform refused the executor's container. The slot and the lease are released here
+    // for the same reason they are after a normal exit: this start created nothing it will use.
+    await releaseStart(ctx, slot);
     if (startLease) await releaseStartLease(ctx, participantId, startLease.leaseId);
     return json(409, {
       error: 'refused',
       reason: 'container_busy',
       participantId,
       detail: String(error?.message ?? error),
-      hint: 'this workspace runs one container at a time; wait for the current one to exit',
+      hint: `every executor slot in this workspace is in use (cap ${cap}); wait for one to exit`,
     });
   }
 
-  // Wait past `runMs`, not at it. The launcher kills the command at `runMs` measured from
-  // when *it* starts, which is after container boot, so the container outlives `runMs` by
-  // the boot duration. Waiting the grace period as well means the workspace stops watching
-  // only once the container has certainly exited — see `EXIT_GRACE_MS`.
-  const outcome = await waitBounded(
-    () => container.monitor(),
-    typeof container.stop === 'function' ? () => container.stop() : null,
-    runMs + EXIT_GRACE_MS,
-  );
-
   // The slot is released whatever happened — clean exit, timeout, or a throw below.
   // A slot held after a failed start would block the workspace until its deadline.
-  await releaseStart(ctx, decision.releasedAt);
+  await releaseStart(ctx, slot);
 
   // The lease too, and for the same reason. The launcher releases its own on the way out,
   // so this is normally a no-op answering `lease_unknown`; it is the backstop for the
@@ -306,11 +318,11 @@ async function releaseStartLease(ctx, participantId, leaseId) {
 }
 
 /**
- * Start slots believed to be in use, as expiry timestamps.
+ * Executor slots believed to be in use, as `{slot, expiresAt}` records.
  *
- * Stored rather than held in memory because a Durable Object can be evicted between
- * requests; an in-memory counter would reset to zero and hand out a fresh quota on
- * every cold start.
+ * Stored rather than held in memory because a Durable Object can be evicted between requests;
+ * an in-memory set would empty itself on every cold start and hand the same executor to two
+ * participants — which is the platform's "already running" error, arrived at by forgetting.
  */
 async function activeStarts(ctx) {
   const stored = await ctx.state.storage.get(startsKey);
@@ -320,10 +332,12 @@ async function activeStarts(ctx) {
 /**
  * Release one slot, keeping any others still running.
  *
- * Identified by its expiry rather than by position, so two starts finishing in an
- * unpredictable order cannot release each other's slot.
+ * Identified by its **number**, so two starts finishing in an unpredictable order cannot
+ * release each other's slot. The first version identified it by expiry timestamp, which broke
+ * the moment two starts were issued in the same millisecond — they shared an expiry, and
+ * finishing one freed both.
  */
-async function releaseStart(ctx, releasedAt) {
+async function releaseStart(ctx, slot) {
   const stored = await activeStarts(ctx);
-  await ctx.state.storage.put(startsKey, stored.filter(expiry => expiry !== releasedAt));
+  await ctx.state.storage.put(startsKey, stored.filter(entry => entry.slot !== slot));
 }

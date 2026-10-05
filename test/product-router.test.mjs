@@ -344,14 +344,25 @@ test('refusing /internal/ cannot break the container, because the container neve
   // The structural half of the argument, and the reason this is a refusal rather than a
   // marker scheme. If a container's egress ever started arriving at the public router,
   // this guard would break every commit — so the interception is asserted, not assumed.
-  const container = readFileSync(
-    new URL('../src/product/handlers/container.mjs', import.meta.url),
+  //
+  // Asserted in the **executor**, which is where the container is now started. It used to be
+  // read out of `handlers/container.mjs`, and when execution split into its own object the
+  // assertion failed — correctly, because the interception moved with the container. A
+  // structural test that fails for the wrong reason is worse than none: it reads like a
+  // regression in the guard when the guard never moved.
+  const executor = readFileSync(
+    new URL('../src/product/executor.mjs', import.meta.url),
     'utf8',
   );
   assert.match(
-    container,
-    /interceptAllOutboundHttp\(\s*ctx\.env\.GATE\s*\)/,
+    executor,
+    /interceptAllOutboundHttp\(gate\)/,
     'container egress must be intercepted to the gate entrypoint, not left to the public router',
+  );
+  assert.match(
+    executor,
+    /enableInternet: false/,
+    'and the container must have no other way out',
   );
 
   // And the gate must resolve the Durable Object itself, rather than looping back

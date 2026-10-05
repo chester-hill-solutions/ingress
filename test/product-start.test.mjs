@@ -244,38 +244,134 @@ test('the deadline timer is cleared when the command exits first', async () => {
 
 // --- the handler consults the decision before doing anything -----------------
 
-test('the handler refuses before it mints a token or registers a participant', async () => {
-  // The order matters: a refusal that has already written a token has had a side
-  // effect the caller did not ask for.
-  const source = readFileSync(new URL('../src/product/handlers/container.mjs', import.meta.url), 'utf8');
-  const decided = source.indexOf('decideStart(');
-  const minted = source.indexOf('crypto.randomUUID()');
-  const started = source.indexOf('container.start(');
+/**
+ * A workspace with an executor stub, so `/start` can be exercised for its side effects.
+ *
+ * Behavioural rather than source-text. The three tests this replaces compared the *positions
+ * of substrings* in the handler — `decideStart(` before `crypto.randomUUID()` before
+ * `container.start(` — which asserted that the file's text had a shape rather than that the
+ * route behaved. All three broke the moment execution split into its own object, for a reason
+ * that had nothing to do with the property each claimed to check.
+ */
+async function mountStartable({ env = {}, data: provided } = {}) {
+  const { WorkspaceAgent } = await import('../src/product/workspace-agent.mjs');
+  const data = provided ?? new Map();
+  const storage = {
+    storage: {
+      async get(key) {
+        return Array.isArray(key) ? new Map(key.map(k => [k, data.get(k)])) : data.get(key);
+      },
+      async put(key, value) {
+        if (typeof key === 'object' && key !== null && !Array.isArray(key)) {
+          for (const [k, v] of Object.entries(key)) data.set(k, structuredClone(v));
+          return;
+        }
+        data.set(key, structuredClone(value));
+      },
+      transaction(fn) {
+        const previous = data.get('__q') ?? Promise.resolve();
+        const next = previous.then(() => fn(), () => fn());
+        data.set('__q', next.catch(() => {}));
+        return next;
+      },
+    },
+  };
+  const calls = [];
+  const bindings = {
+    EXECUTOR: {
+      idFromName: name => ({ name }),
+      get: () => ({
+        fetch: async (_url, init) => {
+          calls.push(JSON.parse(init.body));
+          return new Response(JSON.stringify({
+            timedOut: false, stopAvailable: false, stopError: null, containerError: null,
+          }), { headers: { 'content-type': 'application/json' } });
+        },
+      }),
+    },
+    ...env,
+  };
+  const agent = new WorkspaceAgent(storage, bindings, undefined);
+  const call = (path, init = {}) => agent.fetch(new Request(new URL(`https://x${path}`, 'https://x'), {
+    method: init.method ?? 'GET',
+    headers: init.headers ?? {},
+    body: init.body ?? undefined,
+  }));
+  return { agent, data, calls, bindings, call };
+}
 
-  assert.ok(decided > -1, 'the handler must consult decideStart');
-  assert.ok(decided < minted, 'the decision must precede minting a token');
-  assert.ok(decided < started, 'the decision must precede booting a container');
+const postStart = (call, body) => call('/start', {
+  method: 'POST',
+  headers: { 'x-ingress-workspace': 'demo', 'content-type': 'application/json' },
+  body: JSON.stringify(body),
 });
 
-test('the handler takes a slot before starting and releases it after', async () => {
-  const source = readFileSync(new URL('../src/product/handlers/container.mjs', import.meta.url), 'utf8');
-  assert.ok(
-    source.indexOf('startsKey') < source.indexOf('container.start('),
-    'the slot must be taken before the container starts, or two concurrent starts both see a free slot',
-  );
-  assert.ok(
-    source.indexOf('releaseStart') > source.indexOf('container.start('),
-    'the slot must be released after the container runs',
-  );
-  assert.match(source, /finally|releaseStart\(ctx, decision\.releasedAt\)/, 'a slot must be released');
+test('a refused start mints no token, registers no participant and takes no slot', async () => {
+  // The order matters: a refusal that has already written a token has had a side effect the
+  // caller did not ask for. Checked against storage, because "returns 409" alone would also
+  // be true of a handler that did the damage first and apologised afterwards.
+  const { data, calls, call } = await mountStartable();
+
+  const malformed = await postStart(call, { participantId: 'a', participantCommand: 'echo hi', runMs: 999 });
+  assert.equal(malformed.status, 409);
+  assert.equal((await malformed.json()).reason, 'invalid_run_ms');
+
+  assert.deepEqual([...data.keys()].filter(key => String(key).startsWith('token:')), [],
+    'a refused start must not mint a token');
+  assert.equal(data.get('active-starts'), undefined, 'and must not take a slot');
+  assert.equal(calls.length, 0, 'and must not delegate to an executor');
+
+  // The lease-refusal path too, because it gets much further before it stops — and a
+  // participant left registered there was a real bug, found only by running the product.
+  //
+  // The blocking lease is taken over the public route, not by a finished start: a completed
+  // start releases its own lease on the way out, so a second start finds nothing held and is
+  // admitted. That is correct, and the first version of this test asserted the opposite
+  // because it used a finished start as the blocker.
+  const conflict = await mountStartable();
+  const joined = await conflict.call('/join?name=first&kind=agent&dependencies=');
+  assert.equal(joined.status, 200);
+
+  const held = await conflict.call('/lease/checkout', {
+    method: 'POST',
+    headers: { 'x-ingress-workspace': 'demo', 'content-type': 'application/json' },
+    body: JSON.stringify({ participantId: 'first', paths: ['f.mjs'], mode: 'write' }),
+  });
+  assert.equal(held.status, 200, 'the holder takes a lease that outlives the call');
+
+  const second = await postStart(conflict.call, {
+    participantId: 'second', writePaths: ['f.mjs'], runMs: 30_000, participantCommand: 'true',
+  });
+  assert.equal(second.status, 409);
+  assert.equal((await second.json()).reason, 'lease_conflict');
+
+  const ledger = conflict.data.get('ledger');
+  assert.equal(ledger.participants.some(p => p.participantId === 'second'), false,
+    'the refused participant must not be left in the roster');
 });
 
-test('a deployment with no container binding still answers 501, not a refusal', async () => {
-  // Ordering matters here and this pins it. `decideStart` runs before the container
-  // check, so a malformed request is refused without side effects — which means the
-  // route-coverage probe in `product-workspace.test.mjs` no longer reaches the 501
-  // branch, because its probe body carries no `participantCommand`. Without this test
-  // that branch would be uncovered and the probe would be passing for the wrong reason.
+test('a completed start leaves no slot behind, so the next one is not refused', async () => {
+  // A slot not released on the way out wedges the workspace until its 16-minute TTL, and
+  // every start in between is refused as over the cap.
+  const first = await mountStartable();
+  const a = await postStart(first.call, { participantId: 'a', runMs: 30_000, participantCommand: 'true' });
+  assert.equal(a.status, 200);
+  assert.equal(first.calls.length, 1, 'exactly one executor was asked to run it');
+  assert.deepEqual(first.data.get('active-starts'), [], 'and nothing is held once it has returned');
+
+  const second = await mountStartable({ data: first.data });
+  const b = await postStart(second.call, { participantId: 'b', runMs: 30_000, participantCommand: 'true' });
+  assert.equal(b.status, 200, 'a start after a completed one must not be refused as over the cap');
+});
+
+test('a deployment with no executor binding answers 501, not a refusal about contention', async () => {
+  // A missing *binding* is a deployment fault; a busy workspace is not. They were the same
+  // answer for a while — the exception from reaching an undefined binding was caught by the
+  // same handler as a platform refusal — so a broken deployment answered 409 `container_busy`
+  // and an operator would have gone looking at slots and waits instead of at their own config.
+  //
+  // Found by a test shim with no executor, which answered 409 for every start while appearing
+  // to be testing the caps.
   const { WorkspaceAgent } = await import('../src/product/workspace-agent.mjs');
   const data = new Map();
   const agent = new WorkspaceAgent({
@@ -291,15 +387,18 @@ test('a deployment with no container binding still answers 501, not a refusal', 
         data.set(key, structuredClone(value));
       },
     },
-  });
+  }, { WORKSPACE_TOKEN: 't' });
 
   const response = await agent.fetch(new Request('https://x/start', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'x-ingress-workspace': 'demo', 'content-type': 'application/json' },
     body: JSON.stringify({ participantId: 'a', participantCommand: 'echo hi' }),
   }));
+
   assert.equal(response.status, 501);
-  assert.equal((await response.json()).error, 'no_container');
+  const body = await response.json();
+  assert.equal(body.error, 'no_executor');
+  assert.match(body.detail, /EXECUTOR/, 'and it names the binding that is missing');
 });
 
 test('a refused start has no side effects at all', async () => {

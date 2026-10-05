@@ -22,6 +22,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { WorkspaceAgent as WorkspaceCore } from './product/workspace-agent.mjs';
+import { runOne } from './product/executor.mjs';
 import { CommitGate } from './product/gate.mjs';
 import { decide } from './product/router.mjs';
 import { json } from './product/http.mjs';
@@ -51,6 +52,68 @@ export class WorkspaceAgent extends DurableObject {
   fetch(request) {
     return this.core.fetch(request);
   }
+}
+
+/**
+ * The executor: one Durable Object, one container, no decisions.
+ *
+ * A second class rather than a mode of the workspace object, because `ctx.container` is one
+ * container per object. Holding a container on the same object that holds the ledger caps a
+ * workspace at one participant, and the fence's entire safety argument is that it decides in
+ * a single turn against current state — which is why the ledger stays here and the container
+ * goes elsewhere.
+ *
+ * The split is asymmetric on purpose. This class cannot admit a commit, mint a token or grant
+ * a lease: it is handed all three by the workspace object and only ever reports what happened.
+ * After the split there is still exactly one place where a commit is decided.
+ */
+export class Executor extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.ctx = ctx;
+    this.env = env;
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname !== '/run' || request.method !== 'POST') {
+      return json(404, { error: 'route_not_found' });
+    }
+    let run = null;
+    try {
+      run = await request.json();
+      // A malformed request is a 4xx, never an unhandled throw: an object that throws out of
+      // fetch produces a runtime error page instead of an answer, and the arbiter cannot tell
+      // a refusal from a crash.
+      const outcome = await runOne(containerOf(this.ctx), this.env.GATE, run);
+      return json(200, outcome);
+    } catch (error) {
+      // A 409 rather than a throw, and it carries the keys it actually received. The arbiter
+      // turns this into `container_busy` and releases the slot — but only if it is *told*. An
+      // executor that returned 200 on failure would leave the arbiter waiting out the whole
+      // deadline for a container that never started.
+      //
+      // `received` is here because of a bug this shape made invisible: the command was
+      // arriving empty, and the only symptom was `launcherScript requires a
+      // participantCommand` from three objects away. The key list says whether the field was
+      // never sent or was stripped in transit.
+      return json(409, {
+        error: 'executor_refused',
+        reason: String(error?.message ?? error),
+        received: run ? Object.keys(run) : null,
+        hasCommand: Boolean(run?.command),
+        commandBytes: typeof run?.command === 'string' ? run.command.length : -1,
+      });
+    }
+  }
+}
+
+/** `ctx.container`, named so the fetch body above reads as prose. */
+function containerOf(ctx) {
+  if (!ctx.container) {
+    throw new Error('this executor object has no container binding');
+  }
+  return ctx.container;
 }
 
 export { CommitGate };
