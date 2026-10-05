@@ -64,6 +64,23 @@ export const DEFAULT_LEASE_MS = 60_000;
 export const MAX_LEASE_MS = 15 * 60_000;
 export const MAX_LEASE_PATHS = 256;
 
+/**
+ * How often a live lease is renewed.
+ *
+ * A quarter of the lease, so three consecutive renewals can be missed before the lease
+ * is in danger. That ratio is the whole design and it cuts both ways:
+ *
+ *   the holder stays alive as long as it wants   renewals outrun the expiry
+ *   a dead holder stops blocking anyone          expiry arrives within one lease
+ *
+ * The alternative — a lease long enough to cover a whole participant run, renewed
+ * rarely — inverts that: work stays safe, but a container that dies holding it blocks
+ * everyone for the full run length. So the lease stays short and is renewed often, which
+ * is the arrangement this module's own header describes: the expiry is the bound, and
+ * liveness reporting only makes recovery faster.
+ */
+export const RENEW_INTERVAL_MS = Math.floor(DEFAULT_LEASE_MS / 4);
+
 /** Sentinel for "no holder", so callers never have to invent one. */
 export const NO_HOLDER = null;
 

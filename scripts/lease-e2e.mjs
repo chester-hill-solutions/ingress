@@ -17,26 +17,18 @@
  * happens, rather than being reported after the fact.
  */
 
-const BASE = (process.env.INGRESS_BASE_URL ?? 'https://ingress-workspace.narfin.workers.dev').replace(/\/+$/, '');
-const WORKSPACE = process.env.INGRESS_WORKSPACE ?? `lease-${Date.now()}`;
+import { client, freshWorkspace } from './e2e-client.mjs';
+
+const WORKSPACE = process.env.INGRESS_WORKSPACE ?? freshWorkspace('lease');
 const LEASE_MS = Number(process.env.INGRESS_LEASE_MS ?? 30_000);
 
-const url = suffix => `${BASE}/w/${WORKSPACE}${suffix}`;
+// The worker's workspace credential. Refused here rather than sent as nothing, so a
+// missing secret fails as a configuration error instead of as a puzzling 401 mid-run.
+
 const step = message => console.log(`\n--- ${message}`);
 const ok = (label, value) => console.log(`${value ? '  PASS' : '  FAIL'}  ${label}`);
 
-async function post(suffix, body) {
-  const response = await fetch(url(suffix), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return { status: response.status, body: await response.json() };
-}
-const get = async suffix => {
-  const response = await fetch(url(suffix));
-  return { status: response.status, body: await response.json() };
-};
+const { post, get } = client(WORKSPACE);
 const join = async (name, kind, dependencies) =>
   (await get(`/join?name=${encodeURIComponent(name)}&kind=${kind}&dependencies=${dependencies.join(',')}`)).body;
 
@@ -49,7 +41,7 @@ const entry = async (path, content) => ({
   contentHash: await sha256Hex(Buffer.from(content, 'utf8')),
 });
 
-console.log(`workspace: ${url('')}`);
+console.log(`workspace: ${WORKSPACE}`);
 
 step('1. bootstrap and join');
 {

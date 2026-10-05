@@ -10,6 +10,13 @@ export const ledgerKey = 'ledger';
 export const leasesKey = 'leases';
 export const manifestsKey = 'manifests';
 export const gateLogKey = 'gate-log';
+/**
+ * Expiry timestamps of participant starts believed to be running.
+ *
+ * A single key holding an array, rather than one key per start, because the set is
+ * small (bounded by `MAX_CONCURRENT_STARTS`) and is always read whole.
+ */
+export const startsKey = 'active-starts';
 
 export const contentKey = path => `content:${path}`;
 export const tokenKey = participantId => `token:${participantId}`;

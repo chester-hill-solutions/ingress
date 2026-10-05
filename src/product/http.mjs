@@ -11,10 +11,18 @@
 export const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_COMMIT_BODY = 12 * 1024 * 1024;
 
-export function json(status, value) {
+/**
+ * A JSON response.
+ *
+ * Shared rather than redeclared per module, because the security-relevant part is
+ * the same everywhere: `cache-control: no-store` on a refusal is what stops a token
+ * check or an evidence payload being retained by a shared cache. `extraHeaders` exists
+ * for the one case that varies — `WWW-Authenticate` on a 401.
+ */
+export function json(status, value, extraHeaders = undefined) {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...extraHeaders },
   });
 }
 

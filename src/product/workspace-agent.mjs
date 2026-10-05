@@ -22,10 +22,11 @@
  *           What a participant may ask. Apart from `/bootstrap` — restricted to an
  *           empty ledger — none of these move file state.
  *
- *   Gate    /internal/commit
+ *   Gate    /internal/commit /internal/seed /internal/lease/*
  *           Reached exclusively from the WorkerEntrypoint the container's egress is
  *           intercepted into, and authenticated by a token this object issued when
- *           it started that container.
+ *           it started that container. Only `/internal/commit` admits bytes; the others
+ *           hand over content and keep a lease alive, which is not the same power.
  *
  * There is deliberately no public way to report a write. An earlier version had
  * `POST /observe` and it was the hole this whole layer exists to close: any caller
@@ -131,6 +132,16 @@ export class WorkspaceAgent {
     if (url.pathname === '/internal/gate-log' && method === 'POST') {
       return this.recordGateLog(request);
     }
+    // The container's lease surface. Reachable only from the gate, which forwards the
+    // participant's token and nothing else; each route re-checks it. Present because
+    // `/start` hands the write lease to the container, and a container's only exit is the
+    // gate — see `handlers/leases.mjs`.
+    if (url.pathname === '/internal/lease/heartbeat' && method === 'POST') {
+      return leaseHandler.containerHeartbeat(this.ctx, request);
+    }
+    if (url.pathname === '/internal/lease/release' && method === 'POST') {
+      return leaseHandler.containerRelease(this.ctx, request);
+    }
     if (url.pathname === '/gate-log') {
       // Was public. Removed: an unauthenticated route on a public worker that
       // exposes per-workspace participant ids and traffic. The gate writes the log;
@@ -164,20 +175,17 @@ export class WorkspaceAgent {
     }
 
     // --- the ledger's own read surface ---
-    if (url.pathname === '/write' && method === 'POST') {
-      const ledger = await this.getLedger();
-      const body = await readJSON(request);
-      const receipt = ledger.admit({
-        participantId: body.participantId,
-        path: body.path,
-        baseRevision: body.baseRevision ?? null,
-        contentHash: body.contentHash ?? null,
-      });
-      await this.saveLedger();
-      // A refusal is a successful HTTP exchange: the workspace answered correctly.
-      // Only a malformed request is a 4xx.
-      return json(200, receipt);
-    }
+    //
+    // There is deliberately no `/write` here. It was a second write path that called
+    // `ledger.admit` directly, and `admit` takes no lease and never reads the lease
+    // table — so it admitted writes the gate would have refused with `lease_required`.
+    // It also admitted a revision for content it never stored, leaving `/state`
+    // reporting a revision that `/content` answered 404 for.
+    //
+    // Bytes enter through the gate: `/internal/commit`, authorised by a write lease,
+    // hashed on arrival. See `handlers/commit.mjs`. The fence's decision is still
+    // reachable and still tested — `WorkspaceLedger.admit` is called directly in
+    // `test/product-fence.test.mjs`, without HTTP in the way.
 
     if (url.pathname === '/join' && method === 'GET') {
       const ledger = await this.getLedger();
@@ -200,17 +208,16 @@ export class WorkspaceAgent {
       return json(200, intent);
     }
 
-    if (url.pathname === '/read' && method === 'POST') {
-      const ledger = await this.getLedger();
-      const body = await readJSON(request);
-      ledger.recordRead({ participantId: body.participantId, path: body.path });
-      await this.saveLedger();
-      const cut = ledger.decisionCut(body.participantId);
-      return json(200, {
-        path: body.path,
-        revision: cut.reads.find(entry => entry.path === body.path)?.currentRevision ?? null,
-      });
-    }
+    // There is deliberately no `/read` here either.
+    //
+    // It recorded a read the caller *asserted*, and `readBasis: 'verified'` in the
+    // fence's decision cut rested entirely on that assertion — so the property the whole
+    // product is built on, that a participant's basis is current, was self-reported.
+    //
+    // A read is now recorded where it can be known: by `handlers/leases.mjs`, at the
+    // moment a lease grant hands the content over. The workspace decided to give those
+    // bytes to that participant at those revisions, so the read is a consequence of a
+    // fact rather than a claim about one.
 
     if (url.pathname === '/receipts' && method === 'GET') {
       const ledger = await this.getLedger();

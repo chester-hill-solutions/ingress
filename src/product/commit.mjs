@@ -16,14 +16,27 @@
  *
  * The property that makes this worth the extra code
  *
- * A participant can *lie* about what it changed in exactly one direction: it can
- * omit a file. It cannot forge a file's content, because content is hashed on
- * arrival. Omission is safe rather than dangerous — an omitted change is simply
- * never admitted, so it is lost work, never corruption. That asymmetry is the
- * reason this design can live without snapshot isolation:
+ * A participant cannot cause the workspace to store bytes that differ from what it
+ * sent, because the hash is computed here from the bytes that actually arrived. A
+ * commit cannot be admitted under a hash its content does not match.
  *
- *   forgery  -> blocked by hashing the received bytes
- *   omission -> costs the participant its own work
+ * That is a statement about *storage*, not about truth. It does not establish that the
+ * bytes came from the container's filesystem: a participant that replaces the
+ * in-container reporter can send content it never wrote, and the workspace will hash it,
+ * store it and attribute it to that participant. See `launcher.mjs`, where that boundary
+ * is stated where the reporter is written.
+ *
+ * So a participant has two directions available to it, not one:
+ *
+ *   substitution -> possible with a replaced reporter; the workspace records what
+ *                   arrived and who sent it
+ *   omission     -> undetectable; a hidden change is simply never sent
+ *
+ * Both cost the participant its own honesty rather than another participant's
+ * correctness, which is why this design can live without snapshot isolation: the fence
+ * decides from revisions the workspace itself holds, so a participant that lies about
+ * its changes cannot corrupt anyone else's view of them. What it cannot do is have its
+ * work believed — every admission and refusal is receipted.
  *
  * Pure module. No I/O, no Cloudflare, no agents. The decision is the part that
  * has to be correct, and correctness should be testable without an account.
@@ -150,6 +163,12 @@ export async function verifyCommit(payload) {
  * then performs the mutations for a commit that was admitted in full. Splitting
  * them is what makes atomicity a property of the code rather than a hope about
  * ordering.
+ *
+ * This is the write decision that runs. It is not the only statement of the fence's
+ * rules in the repository: `WorkspaceLedger.admit` in `fence.mjs` reimplements the same
+ * four checks and has no production caller, so the rules currently exist twice and the
+ * better-documented copy is the one that does not run. That duplication is recorded at
+ * `fence.mjs` and in `docs/product-hardening-plan.md` item 4.
  */
 export function evaluateCommit(ledger, verified) {
   const { participantId, files } = verified;

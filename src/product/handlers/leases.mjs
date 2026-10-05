@@ -12,9 +12,16 @@
  * `this` happens to carry.
  */
 
-import { LeaseConflict, expandClosure, DEFAULT_LEASE_MS, MAX_LEASE_PATHS } from '../lease.mjs';
+import {
+  LeaseConflict,
+  expandClosure,
+  DEFAULT_LEASE_MS,
+  RENEW_INTERVAL_MS,
+  MAX_LEASE_PATHS,
+} from '../lease.mjs';
 import { json, readJSON } from '../http.mjs';
 import { readContentMap } from '../keys.mjs';
+import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
 
 /**
  * Byte budget for a seed response.
@@ -124,6 +131,28 @@ export async function checkout(ctx, request) {
     };
   });
 
+  // The read is recorded here, by the party that handed the content over.
+  //
+  // This replaces a public `/read` route that recorded a read the caller *asserted*,
+  // which made `readBasis: 'verified'` in the fence's decision cut a self-report — the
+  // weakest remaining link in the product's central claim. A grant is better evidence
+  // than a claim: the workspace decided to hand these bytes to this participant, at these
+  // revisions, and the read is a side effect of that fact rather than a statement about
+  // it.
+  //
+  // Recorded for both modes, because a write lease is also a handover: whoever holds
+  // the file has been given its current content. Recording only for `read` would mean a
+  // participant holding the file for writing had no basis for it, which is the opposite
+  // of the truth.
+  //
+  // A path that does not exist yields no revision, so `readRecord` stores null and the
+  // cut reports `readBasis: 'unknown'` — you cannot have read a file nobody has written.
+  // That is the correct direction to fail, and it is unchanged by this.
+  for (const path of closure) {
+    ledger.recordRead({ participantId, path });
+  }
+  await ctx.saveLedger();
+
   return json(200, {
     granted: true,
     leaseId: granted.lease.leaseId,
@@ -136,6 +165,77 @@ export async function checkout(ctx, request) {
     files,
     fingerprint: ledger.decisionCut(participantId).fingerprint,
   });
+}
+
+/**
+ * Grant a write lease from inside the workspace, without an HTTP round trip.
+ *
+ * Used by `/start`, which issues the lease the container will hold for the length of its
+ * run. The alternative was leaving it to the caller, which is what the product did before:
+ * a harness had to check out at 300,000 ms to survive a one-minute default, so any task
+ * over 60 s had its commit refused and the cause was nowhere in the request. See
+ * `docs/product-hardening-plan.md` item 7.
+ *
+ * Two things it deliberately does not do:
+ *
+ *   - No closure expansion. A write grant covers exactly what was asked for. Declared
+ *     dependencies join a *read* grant and never a write one, for the reason spelled out
+ *     in `checkout` above.
+ *   - No content read. The caller did not ask to read anything; `/start` hands the
+ *     participant no bytes, and its container picks up its tree from `/seed`, which reads
+ *     the same lease table and serves whatever it finds there.
+ *
+ * It does record the reads, because a write lease is a handover and the argument for that
+ * is the one in `checkout`: the workspace decided to give these paths to this participant,
+ * so the read follows from a fact rather than a claim. `/start` is the party making the
+ * decision, so `/start` is where it is recorded.
+ *
+ * It registers the participant, which is a change of responsibility and the reason this is
+ * not a three-line helper. `recordRead` calls `ledger.require`, which throws for someone
+ * who has not joined — so `/start` used to register *before* granting, and a
+ * `lease_conflict` therefore left a participant behind in the ledger with no token, no
+ * container and no lease. The fix was to move the registration in here rather than to
+ * reorder two statements and hope: the handover is the decision, and the decision is
+ * about who is working as well as what they are working on.
+ *
+ * Throws `LeaseConflict`, which the caller turns into a 409 having created nothing.
+ */
+export async function grantWrite(ctx, {
+  participantId,
+  paths,
+  leaseMs = DEFAULT_LEASE_MS,
+  kind = 'agent',
+}) {
+  const table = await ctx.leases();
+  const now = Date.now();
+
+  const granted = table.checkout({ participantId, paths, mode: 'write', now, leaseMs });
+
+  const ledger = await ctx.getLedger();
+  ledger.register({ participantId, kind });
+  for (const path of granted.lease.paths) {
+    ledger.recordRead({ participantId, path });
+  }
+
+  // Ledger and leases saved together rather than as two writes. They authorise the same
+  // fact, and a grant that was stored without the read it implies would leave the fence
+  // judging this participant against a basis it never recorded.
+  await ctx.saveLeases();
+  await ctx.saveLedger();
+
+  return {
+    leaseId: granted.lease.leaseId,
+    participantId,
+    mode: 'write',
+    paths: [...granted.lease.paths].sort(),
+    // The duration, not the expiry. The caller hands this to the launcher so its
+    // heartbeats re-apply the same length; derived from `expiresAt` instead, it would
+    // come back a few milliseconds short and shorten the lease on its first renewal.
+    leaseMs: granted.lease.expiresAt - granted.lease.grantedAt,
+    expiresAt: granted.lease.expiresAt,
+    renewIntervalMs: RENEW_INTERVAL_MS,
+    reclaimedFrom: granted.reclaimedFrom,
+  };
 }
 
 export async function heartbeat(ctx, request) {
@@ -218,6 +318,81 @@ export async function list(ctx) {
   // `{leases: {leases: [...]}}`, which is the kind of shape nobody reading the
   // response would guess.
   return json(200, (await ctx.leases()).snapshot());
+}
+
+// --- the gate's lease surface ---------------------------------------------------
+//
+// These two exist only because `/start` now hands the write lease to the container
+// rather than to the calling harness, and the container's only exit is the gate.
+//
+// That is a real widening of the gate, from one mutating route to three, so it is worth
+// being exact about what was added and what was not:
+//
+//   - Both are token-checked by the same `authenticateContainer` the commit path uses, so
+//     neither accepts an identity it did not mint. `leaseId` is additionally checked
+//     against `participantId` inside the table, so a container cannot renew or release a
+//     lease belonging to someone else.
+//   - Neither can admit a byte. The commit path is still the only route that does, and
+//     these two change nothing about what it accepts.
+//   - The public `/lease/*` routes above are unchanged. A caller outside a container
+//     still checks out its own leases the way it did before.
+//
+// What this buys: the container becomes the lease holder, which is what a lease is for —
+// the workspace can now tell a participant that stopped working from one that is merely
+// slow, and can free a file the moment a participant finishes rather than at the expiry.
+
+/**
+ * Renew the lease this container holds, from inside the container.
+ *
+ * The renewal interval is fixed by the workspace when it issues the lease and travels to
+ * the launcher in the environment. It is deliberately not a body parameter the caller
+ * chooses: a caller that sent a shorter interval than its lease would shorten its own
+ * expiry on the first heartbeat and lose the lease mid-run, which is a trap rather than a
+ * feature. `leaseMs` is honoured only when the caller sends one, and the launcher always
+ * sends back exactly what it was granted.
+ */
+export async function containerHeartbeat(ctx, request) {
+  const body = await readJSON(request);
+  const { participantId, token } = body;
+
+  const identity = await authenticateContainer(ctx, participantId, token);
+  if (!identity.ok) return json(403, containerRefusal(identity));
+
+  const table = await ctx.leases();
+  const result = table.heartbeat({
+    leaseId: body.leaseId,
+    participantId,
+    now: Date.now(),
+    leaseMs: body.leaseMs ?? DEFAULT_LEASE_MS,
+  });
+  await ctx.saveLeases();
+  return json(result.alive ? 200 : 409, result);
+}
+
+/**
+ * Release the lease this container holds, from inside the container.
+ *
+ * Idempotent in the only sense that matters: a lease that is already gone answers
+ * `lease_unknown` with a 200, because the launcher calls this on its way out whether or
+ * not the participant ran at all, and a release that fails because there was nothing to
+ * release is not a failure worth stopping for.
+ */
+export async function containerRelease(ctx, request) {
+  const body = await readJSON(request);
+  const { participantId, token } = body;
+
+  const identity = await authenticateContainer(ctx, participantId, token);
+  if (!identity.ok) return json(403, containerRefusal(identity));
+
+  const table = await ctx.leases();
+  const result = table.release({
+    leaseId: body.leaseId,
+    participantId,
+    paths: body.paths ?? null,
+    now: Date.now(),
+  });
+  await ctx.saveLeases();
+  return json(200, result);
 }
 
 /**

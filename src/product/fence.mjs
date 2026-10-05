@@ -291,6 +291,23 @@ export class WorkspaceLedger {
    * own evidence, not an exception thrown at the caller: the participant needs
    * to know what changed so it can adapt, and a bare rejection teaches it
    * nothing.
+   *
+   * NOT the write path. Nothing in `src/` calls this any more.
+   *
+   * The live decision is `evaluateCommit` in `commit.mjs`, which the gate calls. That
+   * function reimplements the same four checks — settled participant, stale base, stale
+   * dependency, unknown read — and adds `no_change`, which this one has no notion of.
+   * The two have also drifted: this one knows nothing about leases, so it could admit a
+   * write the gate refuses with `lease_required`.
+   *
+   * It is kept, and kept tested, for two reasons: it is the readable statement of what
+   * the fence believes, and `evaluateCommit`'s own coverage is thinner. But a reader
+   * should not take its tests as evidence about production behaviour — they are evidence
+   * about a function that no longer runs.
+   *
+   * Reconciling the two is the real fix and is not done. Deleting this would remove the
+   * clearest description of the rules; keeping both means the rules exist twice.
+   * Logged in `docs/product-hardening-plan.md` under item 4.
    */
   admit({ participantId, path, baseRevision = null, contentHash = null }) {
     path = declaredPath(path);

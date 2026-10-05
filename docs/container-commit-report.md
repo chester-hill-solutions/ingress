@@ -127,15 +127,29 @@ The refusal is retained next to the admission.
 - **A participant can modify the launcher.** It is root in its own container and
   the launcher is on the same filesystem. Snapshot isolation would close this and
   is unavailable. A casual defector is caught; a determined one is not. This is
-  the real cost of losing the isolation primitive.
+  the real cost of losing the isolation primitive. It also means the workspace
+  can prove stored content hashes to what was declared, but not that the bytes
+  were ever written to the container's filesystem — a replaced reporter can send
+  content that was never on disk.
 - **Omission is undetectable.** A hidden change is invisible to the workspace.
   It is safe rather than corrupting, but it is invisible.
-- **Reads are still self-reported.** The fence knows a participant *declared* it
-  read `engine.mjs`. It cannot verify the read happened. Snapshot isolation would
-  not have fixed this either.
-- **No auth on the public surface.** `/join`, `/read`, `/start`, `/bootstrap` are
-  open. `/start` is the expensive one: anyone can start a container and spend
-  account time. Needs a token before this is exposed to anyone.
+- **Reads were self-reported; now they are not.** This used to read: the fence
+  knew a participant *declared* it read `engine.mjs`. `/read` is gone. A read is
+  recorded by `handlers/leases.mjs` when a lease grant hands the content over,
+  so the workspace is the party establishing it. What remains true is narrower:
+  the workspace cannot verify a participant *understood* the content it was
+  handed. Snapshot isolation would not have fixed that either.
+- **Auth on the public surface, since fixed.** `/join`, `/read`, `/start` and
+  `/bootstrap` were open; every `/w/:workspace` route now requires
+  `x-ingress-workspace-token`, and `/start` is bounded on length, runtime and
+  concurrency. See [product-hardening-plan](product-hardening-plan.md) items 1
+  and 3. Two limits remain: holding that token means holding the right to run
+  code on the account holder's machine, and the workspace name is still the only
+  thing separating two tenants.
+- **Two write decisions exist and only one runs.** `evaluateCommit` decides in
+  production; `WorkspaceLedger.admit` reimplements the same rules with no
+  production caller, and carries the larger share of the tests. Reconciling them
+  is not done.
 - **`/bootstrap` is authorship, not a loophole.** It may only run on an empty
   ledger; a second call is refused. Asserted by test.
 - **The launcher is a string, not a file to upload.** A Worker cannot write into

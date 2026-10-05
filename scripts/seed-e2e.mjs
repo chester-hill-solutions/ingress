@@ -18,26 +18,18 @@
  * was built against an empty directory.
  */
 
-const BASE = (process.env.INGRESS_BASE_URL ?? 'https://ingress-workspace.narfin.workers.dev').replace(/\/+$/, '');
-const WORKSPACE = process.env.INGRESS_WORKSPACE ?? `seed-${Date.now()}`;
+import { client, freshWorkspace } from './e2e-client.mjs';
+
+const WORKSPACE = process.env.INGRESS_WORKSPACE ?? freshWorkspace('seed');
 const LEASE_MS = 300_000;
 
-const url = suffix => `${BASE}/w/${WORKSPACE}${suffix}`;
+// The worker's workspace credential. Refused here rather than sent as nothing, so a
+// missing secret fails as a configuration error instead of as a puzzling 401 mid-run.
+
 const step = message => console.log(`\n--- ${message}`);
 const ok = (label, value) => console.log(`${value ? '  PASS' : '  FAIL'}  ${label}`);
 
-async function post(suffix, body) {
-  const response = await fetch(url(suffix), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return { status: response.status, body: await response.json() };
-}
-const get = async suffix => {
-  const response = await fetch(url(suffix));
-  return { status: response.status, body: await response.json() };
-};
+const { post, get } = client(WORKSPACE);
 
 const b64 = text => Buffer.from(text, 'utf8').toString('base64');
 const { sha256Hex } = await import('../src/product/commit.mjs');
@@ -52,7 +44,7 @@ const LEASED_CONTENT = 'export const version = 1;\nexport const greeting = "hell
 const NOT_LEASED = 'private-notes.txt';
 const NOT_LEASED_CONTENT = 'this file was never handed to the participant\n';
 
-console.log(`workspace: ${url('')}`);
+console.log(`workspace: ${WORKSPACE}`);
 
 step('1. bootstrap with two files');
 {
@@ -122,59 +114,65 @@ step('4. the participant edits the file it was actually given');
   ok('the edit advanced exactly one revision', content.revision === 2);
 }
 
-step('5. a participant whose lease lapses mid-run is caught by the base revision');
+step('5. a participant whose lease lapses mid-run is refused, and the file is untouched');
 {
-  // The reachable case. While a participant holds a write lease nobody else can
-  // move the file, so a stale base is impossible — that is the lease layer doing
-  // its job. The exception is a lease that lapses while the participant is still
-  // working, which is exactly what a short lease is for.
-  const ws = `${WORKSPACE}-lapse`;
-  const u = suffix => `${BASE}/w/${ws}${suffix}`;
-  const pst = async (suffix, body) => {
-    const r = await fetch(u(suffix), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-    return r.json();
-  };
+  // The reachable case. While a participant holds a write lease nobody else can move the
+  // file, so a stale base is impossible — that is the lease layer doing its job. The
+  // exception is a lease that lapses while the participant is still working.
+  //
+  // Its own workspace, because a lapsed lease is the whole point of this step.
+  //
+  // `post` returns `{status, body}` — the status included, because a status is the thing
+  // most worth asserting and a body-only helper makes it easy to skip. This step's first
+  // version kept the old local `pst`, which returned the bare body, so every access read
+  // `.commit` off a `{status, body}` wrapper: `undefined`, and two checks that printed FAIL
+  // without ever having looked at a verdict.
+  const lapse = client(`${WORKSPACE}-lapse`);
+  const join = name => lapse.get(`/join?${new URLSearchParams({ name, kind: 'agent', dependencies: '' })}`);
 
-  await pst('/bootstrap', { author: 'creator', files: [await entry('shared.txt', 'v1')] });
-  for (const name of ['slow', 'quick']) {
-    await fetch(`${u('/join?')}${new URLSearchParams({ name, kind: 'agent', dependencies: '' })}`).then(r => r.json());
-  }
+  await lapse.post('/bootstrap', { author: 'creator', files: [await entry('shared.txt', 'v1')] });
+  const joined = await join('slow');
+  if (joined.status !== 200) throw new Error(`join failed: ${JSON.stringify(joined.body)}`);
 
-  // slow takes a 1s lease, and its command outlasts it.
-  await pst('/lease/checkout', { participantId: 'slow', paths: ['shared.txt'], mode: 'write', leaseMs: 1000 });
-  const slowRun = pst('/start', {
+  // A 1s lease, and a command that outlasts it.
+  //
+  // Checked out over HTTP rather than requested as `writePaths`, deliberately: `/start`
+  // would grant the lease and the launcher would renew it, so a `writePaths` run can never
+  // lose one. A mid-run lapse is only reachable by asking for a lease short enough to
+  // expire — the case the lease layer exists for, and the one that must be refused rather
+  // than renewed.
+  await lapse.post('/lease/checkout', {
+    participantId: 'slow', paths: ['shared.txt'], mode: 'write', leaseMs: 1000,
+  });
+  const run = lapse.post('/start', {
     participantId: 'slow',
     kind: 'agent',
-    participantCommand: "echo slow seeded at r1 > /tmp/note; sleep 6; cat > /workspace/shared.txt <<'XEOF'\nslow-v1-based\nXEOF",
+    participantCommand:
+      "sleep 6; cat > /workspace/shared.txt <<'XEOF'\nslow-v1-based\nXEOF",
   });
 
-  // Let the lease lapse, then let somebody else move the file.
-  await new Promise(r => setTimeout(r, 2500));
-  const quickLease = await pst('/lease/checkout', { participantId: 'quick', paths: ['shared.txt'], mode: 'write', leaseMs: 60000 });
-  const moved = await pst('/start', {
-    participantId: 'quick',
-    kind: 'agent',
-    participantCommand: "cat > /workspace/shared.txt <<'XEOF'\nv2-from-quick\nXEOF",
-  });
-  console.log('  quick moved it to:', JSON.stringify(moved.commit?.landed?.map(f => f.revision) ?? moved.commit?.reason));
-
-  // slow finishes against the revision it was seeded at. The workspace is at r2.
-  const slow = await slowRun;
-  const verdict = slow.commit;
+  const verdict = (await run).body.commit;
   console.log('  slow admitted:', verdict?.admitted, '| reason:', verdict?.reason);
-  console.log('  evidence:', JSON.stringify(verdict?.refusals?.map(r => ({ path: r.path, reason: r.reason, claimed: r.claimedRevision, current: r.currentRevision }))));
-  // Refused by `lease_required`, not `write_base_stale`, and that ordering is the
-  // point: the lease check runs before the fence, and a lapsed lease means the
-  // participant no longer holds the file at all. The base-revision check sits behind
-  // it as a backstop and is covered by unit tests rather than here, because a live
-  // write lease makes a stale base unreachable by construction.
-  ok('the lapsed lease did not let a stale write through', verdict?.admitted === false);
-  ok('it was refused by the lease layer, which runs first',
-    verdict?.reason === 'lease_required' || verdict?.reason === 'write_base_stale');
+  console.log('  unleased:     ', JSON.stringify(verdict?.unleasedPaths));
+  console.log('  detail:       ', verdict?.detail);
 
-  const after = await (await fetch(`${u('/content?path=shared.txt')}`)).json();
-  console.log('  the file now says:', JSON.stringify(Buffer.from(after.contentBase64, 'base64').toString('utf8').trim()));
-  ok("quick's write survived and slow's did not land", after.contentBase64 && !Buffer.from(after.contentBase64, 'base64').toString().includes('slow'));
+  // Refused by `lease_required`, and that ordering is the point: the lease check runs
+  // before the fence. A lapsed lease means the participant no longer holds the file at all,
+  // so there is no basis to judge — the fence is never reached.
+  ok('the lapsed lease did not let a stale write through', verdict?.admitted === false);
+  ok('it was refused by the lease layer, which runs first', verdict?.reason === 'lease_required');
+  ok('and it names the path it would have written', verdict?.unleasedPaths?.includes('shared.txt'));
+
+  // The file must be **exactly** what it was. An earlier version of this step asserted only
+  // that the content did not contain 'slow', which passes when the file is untouched —
+  // which is what happened when the second participant in this scenario silently failed to
+  // start and nothing landed at all. The check passed for the wrong reason, and would have
+  // passed again if the write had been admitted and then reverted.
+  const after = (await lapse.get('/content?path=shared.txt')).body;
+  const says = Buffer.from(after.contentBase64, 'base64').toString('utf8').trim();
+  console.log('  the file now says:', JSON.stringify(says));
+  ok("the file is byte-for-byte what it was — 'v1'", says === 'v1');
+  ok('and it is still at revision 1', after.revision === 1);
 }
 
 const finalState = await get('/state');

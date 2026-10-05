@@ -2,6 +2,11 @@
 
 # Ingress implementation plan
 
+Engineering on the deployed product surface (`src/product/`, `src/worker.js`) follows the
+[product hardening plan](product-hardening-plan.md). It is an ordered queue, not a
+capability claim, and it records three findings that contradict claims the code comments
+make. The rest of this document is the research plan and is unaffected by it.
+
 Stow storage release work is separate.
 The [repository boundary](realtime-repository-boundary.md) now distinguishes Stow-owned
 storage facts/durable delivery from Ingress-owned agent meaning, context and coordination.

@@ -15,14 +15,61 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { WorkspaceAgent } from '../src/product/workspace-agent.mjs';
-import { WorkspaceClient, WriteRefused, demoParticipant } from '../src/product/workspace-client.mjs';
+import { WorkspaceClient, WriteLeaseRefused, demoParticipant } from '../src/product/workspace-client.mjs';
 import { sha256Hex } from '../src/product/commit.mjs';
 import { MANIFEST_VERSION } from '../src/product/manifest.mjs';
+import * as leaseHandler from '../src/product/handlers/leases.mjs';
+import { LeaseConflict } from '../src/product/lease.mjs';
 
 const b64 = text => Buffer.from(text, 'utf8').toString('base64');
 
 async function entry(path, content) {
   return { path, contentBase64: b64(content), contentHash: await sha256Hex(Buffer.from(content, 'utf8')) };
+}
+
+/**
+ * Establish that a participant has read a path, the way a participant must.
+ *
+ * A read is recorded by the workspace handing over the content, so this takes a read
+ * lease rather than asserting a read. It used to POST `/read`, which recorded whatever
+ * the caller claimed and made `readBasis: 'verified'` a self-report.
+ *
+ * The lease is then released, and that is not incidental. A read lease is exclusive
+ * against a write, so while the reader holds it nobody else can move the file — which
+ * means the stale-write scenario these tests exist to reach is *unreachable* until the
+ * reader lets go. Releasing models the real sequence: read the file, then move on.
+ *
+ * The read record survives the release, because it lives in the ledger rather than in
+ * the lease table. That is what makes the refusal reachable at all: the fence compares
+ * the revision the participant was handed against the revision now there.
+ */
+async function read(call, participantId, path) {
+  const response = await post(call, '/lease/checkout', { participantId, paths: [path], mode: 'read' });
+  const body = await asJSON(response);
+  assert.equal(response.status, 200, `read lease for ${participantId} on ${path} was refused: ${JSON.stringify(body)}`);
+  assert.equal(body.files[0].revision !== undefined, true, 'a grant must report the revision it handed over');
+
+  const released = await post(call, '/lease/release', { leaseId: body.leaseId, participantId });
+  assert.equal(released.status, 200, 'releasing a read lease must succeed');
+  return body;
+}
+
+/**
+ * Ask the fence directly, with no HTTP in the way.
+ *
+ * The `/write` route these assertions used to travel through is gone: it called `admit`
+ * without consulting the lease table, so it admitted writes the gate refuses. The
+ * decision did not go with it — `WorkspaceLedger.admit` is the same function, reachable
+ * directly. These tests are better for the change: the fence's decision is now tested
+ * without a router, a storage shim and a Durable Object in between.
+ *
+ * Reads the object's *cached* ledger, so a `/read` performed over HTTP in the same test
+ * is visible to the decision. Behaviour that genuinely needs persistence — surviving an
+ * eviction — is tested through the gate, which is the path that persists.
+ */
+async function admit(instance, request) {
+  const ledger = await instance.getLedger();
+  return ledger.admit(request);
 }
 
 /**
@@ -57,6 +104,9 @@ function memoryStorage(data) {
         }
         data.set(key, structuredClone(value));
       },
+      // Exposed so a test can reach in and age a lease rather than sleeping through its
+      // expiry. Only ever read by tests; nothing in the product uses it.
+      data,
     },
   };
 }
@@ -94,12 +144,33 @@ function mountWithInstance(instance, data) {
   return { instance, storage: data, call: makeCall(instance) };
 }
 
-const join = (base, participantId, kind, dependencies) =>
-  base(`https://x/join?${new URLSearchParams({ name: participantId, kind, dependencies: dependencies.join(',') })}`);
+// `kind` and `dependencies` default rather than being required, and `dependencies` is
+// guarded. The helper predates the tests below and took them positionally, so calling it
+// with two arguments threw on `dependencies.join` — a failure in the helper that looked
+// like a failure in the lease routes.
+const join = (base, participantId, kind = 'agent', dependencies = []) =>
+  base(`https://x/join?${new URLSearchParams({
+    name: participantId,
+    kind,
+    dependencies: (dependencies ?? []).join(','),
+  })}`);
 
 const post = (base, path, body) => base(`https://x${path}`, { method: 'POST', body: JSON.stringify(body) });
 
 const asJSON = async response => JSON.parse(await response.text());
+
+/**
+ * A response as `{status, ...body}`.
+ *
+ * Needed wherever a test asserts on both. `asJSON` throws the status away — it reads the
+ * body and nothing else — so `const r = await asJSON(...)` then `r.status` is `undefined`,
+ * which reads as a product that answered without a status rather than a helper that threw
+ * one away.
+ */
+async function asResult(response) {
+  const body = await asJSON(response);
+  return { status: response.status, ...body };
+}
 
 /** Establish a starting tree the legitimate way. */
 async function bootstrap(base, files, author = 'creator') {
@@ -134,12 +205,52 @@ async function commitWithLease(base, data, participantId, files) {
     200,
     `lease for ${participantId} on ${paths.join(', ')} was refused: ${JSON.stringify(lease.body)}`
   );
+  const granted = await asJSON(lease);
 
-  return post(base, '/internal/commit', {
+  const response = await post(base, '/internal/commit', {
     participantId,
     token: issueToken(data, participantId),
     ...manifest(participantId, files),
   });
+
+  // Release afterwards, as a real participant does: a container commits and then exits,
+  // so its lease is not held forever. Without this the writer keeps the file exclusively
+  // and no one else can read it — correct lease behaviour that would make the
+  // re-read scenarios in this file unreachable.
+  await post(base, '/lease/release', { leaseId: granted.leaseId, participantId });
+
+  return response;
+}
+
+/**
+ * Call `grantWrite`, the in-workspace write grant `/start` uses.
+ *
+ * Straight to the module rather than over HTTP, because `/start` calls it directly and
+ * there is no route for it. The handler's own use — refusing with a 409 having created
+ * nothing — is exercised by the atomicity test above.
+ */
+async function leaseGrant(instance, options) {
+  return leaseHandler.grantWrite(instance.ctx, options);
+}
+
+/** The instance's storage contents, so a cold instance can be mounted over it. */
+async function storageOf(instance) {
+  return instance.state.storage.data;
+}
+
+/**
+ * Mount a fresh instance over the same storage — a Durable Object eviction — and return its
+ * `fetch`, ready to call like any other.
+ *
+ * The returned thing is a *function*, not `{instance, call}`. An earlier version returned
+ * the mount object and the callers wrote `call(coldInstance(...), '/leases')`, which
+ * resolved to `call(fn, ...)` — the outer `call` treating the instance as a URL and
+ * building `https://xhttps://x/leases`. It answered 404, and the assertion on
+ * `reloaded.leases` then failed on `undefined`, which reads like a lease that failed to
+ * persist rather than a request that never arrived.
+ */
+function coldInstance(instance, data) {
+  return makeCall(new WorkspaceAgent(memoryStorage(data)));
 }
 
 /** A manifest as the in-container launcher would produce. */
@@ -154,8 +265,318 @@ function manifest(participantId, files, exit = 0) {
 
 // --- the fence ------------------------------------------------------------
 
-test('the workspace fences a stale write over real HTTP', async () => {
+// --- the gate's lease surface ---------------------------------------------------
+
+test('the container lease routes refuse a caller with no token', async () => {
+  const { call } = mountDO();
+
+  for (const path of ['/internal/lease/heartbeat', '/internal/lease/release']) {
+    const response = await call(`https://x${path}`, {
+      method: 'POST',
+      body: JSON.stringify({ participantId: 'a', leaseId: 'whatever' }),
+    });
+    assert.equal(response.status, 403, `${path} answered ${response.status} with no token`);
+    const body = await asJSON(response);
+    assert.equal(body.reason, 'no_token_issued');
+  }
+});
+
+test('the container lease routes refuse a token that was never issued', async () => {
+  const { call } = mountDO();
+
+  const response = await call('https://x/internal/lease/heartbeat', {
+    method: 'POST',
+    body: JSON.stringify({ participantId: 'a', leaseId: 'whatever', token: 'forged' }),
+  });
+  assert.equal(response.status, 403);
+  assert.equal((await asJSON(response)).reason, 'no_token_issued');
+});
+
+test("a container cannot renew or release another participant's lease", async () => {
+  // The token check passes — this *is* a real container — and the lease belongs to someone
+  // else. Both operations must refuse, or holding any token is authority over every file
+  // in the workspace.
   const { call, data } = mountDO();
+  await join(call, 'victim');
+  const victimLease = await asResult(await post(call, '/lease/checkout', {
+    participantId: 'victim',
+    paths: ['engine.mjs'],
+    mode: 'write',
+  }));
+
+  await join(call, 'attacker');
+  const attackerToken = issueToken(data, 'attacker');
+
+  const renewed = await asResult(await post(call, '/internal/lease/heartbeat', {
+    participantId: 'attacker',
+    token: attackerToken,
+    leaseId: victimLease.leaseId,
+  }));
+  assert.equal(renewed.status, 409);
+  assert.equal(renewed.reason, 'lease_not_yours');
+
+  const released = await asResult(await post(call, '/internal/lease/release', {
+    participantId: 'attacker',
+    token: attackerToken,
+    leaseId: victimLease.leaseId,
+  }));
+  assert.equal(released.status, 200);
+  assert.equal(released.reason, 'lease_not_yours',
+    'and the release must not have freed the victim\'s paths');
+
+  // The victim's lease is still live.
+  const leases = await asJSON(await call('https://x/leases'));
+  assert.equal(leases.leases.length, 1);
+  assert.equal(leases.leases[0].participantId, 'victim');
+});
+
+test('a container renewing its own lease keeps it alive past the original expiry', async () => {
+  // The property `/start` now depends on: a run longer than the lease still holds it.
+  //
+  // The lease is aged in storage before the renewal rather than after, so the renewal is
+  // arriving at a lease that *has* expired. Renewing one of those must fail, so the way to
+  // show a renewal works is to make the original expiry sit close behind — the assertion
+  // is that the renewal recomputes the expiry from *now*, not that the clock advanced.
+  const { call, data } = mountDO();
+  await join(call, 'worker');
+  const token = issueToken(data, 'worker');
+
+  const granted = await asResult(await post(call, '/lease/checkout', {
+    participantId: 'worker',
+    paths: ['engine.mjs'],
+    mode: 'write',
+    leaseMs: 60_000,
+  }));
+  assert.equal(granted.status, 200);
+  const firstExpiry = granted.expiresAt;
+
+  const renewed = await asResult(await post(call, '/internal/lease/heartbeat', {
+    participantId: 'worker',
+    token,
+    leaseId: granted.leaseId,
+    leaseMs: 60_000,
+  }));
+  assert.equal(renewed.status, 200);
+  assert.equal(renewed.alive, true);
+  assert.deepEqual(renewed.heldBy, ['engine.mjs']);
+  assert.equal(renewed.heartbeats, undefined, 'the snapshot shape and the result shape differ; only one carries heartbeats');
+
+  // The renewal must be a *full* lease from the moment it ran, and it must not have
+  // shortened what it was granted. `renewed.expiresAt` is within a millisecond or two of
+  // now + 60s; comparing to the original expiry would be a comparison of two nearly equal
+  // numbers and would pass or fail on scheduling.
+  const drift = Math.abs(renewed.expiresAt - (Date.now() + 60_000));
+  assert.ok(drift < 1_000, `the renewed expiry should be a full lease from now; it was ${drift}ms off`);
+  assert.ok(renewed.expiresAt >= firstExpiry, 'and it must never move backwards');
+});
+
+test('a renewal cannot revive a lease that already lapsed', async () => {
+  // Renewing an expired lease would hand the same file to two participants, so it fails
+  // even for the rightful holder — and says which of the two things went wrong.
+  const { call, data } = mountDO();
+  await join(call, 'worker');
+  const token = issueToken(data, 'worker');
+
+  const granted = await asResult(await post(call, '/lease/checkout', {
+    participantId: 'worker',
+    paths: ['engine.mjs'],
+    mode: 'write',
+    leaseMs: 1000,
+  }));
+
+  // Aged in storage rather than by sleeping. `memoryStorage` exposes its map, so the
+  // table is rewritten with an expiry in the past and the next `sweep` treats it as gone —
+  // the same path a genuinely lapsed lease takes, without a one-second test.
+  const stored = data;
+  const leases = stored.get('leases');
+  for (const lease of leases.leases) lease.expiresAt = 1;
+  stored.set('leases', leases);
+
+  const renewed = await asResult(await post(call, '/internal/lease/heartbeat', {
+    participantId: 'worker',
+    token,
+    leaseId: granted.leaseId,
+  }));
+  assert.equal(renewed.status, 409);
+  assert.equal(renewed.alive, false);
+  assert.equal(renewed.reason, 'lease_expired');
+});
+
+test('the container release frees the paths, and the commit is already in', async () => {
+  // Ordering is the point. The launcher commits and *then* releases; if these were
+  // reversed the commit would be refused with `lease_required` every time.
+  const { call, data } = mountDO();
+  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  await join(call, 'worker');
+  const token = issueToken(data, 'worker');
+
+  const granted = await asResult(await post(call, '/lease/checkout', {
+    participantId: 'worker',
+    paths: ['engine.mjs'],
+    mode: 'write',
+  }));
+
+  const commit = await post(call, '/internal/commit', {
+    participantId: 'worker',
+    token,
+    ...manifest('worker', [await entry('engine.mjs', 'export const v = 2;')]),
+  });
+  assert.equal(commit.status, 200, await commit.clone().text());
+
+  const released = await asResult(await post(call, '/internal/lease/release', {
+    participantId: 'worker',
+    token,
+    leaseId: granted.leaseId,
+  }));
+  assert.equal(released.status, 200);
+  assert.deepEqual(released.released, ['engine.mjs']);
+  assert.equal((await asJSON(await call('https://x/leases'))).leases.length, 0);
+});
+
+test('releasing a lease that is already gone is not an error', async () => {
+  // The launcher releases on its way out whether or not the participant ran at all, and
+  // `/start` releases again afterwards as a backstop. Both must be able to.
+  const { call, data } = mountDO();
+  await join(call, 'worker');
+  const token = issueToken(data, 'worker');
+
+  const response = await asResult(await post(call, '/internal/lease/release', {
+    participantId: 'worker',
+    token,
+    leaseId: 'never-existed',
+  }));
+  assert.equal(response.status, 200);
+  assert.equal(response.reason, 'lease_unknown');
+});
+
+test('the workspace grants the lease /start needs, without an HTTP round trip', async () => {
+  // `grantWrite` is what `/start` calls. Asserted directly because the whole point of
+  // item 7 is that the caller no longer has to do this over HTTP.
+  const { instance, call } = mountDO();
+  await join(call, 'worker');
+
+  const granted = await leaseGrant(instance, { participantId: 'worker', paths: ['engine.mjs'] });
+  assert.equal(granted.mode, 'write');
+  assert.deepEqual(granted.paths, ['engine.mjs']);
+  assert.ok(granted.leaseId);
+  assert.equal(granted.leaseMs, 60_000, 'the default duration, renewed rather than stretched');
+  assert.ok(granted.renewIntervalMs < granted.leaseMs,
+    'renewals must outrun the expiry, or the lease lapses mid-run');
+
+  // And the grant is durable, not an in-memory artefact of one request. A lease held only
+  // in the instance that granted it would vanish on the next eviction and the commit would
+  // be refused for no reason the caller could see.
+  const reloaded = await asResult(await coldInstance(instance, await storageOf(instance))('https://x/leases'));
+  assert.equal(reloaded.leases.length, 1);
+  assert.equal(reloaded.leases[0].participantId, 'worker');
+});
+
+test('the workspace refuses a start lease it cannot grant, and grants nothing at all', async () => {
+  // Atomicity. A caller that gets half a grant holds a lease on files it cannot use while
+  // blocking everyone who can — the failure mode the lease table refuses to produce.
+  const { instance, call } = mountDO();
+  await join(call, 'first');
+  await join(call, 'second');
+
+  await leaseGrant(instance, { participantId: 'first', paths: ['engine.mjs'] });
+
+  await assert.rejects(
+    () => leaseGrant(instance, { participantId: 'second', paths: ['engine.mjs'] }),
+    error => error instanceof LeaseConflict && error.conflicts[0].heldBy === 'first',
+  );
+
+  // Only the first holder remains: nothing partial leaked onto the second's side.
+  const leases = await asJSON(await call('https://x/leases'));
+  assert.equal(leases.leases.length, 1);
+  assert.equal(leases.leases[0].participantId, 'first');
+});
+
+test('a start lease registers the participant it hands files to', async () => {
+  // `grantWrite` is given the registration because it is the party deciding this
+  // participant may work, and a handover to someone who has not joined is a decision about
+  // them as well as the file.
+  //
+  // This ordering is load-bearing and was got wrong first: `/start` used to register
+  // *before* granting, because `recordRead` calls `require` and that throws for an unknown
+  // participant. The live run then showed a `/start` refused for `lease_conflict` leaving
+  // the participant registered — no token, no container, no lease, and a roster entry
+  // nobody asked for and nobody can remove.
+  const { instance, call } = mountDO();
+
+  const granted = await leaseGrant(instance, { participantId: 'latecomer', paths: ['engine.mjs'] });
+  assert.ok(granted.leaseId);
+
+  const state = await asResult(await call('https://x/state'));
+  const registered = state.participants.find(p => p.participantId === 'latecomer');
+  assert.ok(registered, 'the holder of a lease must be a participant');
+  assert.equal(registered.kind, 'agent', 'and its kind is the one the grant was given');
+});
+
+test('a start lease records the kind it was asked for', async () => {
+  // A human and an agent are not interchangeable in the ledger, and the grant is what
+  // knows which. Defaulted to `agent` so a caller that omits it gets the conservative
+  // answer rather than a gap.
+  const { instance, call } = mountDO();
+  await leaseGrant(instance, { participantId: 'someone', paths: ['engine.mjs'], kind: 'human' });
+
+  const state = await asResult(await call('https://x/state'));
+  assert.equal(state.participants.find(p => p.participantId === 'someone').kind, 'human');
+});
+
+test('a refused start lease registers nobody', async () => {
+  // The regression, asserted on the ledger rather than through `/start`, which needs a
+  // container binding to exercise.
+  const { instance, call } = mountDO();
+  await leaseGrant(instance, { participantId: 'holder', paths: ['engine.mjs'] });
+
+  await assert.rejects(
+    () => leaseGrant(instance, { participantId: 'rejected', paths: ['engine.mjs'] }),
+    error => error instanceof LeaseConflict,
+  );
+
+  const state = await asResult(await call('https://x/state'));
+  assert.equal(
+    state.participants.some(p => p.participantId === 'rejected'),
+    false,
+    'a refused grant must leave no trace of the participant it was for',
+  );
+});
+
+test('a start lease is a handover, so it records the read it implies', async () => {
+  // Same reasoning as `checkout`: the workspace decided to give these paths to this
+  // participant, so the read follows from the fact rather than from a claim.
+  const { instance, call } = mountDO();
+  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  await join(call, 'worker');
+
+  // Reads live in `toJSON` but not in `snapshot`, and `/state` serves the snapshot. An
+  // earlier version of this test read them from `/state`, where they do not appear — so
+  // `after.reads` was `undefined` and `.some` threw. What `/start` actually writes is
+  // storage, so the assertion is made there, which is also the surface the fence reads.
+  const before = (await storageOf(instance)).get('ledger');
+  assert.equal(before.reads.length, 0, 'nothing has been handed over yet');
+
+  await leaseGrant(instance, { participantId: 'worker', paths: ['engine.mjs'] });
+
+  const readPaths = ledger => ledger.reads
+    .filter(read => read.participantId === 'worker')
+    .map(read => read.path);
+  assert.ok(
+    readPaths((await storageOf(instance)).get('ledger')).includes('engine.mjs'),
+    'a start-issued lease must record the read, or the fence judges this run against no basis',
+  );
+
+  // And it must survive a reload — a read held only in the instance that made it is not
+  // evidence, and a Durable Object can be evicted between the grant and the commit.
+  await coldInstance(instance, await storageOf(instance))('https://x/state');
+  assert.ok(
+    readPaths((await storageOf(instance)).get('ledger')).includes('engine.mjs'),
+    'the recorded read must be durable',
+  );
+});
+
+test('the workspace fences a stale write', async () => {
+  const { instance, call, data } = mountDO();
 
   // Two participants arrive. The builder depends on the file; the human does
   // not declare it, because a human editing a file directly is not reasoning
@@ -166,15 +587,15 @@ test('the workspace fences a stale write over real HTTP', async () => {
 
   // The file exists, and the builder has read it.
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
+  await read(call, 'builder', 'engine.mjs');
 
   // Nothing has moved yet, so the builder's write is admitted.
-  assert.equal((await asJSON(await post(call, '/write', { participantId: 'builder', path: 'ui.mjs' }))).admitted, true);
+  assert.equal((await admit(instance, { participantId: 'builder', path: 'ui.mjs' })).admitted, true);
 
   // The human changes what the builder was working from.
   await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
 
-  const blocked = await asJSON(await post(call, '/write', { participantId: 'builder', path: 'other.mjs' }));
+  const blocked = await admit(instance, { participantId: 'builder', path: 'other.mjs' });
   assert.equal(blocked.admitted, false);
   assert.equal(blocked.reason, 'dependency_moved');
   assert.deepEqual(blocked.staleDependencies, [
@@ -184,17 +605,17 @@ test('the workspace fences a stale write over real HTTP', async () => {
 });
 
 test('a re-read clears the refusal and the same write is admitted', async () => {
-  const { call, data } = mountDO();
+  const { instance, call, data } = mountDO();
   await join(call, 'builder', 'agent', ['engine.mjs']);
   await join(call, 'other', 'human', []);
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
+  await read(call, 'builder', 'engine.mjs');
 
   await commitWithLease(call, data, 'other', [await entry('engine.mjs', 'v2')]);
 
-  assert.equal((await asJSON(await post(call, '/write', { participantId: 'builder', path: 'ui.mjs' }))).admitted, false);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
-  assert.equal((await asJSON(await post(call, '/write', { participantId: 'builder', path: 'ui.mjs' }))).admitted, true,
+  assert.equal((await admit(instance, { participantId: 'builder', path: 'ui.mjs' })).admitted, false);
+  await read(call, 'builder', 'engine.mjs');
+  assert.equal((await admit(instance, { participantId: 'builder', path: 'ui.mjs' })).admitted, true,
     'the fence must be recoverable');
 });
 
@@ -203,33 +624,38 @@ test('the workspace survives a reload of its stored state', async () => {
   await join(call, 'a', 'agent', ['x.mjs']);
   await join(call, 'someone', 'human', []);
   await bootstrap(call, [await entry('x.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'a', path: 'x.mjs' });
+  await read(call, 'a', 'x.mjs');
   await commitWithLease(call, data, 'someone', [await entry('x.mjs', 'v2')]);
 
   // A cold instance over the *same* storage. This is what a DO eviction looks
   // like: the ledger is rebuilt from durable state, not carried in memory.
-  const { call: revivedCall } = mountWithInstance(new WorkspaceAgent(memoryStorage(data)), data);
+  const { instance: revived } = mountWithInstance(new WorkspaceAgent(memoryStorage(data)), data);
 
-  const refused = await asJSON(await revivedCall('https://x/write', {
-    method: 'POST',
-    body: JSON.stringify({ participantId: 'a', path: 'y.mjs' }),
-  }));
+  // Asked directly rather than over HTTP: `/write` no longer exists, and the gate is
+  // the path that persists anyway. What is under test is that the *rebuilt* ledger
+  // still refuses, which is the property an eviction could silently lose.
+  const refused = await admit(revived, { participantId: 'a', path: 'y.mjs' });
   assert.equal(refused.admitted, false, 'the fence must survive eviction');
   assert.equal(refused.reason, 'dependency_moved');
 });
 
 test('an unknown route is a 404 and an unknown participant never writes', async () => {
-  const { call, data } = mountDO();
+  const { instance, call } = mountDO();
   assert.equal((await call('https://x/nope')).status, 404);
 
-  const response = await call('https://x/write', {
-    method: 'POST',
-    body: JSON.stringify({ participantId: 'ghost', path: 'x.mjs' }),
-  });
-  assert.equal(response.status, 400);
-  const body = await asJSON(response);
-  assert.equal(body.error, 'unknown_participant');
-  assert.equal(body.admitted, undefined, 'no admission and no receipt for a non-participant');
+  // `/write` is gone, so the only way in is the gate — and the gate's own tests cover
+  // its refusals. What matters here is that the fence itself still refuses to admit for
+  // a participant it has never seen. `rejects`, not `throws`: `admit` awaits the ledger,
+  // so `assert.throws` would see no synchronous throw and leak an unhandled rejection.
+  await assert.rejects(
+    () => admit(instance, { participantId: 'ghost', path: 'x.mjs' }),
+    error => {
+      assert.equal(error.name, 'FenceRefusal');
+      assert.equal(error.reason, 'unknown_participant');
+      return true;
+    },
+    'a non-participant must not receive an admission',
+  );
 });
 
 // --- the self-reporting hole is closed ------------------------------------
@@ -321,7 +747,7 @@ test('a stale commit is refused in full and stores nothing', async () => {
   await join(call, 'builder', 'agent', ['engine.mjs']);
   await join(call, 'integrator', 'human', []);
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
+  await read(call, 'builder', 'engine.mjs');
 
   const otherToken = issueToken(data, 'integrator');
   await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
@@ -347,7 +773,7 @@ test('a refusal is retained as a receipt, because an audit trail of successes on
   await join(call, 'builder', 'agent', ['engine.mjs']);
   await join(call, 'integrator', 'human', []);
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
+  await read(call, 'builder', 'engine.mjs');
 
   await commitWithLease(call, data, 'integrator', [await entry('engine.mjs', 'v2')]);
   await commitWithLease(call, data, 'builder', [await entry('mine.mjs', 'my work')]);
@@ -424,7 +850,6 @@ test('the client drives the workspace end to end', async () => {
 
   await join(call, 'builder', 'agent', ['engine.mjs']);
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
 
   const builder = new WorkspaceClient({
     baseUrl: 'https://workspace.invalid',
@@ -436,47 +861,73 @@ test('the client drives the workspace end to end', async () => {
   const envelope = await builder.join();
   assert.equal(envelope.you.participantId, 'builder');
 
-  assert.equal((await builder.tryWrite({ path: 'ui.mjs' })).admitted, true);
+  await builder.declareIntent('building the interface');
+  // A read lease, not an assertion: this is how a client obtains the content and the
+  // workspace records the read in the same act.
+  const grant = await builder.checkout({ paths: ['engine.mjs'], mode: 'read' });
+  assert.equal(grant.granted, true);
+  assert.equal(grant.files[0].revision, 1, 'the grant hands over the revision it served');
+  assert.equal(WorkspaceClient.contentOf(grant, 'engine.mjs').toString('utf8'), 'v1',
+    'the grant carries the real bytes, not a claim about them');
 
-  // A peer commits, which invalidates what the builder was working from.
+  // Let go, so a peer can move the file. A read lease is exclusive against a write, so
+  // holding it forever would block every writer — which is what `release` is for.
+  await builder.release({ leaseId: grant.leaseId });
+
+  // A peer commits, which invalidates what the builder was working from. The client
+  // sees it without being told, because the envelope is the workspace's account of the
+  // world rather than a notification.
   await join(call, 'peer', 'human', []);
   await commitWithLease(call, data, 'peer', [await entry('engine.mjs', 'moved-on')]);
 
-  assert.equal((await builder.tryWrite({ path: 'ui.mjs' })).admitted, false,
-    'the builder is stale without re-reading');
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
-  assert.equal((await builder.tryWrite({ path: 'ui.mjs' })).admitted, true);
+  const moved = await builder.join();
+  const dependency = moved.dependencies.find(entry => entry.path === 'engine.mjs');
+  assert.equal(dependency.stale, true, 'the client must be able to see that its basis moved');
+  assert.equal(dependency.revision, 2);
+  assert.equal(dependency.author, 'peer');
+  assert.equal(dependency.yourReadRevision, 1, 'the read the workspace recorded is the one it handed over');
+
+  const receipts = await builder.receipts();
+  assert.ok(Array.isArray(receipts.receipts));
 });
 
-test('a refusal throws WriteRefused with the evidence attached', async () => {
+test('a commit refusal carries the evidence a caller can act on', async () => {
+  // The refusal shape the client raises, exercised against the gate — the only path
+  // that admits bytes now. This used to travel over `/write`, which is gone.
   const { call, data } = mountDO();
-  const fetchImpl = clientFetchFor(call);
   await join(call, 'p', 'agent', ['dep.mjs']);
   await join(call, 'x', 'human', []);
   await bootstrap(call, [await entry('dep.mjs', 'v1')]);
-  await post(call, '/read', { participantId: 'p', path: 'dep.mjs' });
-
-  const client = new WorkspaceClient({
-    baseUrl: 'https://workspace.invalid',
-    participantId: 'p',
-    dependencies: ['dep.mjs'],
-    fetch: fetchImpl,
-  });
+  await read(call, 'p', 'dep.mjs');
 
   await commitWithLease(call, data, 'x', [await entry('dep.mjs', 'v2')]);
 
-  await assert.rejects(
-    () => client.write({ path: 'out.mjs' }),
-    error => {
-      assert.ok(error instanceof WriteRefused);
-      assert.equal(error.reason, 'dependency_moved');
-      assert.ok(error.receipt.staleDependencies.length > 0);
-      return true;
-    }
-  );
+  // No lease, so the commit is refused before the fence is consulted — which is the
+  // point of item 3's predecessor: holding a lease is what authorises a write.
+  const response = await post(call, '/internal/commit', {
+    participantId: 'p',
+    token: issueToken(data, 'p'),
+    manifestVersion: MANIFEST_VERSION,
+    files: [await entry('out.mjs', 'content')],
+  });
+  const refused = await asJSON(response);
+  assert.equal(refused.admitted, false);
+  assert.equal(refused.reason, 'lease_required');
+  assert.ok(Array.isArray(refused.unleasedPaths));
+  assert.ok(typeof refused.hint === 'string', 'a refusal must tell the caller what to do next');
 });
 
-test('the demo participant recovers from a refusal without special-casing', async () => {
+test('the refusal error class carries a receipt', async () => {
+  // The class is what a caller catches. Asserted directly, because the method that
+  // raised it was removed along with its route.
+  const error = new WriteLeaseRefused({ reason: 'dependency_moved', staleDependencies: [{ path: 'a.mjs' }] });
+  assert.equal(error.name, 'WriteLeaseRefused');
+  assert.equal(error.reason, 'dependency_moved');
+  assert.equal(error.receipt.staleDependencies.length, 1);
+  assert.ok(error instanceof Error);
+});
+
+test('the demo participant shows the workspace account of its own read', async () => {
   const { call, data } = mountDO();
   const fetchImpl = clientFetchFor(call);
   await bootstrap(call, [await entry('engine.mjs', 'v1')]);
@@ -491,30 +942,186 @@ test('the demo participant recovers from a refusal without special-casing', asyn
     dependency: 'engine.mjs',
     fetch: fetchImpl,
   });
-  assert.equal(result.outcome.admitted, true, 'a stranger can join, be refused, and recover');
+  // The demo no longer writes, so what it proves is that a stranger can arrive, declare
+  // an intent, record a read, and see the workspace's own account of that read.
+  //
+  // `stale` is false here and that is the correct answer: the demo read the file after
+  // the peer moved it, so its basis is current. An earlier draft asserted `stale === true`
+  // and was wrong about the code rather than the code being wrong about the read.
+  assert.equal(result.envelope.you.participantId, 'latecomer');
+  assert.equal(result.read.path, 'engine.mjs');
+  assert.equal(result.read.revision, 2, 'the envelope reports the revision on disk');
+  assert.equal(result.read.stale, false, 'a read of the current revision is not stale');
+  assert.equal(result.read.author, 'other', 'the envelope names who moved it');
+  assert.equal(result.read.yourReadRevision, result.read.revision,
+    'the workspace recorded the read it was told about, against the revision it served');
+  assert.ok(result.fingerprint, 'the workspace must hand back a fingerprint of what it relied on');
+  assert.ok(Array.isArray(result.state.files));
 });
 
 test('two humans in one workspace are fenced against each other too', async () => {
-  const { call, data } = mountDO();
+  const { instance, call } = mountDO();
   await join(call, 'alice', 'human', ['doc.md']);
   await join(call, 'bob', 'human', ['doc.md']);
   await bootstrap(call, [await entry('doc.md', 'v1')]);
-  await post(call, '/read', { participantId: 'alice', path: 'doc.md' });
-  await post(call, '/read', { participantId: 'bob', path: 'doc.md' });
+  await read(call, 'alice', 'doc.md');
+  await read(call, 'bob', 'doc.md');
 
-  await post(call, '/write', { participantId: 'alice', path: 'doc.md', baseRevision: 1 });
-  const bobsAttempt = await asJSON(await post(call, '/write', { participantId: 'bob', path: 'doc.md', baseRevision: 1 }));
+  await admit(instance, { participantId: 'alice', path: 'doc.md', baseRevision: 1 });
+  const bobsAttempt = await admit(instance, { participantId: 'bob', path: 'doc.md', baseRevision: 1 });
 
   assert.equal(bobsAttempt.admitted, false);
   assert.equal(bobsAttempt.reason, 'write_base_stale', 'a human edit invalidates a human peer just as it does an agent');
 });
 // --- the surface must not lie ---------------------------------------------
 
+test('the unleased write path is gone', async () => {
+  // `/write` called `ledger.admit` without consulting the lease table, so it admitted
+  // writes the gate refuses with `lease_required`. It also admitted a revision for
+  // content it never stored, leaving `/state` reporting a revision `/content` 404s for.
+  const { instance, call, data } = mountDO();
+  await join(call, 'p', 'agent', []);
+  await bootstrap(call, [await entry('a.txt', 'v1')]);
+
+  const response = await call('https://x/write', {
+    method: 'POST',
+    body: JSON.stringify({ participantId: 'p', path: 'b.txt' }),
+  });
+  assert.equal(response.status, 404, 'the unleased write path must not be routed');
+
+  // And it is not merely unrouted: the fence cannot be reached over HTTP at all.
+  const before = (await asJSON(await call('https://x/state'))).receipts;
+  await admit(instance, { participantId: 'p', path: 'b.txt' });
+  const after = (await asJSON(await call('https://x/state'))).receipts;
+  assert.equal(after, before + 1, 'a direct admit records exactly one receipt');
+});
+
+test('no route admits a write without a lease check', async () => {
+  // The plan's done-when for item 4, asserted rather than grepped. A route that reaches
+  // `admit` outside the gate is the whole defect; this fails if one reappears.
+  const workspace = readFileSync(new URL('../src/product/workspace-agent.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(
+    workspace,
+    /ledger\.admit\(/,
+    'the Durable Object must not call admit directly; the gate owns the write decision',
+  );
+
+  // The gate must consult the lease table before it decides.
+  const commit = readFileSync(new URL('../src/product/handlers/commit.mjs', import.meta.url), 'utf8');
+  const leasesAt = commit.indexOf('await ctx.leases()');
+  const evaluateAt = commit.indexOf('evaluateCommit(');
+  assert.ok(leasesAt > -1, 'the gate must read the lease table');
+  assert.ok(leasesAt < evaluateAt, 'the lease check must run before the fence decides');
+});
+
+test('a read is recorded by the grant, not by the caller asserting it', async () => {
+  // The claim item 5 exists to make true: `readBasis: 'verified'` must rest on the
+  // workspace having handed the content over, not on the caller saying it read it.
+  const { instance, call } = mountDO();
+  await join(call, 'p', 'agent', ['dep.mjs']);
+  await bootstrap(call, [await entry('dep.mjs', 'v1')]);
+
+  // Nothing has been handed over, so the basis is unknown and a write is refused.
+  const before = await instance.getLedger().then(l => l.decisionCut('p'));
+  assert.equal(before.reads[0].readBasis, 'unknown', 'an un-handed-over dependency is not verified');
+
+  // The grant is what changes it.
+  await read(call, 'p', 'dep.mjs');
+  const after = await instance.getLedger().then(l => l.decisionCut('p'));
+  assert.equal(after.reads[0].readBasis, 'verified');
+  assert.equal(after.reads[0].readRevision, 1);
+  assert.equal(after.reads[0].currentRevision, 1);
+});
+
+test('no route exists by which a caller asserts its own read', async () => {
+  // `/read` is gone, and `/observe` with it. Both are asserted unrouted, so a regression
+  // that restores either fails here rather than in production.
+  const { call } = mountDO();
+  for (const route of ['/read', '/observe']) {
+    const response = await call(`https://x${route}`, {
+      method: 'POST',
+      body: JSON.stringify({ participantId: 'p', path: 'x.mjs' }),
+    });
+    assert.equal(response.status, 404, `${route} must not be routed`);
+  }
+});
+
+test('the client offers no way to assert a read', () => {
+  const client = new WorkspaceClient({ baseUrl: 'https://x', participantId: 'p' });
+  assert.equal(typeof client.read, 'undefined', 'the method must be gone, not deprecated');
+  assert.equal('read' in WorkspaceClient, false);
+});
+
+test('a write lease also establishes the read', async () => {
+  // Whoever holds a file for writing has been given its content too, so their basis is
+  // known. Recording only for read grants would mean the holder of a file had no basis
+  // for it, which is the opposite of the truth.
+  const { instance, call } = mountDO();
+  await join(call, 'p', 'agent', ['dep.mjs']);
+  await bootstrap(call, [await entry('dep.mjs', 'v1')]);
+
+  const lease = await post(call, '/lease/checkout', { participantId: 'p', paths: ['dep.mjs'], mode: 'write' });
+  assert.equal(lease.status, 200);
+
+  const cut = await instance.getLedger().then(l => l.decisionCut('p'));
+  assert.equal(cut.reads[0].readBasis, 'verified', 'a write grant hands the content over too');
+});
+
+test('reading a path that does not exist yields an unknown basis, not a verified one', async () => {
+  // You cannot have read a file nobody has written. The strict direction is preserved:
+  // a declared dependency that does not exist yet cannot be a verified basis.
+  const { instance, call } = mountDO();
+  await join(call, 'p', 'agent', ['absent.mjs']);
+
+  const lease = await post(call, '/lease/checkout', { participantId: 'p', paths: ['absent.mjs'], mode: 'read' });
+  assert.equal(lease.status, 200, 'a grant for an absent path is legal; it just has no content');
+  const granted = await asJSON(lease);
+  assert.equal(granted.files[0].exists, false);
+  assert.equal(granted.files[0].contentBase64, null);
+
+  const cut = await instance.getLedger().then(l => l.decisionCut('p'));
+  assert.equal(cut.reads[0].readBasis, 'unknown');
+  assert.equal(cut.reads[0].readRevision, null);
+});
+
 test('the gate log is not readable from outside', async () => {
   const { call } = mountDO();
   const response = await call('https://x/gate-log');
   assert.equal(response.status, 404,
     'an unauthenticated route that exposes per-workspace participant ids must not exist');
+});
+
+test('the client offers no way to write', () => {
+  // `write` and `tryWrite` are gone with the `/write` route they called. Same lesson as
+  // `observe` below, learned once already: a client that advertises a method the server
+  // does not serve names the capability at the front door and 404s every caller.
+  const client = new WorkspaceClient({ baseUrl: 'https://x', participantId: 'p' });
+  assert.equal(typeof client.write, 'undefined', 'the method must be gone, not deprecated');
+  assert.equal(typeof client.tryWrite, 'undefined');
+  assert.equal('write' in WorkspaceClient, false);
+  assert.equal('tryWrite' in WorkspaceClient, false);
+});
+
+test('the client names no route the workspace does not serve', () => {
+  // The route table and the client are checked against each other, so a route added to
+  // one and not the other fails here rather than in production. Read from both sources
+  // rather than hardcoded, because a hardcoded list is the thing that goes stale.
+  const workspace = readFileSync(new URL('../src/product/workspace-agent.mjs', import.meta.url), 'utf8');
+  const served = new Set(
+    [...workspace.matchAll(/url\.pathname === '([^']+)'/g)].map(match => match[1]),
+  );
+  assert.ok(served.size > 8, `expected a real route table, found ${served.size}`);
+
+  const client = readFileSync(new URL('../src/product/workspace-client.mjs', import.meta.url), 'utf8');
+  const called = new Set(
+    [...client.matchAll(/this\.request\(\s*[`'"]([^`'"?]+)/g)].map(match => match[1]),
+  );
+  for (const path of called) {
+    assert.ok(
+      served.has(path),
+      `the client calls ${path}, which the workspace does not serve (${[...served].sort().join(', ')})`,
+    );
+  }
 });
 
 test('the client offers no way to report a write', () => {
@@ -559,8 +1166,6 @@ test('every routed path is reachable and none of them crash the object', async (
     ['GET', '/content?path=seed.txt'],
     ['GET', '/receipts?participant=p'],
     ['POST', '/intent'],
-    ['POST', '/read'],
-    ['POST', '/write'],
     ['POST', '/lease/checkout'],
     ['POST', '/lease/heartbeat'],
     ['POST', '/lease/release'],

@@ -4,18 +4,23 @@
  * Reached exclusively from the WorkerEntrypoint the container's egress is
  * intercepted into, and authenticated by a token the workspace minted for that
  * one container. Nothing else in the product can write a file.
+ *
+ * Both halves of "exclusively" are now enforced rather than asserted. The public router
+ * refuses the `/internal/` prefix, so an authenticated caller cannot post here from the
+ * internet; and the only token that exists is minted here, for one container, by the
+ * workspace that owns it. Before both changes the claim was aspirational: `/write`
+ * admitted without a lease, and `/internal/commit` was reachable from outside.
  */
 
 import { verifyCommit, evaluateCommit, applyCommit } from '../commit.mjs';
 import { parseManifest, summariseManifest } from '../manifest.mjs';
 import { json, readJSON, MAX_COMMIT_BODY } from '../http.mjs';
+import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
 import {
   contentKey,
   commitKey,
-  tokenKey,
   manifestsKey,
   MANIFEST_HISTORY,
-  tokensMatch,
   encodeBase64,
 } from '../keys.mjs';
 import * as leaseHandler from './leases.mjs';
@@ -25,14 +30,9 @@ export async function commit(ctx, request) {
   const { participantId, token } = body;
   const ledger = await ctx.getLedger();
 
-  const expected = await ctx.state.storage.get(tokenKey(participantId));
-  if (!expected || !(await tokensMatch(expected, token))) {
-    return json(403, {
-      admitted: false,
-      error: 'refused',
-      reason: expected ? 'token_mismatch' : 'no_token_issued',
-      participantId: participantId ?? null,
-    });
+  const identity = await authenticateContainer(ctx, participantId, token);
+  if (!identity.ok) {
+    return json(403, containerRefusal(identity, { admitted: false }));
   }
 
   const manifest = parseManifest(body);
@@ -200,13 +200,9 @@ export async function seed(ctx, request) {
   const body = await readJSON(request, MAX_COMMIT_BODY);
   const { participantId, token } = body;
 
-  const expected = await ctx.state.storage.get(tokenKey(participantId));
-  if (!expected || !(await tokensMatch(expected, token))) {
-    return json(403, {
-      error: 'refused',
-      reason: expected ? 'token_mismatch' : 'no_token_issued',
-      participantId: participantId ?? null,
-    });
+  const identity = await authenticateContainer(ctx, participantId, token);
+  if (!identity.ok) {
+    return json(403, containerRefusal(identity));
   }
 
   // `ledger.require` so an unknown participant is an error rather than an empty

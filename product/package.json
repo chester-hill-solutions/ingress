@@ -1,1 +1,8 @@
-{ "name": "ingress-workspace", "private": true, "type": "module" }
+{
+  "name": "ingress-workspace",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "^4.147.0"
+  }
+}

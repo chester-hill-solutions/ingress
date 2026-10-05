@@ -402,7 +402,9 @@ test('a reader blocks a writer: leases prevent the collision the fence would oth
     participantId: 'builder', paths: ['engine.mjs'], mode: 'read',
   }));
   assert.equal(grant.files[0].revision, 1);
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
+  // No `/read` call: the grant above already recorded the read, because the workspace is
+  // what handed the content over. A separate assertion of "I read this" is exactly what
+  // item 5 removed.
 
   // The integrator tries to rewrite it. This is refused before any work happens.
   const blocked = await post(call, '/lease/checkout', { participantId: 'integrator', paths: ['engine.mjs'], mode: 'write' });
@@ -429,7 +431,6 @@ test('the fence catches what leases cannot: a dependency that moved after releas
   const grant = await asJSON(await post(call, '/lease/checkout', {
     participantId: 'builder', paths: ['engine.mjs'], mode: 'read',
   }));
-  await post(call, '/read', { participantId: 'builder', path: 'engine.mjs' });
 
   // The builder lets go — or its lease lapses. Now the integrator can move it.
   await post(call, '/lease/release', { leaseId: grant.leaseId, participantId: 'builder' });

@@ -2,7 +2,7 @@
  * Worker entry point.
  *
  * Three routes and nothing else:
- *   /health              -> liveness, checkable without a workspace
+ *   /health              -> liveness, checkable without a credential
  *   /w/:workspace/*      -> that workspace's Durable Object
  *   /internal/gate/*     -> not reachable from outside; the container's egress is
  *                           intercepted into the CommitGate entrypoint directly,
@@ -13,11 +13,18 @@
  * into a name, so this is where identity enters the system — and because it is
  * stamped by the router rather than by the caller, a caller cannot choose which
  * workspace it is writing into by putting a name in a body.
+ *
+ * Which requests are allowed at all is decided in `product/router.mjs`, not here.
+ * That file is pure and loads under Node; this one imports `cloudflare:workers` and
+ * does not. The authentication check is the reason for the split: written here it
+ * would be a security boundary with no test over it.
  */
 
 import { DurableObject } from 'cloudflare:workers';
 import { WorkspaceAgent as WorkspaceCore } from './product/workspace-agent.mjs';
 import { CommitGate } from './product/gate.mjs';
+import { decide } from './product/router.mjs';
+import { json } from './product/http.mjs';
 
 /**
  * The platform adapter — the only Cloudflare-specific code in the product.
@@ -50,39 +57,39 @@ export { CommitGate };
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    const decision = await decide(request, env);
 
-    if (url.pathname === '/health') {
+    if (decision.action === 'health') {
+      // Deliberately the same body whether or not a secret is configured.
+      //
+      // An earlier draft reported `workspaceAuth: 'absent'` here, which turned the one
+      // unauthenticated route into a way for anyone to learn that a deployment forgot
+      // its credential. The operator learns it from the 503 every workspace route then
+      // returns; a stranger learns only that the service exists.
       return json(200, { ok: true, service: 'ingress-workspace' });
     }
 
-    const match = /^\/w\/([^/]+)(\/.*)?$/.exec(url.pathname);
-    if (match) {
-      const name = decodeURIComponent(match[1]);
-      const stub = env.WORKSPACE.get(env.WORKSPACE.idFromName(name));
-      // Forward the sub-path *and* the query, so the DO's own routing sees
-      // /join?name=... rather than a bare /join.
-      const target = new URL(`https://workspace.internal${match[2] ?? '/state'}`);
-      target.search = url.search;
-
-      const headers = new Headers(request.headers);
-      headers.set('x-ingress-workspace', name);
-
-      return stub.fetch(target.toString(), {
-        method: request.method,
-        headers,
-        body: request.body,
-        ...(request.body ? { duplex: 'half' } : {}),
-      });
+    if (decision.action === 'refuse') {
+      // `WWW-Authenticate` on the 401 so the failure is legible to a standard client
+      // rather than only to someone who read the router.
+      //
+      // The scheme is a registered token type, not `Bearer`. The credential travels in
+      // `x-ingress-workspace-token`, and RFC 6750 `Bearer` specifically means the
+      // `Authorization` header — a generic client honouring this header would send
+      // `Authorization: Bearer …` and be refused forever.
+      const headers = decision.status === 401 ? { 'www-authenticate': 'Token realm="ingress-workspace"' } : undefined;
+      return json(decision.status, decision.body, headers);
     }
 
-    return json(404, { error: 'not_found', routes: ['/health', '/w/:workspace/*'] });
+    const stub = env.WORKSPACE.get(env.WORKSPACE.idFromName(decision.workspace));
+    const target = new URL(`https://workspace.internal${decision.path}`);
+    target.search = decision.search;
+
+    return stub.fetch(target.toString(), {
+      method: request.method,
+      headers: decision.headers,
+      body: request.body,
+      ...(request.body ? { duplex: 'half' } : {}),
+    });
   },
 };
-
-function json(status, value) {
-  return new Response(JSON.stringify(value), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}

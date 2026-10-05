@@ -19,6 +19,19 @@
   "services": [
     { "binding": "GATE", "service": "ingress-workspace", "entrypoint": "CommitGate" }
   ],
+  // WORKSPACE_TOKEN is a secret, not a var, and is deliberately absent here.
+  //
+  // Every `/w/:workspace` route requires it as `x-ingress-workspace-token`. The router
+  // fails CLOSED when it is missing: workspace routes answer 503
+  // `workspace_token_not_configured` rather than serving unauthenticated callers. So a
+  // fresh deploy is visibly broken until the secret is set, which is the correct
+  // direction to fail.
+  //
+  // It is set once per account, not per deploy, and survives redeployment:
+  //
+  //   cf workers secrets update WORKSPACE_TOKEN --worker ingress-workspace --text "$T"
+  //
+  // It is written to no file and read by no log. Do not add it to `vars`.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorkspaceAgent"] }],
   "workers_dev": true,
   "preview_urls": true
