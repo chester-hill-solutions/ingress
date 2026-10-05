@@ -39,7 +39,7 @@ code-hygiene tier.
 | 10 | Model workspace ownership | P3 | M | done — **buys attribution, not squat prevention**; see the item |
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
-| 13 | Make the fence survive a swarm | P0 | M | **leg 1 scoping done** (`e2e:swarm` 18/18); **leg 2 concurrency done** (`e2e:concurrency` 15/15, four 30s commands in 33s); **leg 3 merge open** — see below |
+| 13 | Make the fence survive a swarm | P0 | M | **leg 1 scoping done** (`e2e:swarm` 18/18); **leg 2 concurrency done** (`e2e:concurrency` 16/16, four 30s commands in 33s); **leg 3 content-per-revision done** (`e2e:content`) — the base survives; **the merge itself open** — see below |
 
 ## Already recorded as a limit
 
@@ -1190,12 +1190,62 @@ behavioural versions: a refused start mints no token, registers no participant, 
 and delegates to no executor; a completed start leaves no slot; a deployment with no executor
 answers 501.
 
-#### What is still open
+#### Leg 3 — content-per-revision (the merge prerequisite)
 
-**No merge.** `contentKey(path)` holds one version per path, so the base *content* is gone and
-a 3-way merge is impossible. Two agents editing different parts of one file conflict where git
-would merge cleanly. Content-per-revision is the prerequisite, and it is the last structural
-thing standing between what the product is for and what it does.
+**What was wrong.** `contentKey(path)` held exactly one version per path, overwritten on every
+commit. Enough to decide *whether* a write is admissible, and completely enough to merge it: by
+the time the second agent commits, the bytes it was handed are gone, so a 3-way merge has no
+base and the only remaining answer is "refused".
+
+For one participant doing one thing that is correct. For a swarm it is the whole problem — two
+agents editing different functions of one file collide over a base neither of them is looking
+at, and the refusal names the right reason and still leaves a human merging by hand.
+
+**The fix.** Three keys per write, all in one storage `put`:
+
+```
+content:<path>              current content — what every existing reader already wants
+content:<path>@<revision>   that revision, so a later merge has a base
+content-index:<path>        which revisions are retained, and how many were dropped
+```
+
+`/content?path=X&revision=N` serves one revision; `/content?path=X` is unchanged and serves the
+current one.
+
+**Retention is part of the design, not an afterthought.** Content-per-revision is unbounded by
+construction: `MAX_FILES` is 512 and `MAX_FILE_BYTES` is 512 KiB, so keeping everything forever
+is 512 × N × 512 KiB with no term. Each path keeps a bounded window — five revisions or 2 MiB,
+whichever bites first — and **the count of what it dropped is retained**, the same rule
+`receiptsTrimmed` follows. A trim that does not report itself is worse than one that admits it:
+a caller asking "what was revision 3?" has to be able to tell "never existed" from "dropped, and
+here is a merge you can no longer attempt". `findBase` returns `evicted` for that case and
+**never substitutes a nearby revision** — the nearest retained revision is a plausible-looking
+base that the participant never saw, and merging against it lands a file attributed to an agent
+that did not write it.
+
+**Three bugs, all found by tests written after the code:**
+
+- **The byte ceiling was unreachable.** `retain` read it from a fresh `retentionFromEnv({})`
+  rather than from its `limit` argument, so it only applied when the environment was *empty* —
+  never in production, where every caller passes an env-derived limit. A ceiling that only
+  applies in tests is worse than none: the test exercising it passes while deployed behaviour is
+  unbounded.
+- **One revision was dropped twice.** The trim cursor re-read `entries[0]` each pass instead of
+  advancing, so the same revision went into `drop` twice: its bytes were subtracted twice, the
+  loop stopped a revision early, and `trimmed` counted revisions that were never removed.
+- **The mutation harness could not fail.** It ran the suite as a subprocess and asserted on the
+  exit status — and `node --test` exits 0 even when tests fail, so all 14 mutations "survived".
+  Two of them were in fact no-op edits: they replaced the condition of a ternary and left
+  `(Infinity ? bounds.bytes : DEFAULT)`, which evaluates to the original value. Rewritten
+  in-process, matching `router-auth-mutations.test.mjs`, and verified by inverting its own
+  assertion: 14 failures when inverted, 0 when correct.
+
+**What is still open, and it is the merge itself.** Nothing reads the revisioned keys yet — the
+seed, `/content` and `retrieve` are untouched, and `applyCommit` still refuses a stale base with
+`write_base_stale`. A line-based merge is a decision this layer should not make by itself: a
+merge that is subtly wrong lands a file nobody wrote, which is worse than a refusal. What is now
+true is that the base is retrievable, so the decision can be made and reviewed on its own
+merits.
 
 ## Verification gates per tier
 

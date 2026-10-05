@@ -104,6 +104,15 @@ function memoryStorage(data) {
         }
         data.set(key, structuredClone(value));
       },
+      // Real Durable Object storage has this. It was missing here, and the gap was invisible
+      // until content retention actually trimmed something: `storeRevisions` writes the index
+      // and then deletes the evicted revisions in a second operation, so a shim without
+      // `delete` failed *after* a successful write. Which is the right way round to find out —
+      // the failure was loud, and the order means the index could never claim a revision was
+      // dropped when its content was still there.
+      async delete(keys) {
+        for (const key of Array.isArray(keys) ? keys : [keys]) data.delete(key);
+      },
       // Exposed so a test can reach in and age a lease rather than sleeping through its
       // expiry. Only ever read by tests; nothing in the product uses it.
       data,
@@ -236,6 +245,22 @@ async function commitWithLease(base, data, participantId, files) {
   // re-read scenarios in this file unreachable.
   await post(base, '/lease/release', { leaseId: granted.leaseId, participantId });
 
+  return response;
+}
+
+/**
+ * Rewrite one path through a real commit, so the retention window advances.
+ *
+ * Goes through `commitWithLease` like every other commit in this file — a commit without a
+ * write lease is refused, and a refusal would not advance the revision at all, so a retention
+ * test built on a shortcut would be testing nothing.
+ */
+async function rewrite(base, data, participantId, path, content) {
+  // `commitWithLease` answers a Response. Read before asserting: `response.admitted` off a
+  // Response is `undefined`, so the assertion below compared undefined to true and reported a
+  // refusal for a commit that had been admitted.
+  const response = await asJSON(await commitWithLease(base, data, participantId, [await entry(path, content)]));
+  assert.equal(response.admitted, true, `rewrite of ${path} was refused: ${JSON.stringify(response)}`);
   return response;
 }
 
@@ -1607,6 +1632,96 @@ test('the client never names a route the workspace does not serve', async () => 
     const response = await makeCall(agent)(`https://x${route}`);
     assert.notEqual(response.status, 404, `the client calls ${route}, which the workspace does not serve`);
   }
+});
+
+// --- one revision of a path -------------------------------------------------
+
+test('a revision can be asked for, and a trimmed one is distinguished from a missing one', async () => {
+  // The whole point of content-per-revision is that an older base is retrievable. The
+  // distinction this asserts is the one a merge depends on: "that revision was dropped" and
+  // "that revision never existed" are different situations, and both being 404 would leave a
+  // caller unable to say whether a merge is impossible or simply unnecessary.
+  const { call, data } = mountDO();
+  await bootstrap(call, [await entry('engine.mjs', 'one')]);
+
+  // `asJSON`, because `call` answers a Response. Reading `.body.revision` off the Response
+  // gives undefined and every comparison below would have failed for a reason that had nothing
+  // to do with revisions.
+  const currentResponse = await call('https://x/content?path=engine.mjs');
+  const current = await asJSON(currentResponse);
+  assert.equal(currentResponse.status, 200);
+  assert.equal(current.revision, 1);
+  assert.deepEqual(current.retained, [1]);
+  assert.equal(current.trimmed, 0);
+  assert.equal(Buffer.from(current.contentBase64, 'base64').toString(), 'one');
+
+  const first = await asJSON(await call('https://x/content?path=engine.mjs&revision=1'));
+  assert.equal(first.revision, 1);
+  assert.equal(Buffer.from(first.contentBase64, 'base64').toString(), 'one');
+
+  // A revision that was never written: the path is at 1, so 7 does not exist.
+  const neverResponse = await call('https://x/content?path=engine.mjs&revision=7');
+  assert.equal(neverResponse.status, 404);
+  const never = await neverResponse.json();
+  assert.equal(never.error, 'revision_not_retained');
+  assert.deepEqual(never.retained, [1], 'and it says what *is* there');
+  assert.equal(never.trimmed, 0);
+
+  // A revision that was trimmed. Forced by rewriting the path past the retention window,
+  // which is the only way to tell a trim from a non-existence.
+  // Joined, because a lease checkout on an unregistered participant is refused with 400 --
+  // which would leave every revision unmoved and the retention window never advancing.
+  await join(call, 'w', 'agent', []);
+  for (const text of ['two', 'three', 'four', 'five', 'six', 'seven']) {
+    await rewrite(call, data, 'w', 'engine.mjs', text);
+  }
+  const after = await asJSON(await call('https://x/content?path=engine.mjs'));
+  assert.equal(after.revision, 7);
+  assert.ok(after.trimmed > 0, `expected history to be trimmed, trimmed is ${after.trimmed}`);
+  assert.ok(!after.retained.includes(1), 'revision 1 must be gone at this point');
+
+  const evictedResponse = await call('https://x/content?path=engine.mjs&revision=1');
+  assert.equal(evictedResponse.status, 404);
+  const evicted = await evictedResponse.json();
+  assert.equal(evicted.error, 'revision_not_retained');
+  assert.equal(evicted.trimmed, after.trimmed,
+    'and it reports the drop count, so the caller can tell a trim from a non-existence');
+});
+
+test('a malformed revision is refused rather than coerced', async () => {
+  // `Number('')` is 0 and `Number(' 2 ')` is 2, so a lenient parse would quietly serve a
+  // different revision than the one asked for — and a merge base that is not the base.
+  const { call } = mountDO();
+  await bootstrap(call, [await entry('engine.mjs', 'one')]);
+
+  // `1e2` is deliberately absent: `Number('1e2')` is 100, a legitimate parse, so asking for
+  // revision 100 is a valid question with a "no such revision" answer. Refusing it as
+  // malformed would be pedantry about notation rather than about safety.
+  for (const revision of ['0', '-1', '1.5', 'two', '', '  ', 'NaN', 'Infinity', '1,000']) {
+    const response = await call(`https://x/content?path=engine.mjs&revision=${encodeURIComponent(revision)}`);
+    assert.equal(response.status, 400, `revision=${JSON.stringify(revision)} should be refused`);
+    assert.equal((await response.json()).error, 'invalid_revision');
+  }
+
+  // Present but empty is the *current* revision's request, not a malformed one.
+  const bare = await call('https://x/content?path=engine.mjs&revision=');
+  assert.equal(bare.status, 400, 'an empty revision is malformed, not "the current one"');
+});
+
+test('the current content is still served when no revision is asked for', async () => {
+  // The read path every existing caller depends on. The revisioned keys sit beside it and must
+  // not shadow it — if they did, every agent would be seeded from a stale tree and the fence
+  // would be silently judging every change against the wrong base.
+  const { call, data } = mountDO();
+  await bootstrap(call, [await entry('engine.mjs', 'one')]);
+  await join(call, 'w', 'agent', []);
+  await rewrite(call, data, 'w', 'engine.mjs', 'two');
+
+  const response = await asJSON(await call('https://x/content?path=engine.mjs'));
+  assert.equal(Buffer.from(response.contentBase64, 'base64').toString(), 'two',
+    'no revision parameter means the latest admitted bytes');
+  assert.equal(response.revision, 2);
+  assert.deepEqual([...response.retained].sort(), [1, 2], 'and history is reported alongside it');
 });
 
 // --- the routing stays wired ----------------------------------------------

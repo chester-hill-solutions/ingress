@@ -18,12 +18,12 @@ import { json, readJSON, MAX_COMMIT_BODY } from '../http.mjs';
 import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
 import { commitDelta } from '../usage.mjs';
 import {
-  contentKey,
   commitKey,
   manifestsKey,
   MANIFEST_HISTORY,
-  encodeBase64,
 } from '../keys.mjs';
+import { storeRevisions } from '../content-store.mjs';
+import { retentionFromEnv } from '../content.mjs';
 import * as leaseHandler from './leases.mjs';
 
 export async function commit(ctx, request) {
@@ -139,13 +139,26 @@ export async function commit(ctx, request) {
   // `verified.files` is already sorted; index it once rather than scanning it per
   // file. The original `.find` inside the loop was quadratic.
   const bytesByPath = new Map(verified.files.map(file => [file.path, file.bytes]));
-  await ctx.state.storage.put(
-    Object.fromEntries(
-      files.map(file => [
-        contentKey(file.path),
-        { contentBase64: encodeBase64(bytesByPath.get(file.path)), contentHash: file.contentHash },
-      ])
-    )
+
+  // Stored per revision as well as current. This is what makes a base retrievable: when the
+  // next agent commits this same path, the bytes it was handed are still here rather than
+  // overwritten. Nothing reads these keys yet — see `content-store.mjs` — so a fault here
+  // cannot yet corrupt a read, and the seed, `/content` and `retrieve` are untouched.
+  //
+  // `nextRevision` is the ledger's number, not a count of what is in storage. If the two ever
+  // disagreed, `findBase` would report `exact` for a revision with no bytes behind it, and a
+  // merge would run against nothing.
+  await storeRevisions(
+    ctx.state.storage,
+    files.map(file => ({
+      path: file.path,
+      bytes: bytesByPath.get(file.path),
+      contentHash: file.contentHash,
+      revision: file.nextRevision,
+      author: decision.participantId,
+      byteLength: file.byteLength,
+    })),
+    retentionFromEnv(ctx.env ?? {}),
   );
   await ctx.saveLedger();
 

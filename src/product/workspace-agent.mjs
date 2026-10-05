@@ -40,6 +40,7 @@ import { json, readJSON, MAX_BODY_BYTES } from './http.mjs';
 import { contentKey, ledgerKey, leasesKey, gateLogKey, usageKey, GATE_LOG_HISTORY } from './keys.mjs';
 import { usageFrom, usageSnapshot, ceilingFromEnv, applyDelta } from './usage.mjs';
 import { executorName } from './slots.mjs';
+import { readIndex, readRevision } from './content-store.mjs';
 import * as commitHandler from './handlers/commit.mjs';
 import * as leaseHandler from './handlers/leases.mjs';
 import * as containerHandler from './handlers/container.mjs';
@@ -324,15 +325,59 @@ export class WorkspaceAgent {
       // Content is served from admitted state only, never from whatever a
       // participant most recently claimed.
       const path = url.searchParams.get('path');
-      const stored = await this.state.storage.get(contentKey(path));
-      if (!stored) return json(404, { error: 'no_such_path', path });
+
+      // What this path retains, so history is observable rather than a claim.
+      //
+      // A caller asking "was this there before, and can it still be merged against?" needs an
+      // answer. Reporting `retained` without `trimmed` would make an evicted base
+      // indistinguishable from one that never existed, and a merge would be attempted against
+      // whatever happened to be left.
+      const index = await readIndex(this.state.storage, path);
+
+      // `?revision=N` serves that revision. Absent, it serves the current one — the behaviour
+      // every existing caller relies on, unchanged.
+      const wanted = url.searchParams.get('revision');
+      if (wanted !== null) {
+        const revision = Number(wanted);
+        if (!Number.isSafeInteger(revision) || revision < 1) {
+          return json(400, { error: 'invalid_revision', revision: wanted ?? null });
+        }
+        const stored = await readRevision(this.state.storage, path, revision);
+        if (!stored) {
+          // Distinguishes the two cases a caller has to tell apart: this revision was trimmed,
+          // or it never existed. Without `trimmed` those are the same 404.
+          const held = index.entries.some(entry => entry.revision === revision);
+          return json(404, {
+            error: held ? 'revision_missing' : 'revision_not_retained',
+            path,
+            revision,
+            trimmed: index.trimmed,
+            retained: index.entries.map(entry => entry.revision),
+          });
+        }
+        return json(200, {
+          path,
+          revision,
+          author: stored.author ?? null,
+          contentBase64: stored.contentBase64,
+          contentHash: stored.contentHash,
+          retained: index.entries.map(entry => entry.revision),
+          trimmed: index.trimmed,
+        });
+      }
+
       const record = ledger.files.get(path);
+      const stored = await this.state.storage.get(contentKey(path));
+      if (!stored) return json(404, { error: 'no_such_path', path, retained: [], trimmed: 0 });
+
       return json(200, {
         path,
         revision: record?.revision ?? null,
         author: record?.author ?? null,
         contentBase64: stored.contentBase64,
         contentHash: stored.contentHash,
+        retained: index.entries.map(entry => entry.revision),
+        trimmed: index.trimmed,
       });
     }
 

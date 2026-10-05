@@ -40,6 +40,38 @@ export const contentKey = path => `content:${path}`;
 export const tokenKey = participantId => `token:${participantId}`;
 export const commitKey = participantId => `commit:${participantId}`;
 
+/**
+ * One revision of one path.
+ *
+ * Distinct from `contentKey` rather than a replacement for it. `contentKey` is what the
+ * *current* content is, and every existing reader wants that: the seed hands a participant the
+ * latest admitted bytes, `/content` serves the latest, and `retrieve` gives a lease holder the
+ * latest. Those are correct and are not changing.
+ *
+ * The revisioned key exists so the bytes a participant *built on* are still there when the
+ * second agent commits. Keeping both is one extra write per commit and no read-path risk,
+ * which is the cheaper side of that trade while merge is not yet implemented: nothing depends
+ * on these keys existing yet, so a bug in this feature cannot corrupt a read.
+ *
+ * The revision is part of the key rather than a field in the value because a value can only
+ * hold one revision. `content:engine.mjs@3` is a different object from `content:engine.mjs@2`,
+ * and both can exist without either being overwritten.
+ *
+ * Path may contain `@`. It is validated elsewhere to be printable ASCII with no empty or dot
+ * segments, so the last `@` is unambiguously the separator when reading it back.
+ */
+export const contentRevisionKey = (path, revision) => `content:${path}@${revision}`;
+
+/**
+ * The retention index for one path: which revisions it holds.
+ *
+ * A separate key from the content because it is written at a different moment and trimmed at
+ * yet another. A content value carries its own revision, so no separate index would be needed
+ * to *find* a revision by key — but listing what exists, and knowing what was dropped, cannot
+ * be answered from storage without an enumeration this runtime does not offer cheaply.
+ */
+export const contentIndexKey = path => `content-index:${path}`;
+
 /** How many manifest summaries to retain. Oldest fall off the end. */
 export const MANIFEST_HISTORY = 20;
 /** How many gate log entries to retain. */

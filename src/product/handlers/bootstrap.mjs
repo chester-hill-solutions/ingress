@@ -28,7 +28,9 @@
 
 import { verifyCommit } from '../commit.mjs';
 import { json, readJSON, MAX_COMMIT_BODY } from '../http.mjs';
-import { contentKey, encodeBase64, ownerKey, digest, digestHex, bytesToHex, equalHex } from '../keys.mjs';
+import { ownerKey, digest, digestHex, bytesToHex, equalHex } from '../keys.mjs';
+import { storeRevisions } from '../content-store.mjs';
+import { retentionFromEnv } from '../content.mjs';
 
 const BOOTSTRAP_AUTHOR = '__bootstrap__';
 
@@ -100,13 +102,20 @@ export async function bootstrap(ctx, request) {
       ledger.recordWrite({ path: file.path, revision: 1, actorId: author, contentHash: file.contentHash })
     );
   }
-  await ctx.state.storage.put(
-    Object.fromEntries(
-      verified.files.map(file => [
-        contentKey(file.path),
-        { contentBase64: encodeBase64(file.bytes), contentHash: file.contentHash },
-      ])
-    )
+  // Stored per revision as well as current. At bootstrap that is one revision, so it buys
+  // nothing yet — but it is the point at which the base exists, and a bootstrap that wrote only
+  // the current key would leave every path in the workspace without a retrievable revision 1.
+  await storeRevisions(
+    ctx.state.storage,
+    verified.files.map(file => ({
+      path: file.path,
+      bytes: file.bytes,
+      contentHash: file.contentHash,
+      revision: 1,
+      author,
+      byteLength: file.byteLength,
+    })),
+    retentionFromEnv(ctx.env ?? {}),
   );
   await ctx.saveLedger();
 
