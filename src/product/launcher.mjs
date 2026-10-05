@@ -231,6 +231,62 @@ const leaseMs = Number(process.env.INGRESS_LEASE_MS || 0) || undefined;
 
 const REVISIONS_PATH = process.env.INGRESS_REVISIONS_PATH || '/tmp/ingress-revisions.json';
 
+// Where a participant declares what each of its outputs was built from.
+//
+// A JSON map of output path -> [{path, revision}]. Absent means "did not declare", and the
+// workspace then falls back to the participant-wide dependency list — which refuses more
+// than necessary, and is what makes a swarm of agents deadlock.
+//
+// It lives under .ingress/ rather than /tmp for two reasons. It is inside the work tree, so
+// it is something a participant can actually write during a run; and .ingress/ is already
+// in the reporter's ALWAYS_IGNORED list, so the declaration can never be committed as
+// workspace content. A participant cannot smuggle it in as a file change.
+//
+// Read at commit time rather than at seed time: the revisions it refers to are what the
+// participant was handed, and the file is written while it works.
+const BUILT_FROM_PATH = process.env.INGRESS_BUILT_FROM_PATH
+  || path.join(workDir, '.ingress', 'built-from.json');
+
+// Files this reporter never sends, however the participant asks.
+//
+// Inlined rather than imported, because this string runs in a container and cannot import
+// anything. It MUST stay identical to ALWAYS_IGNORED in ../manifest.mjs -- and for a long
+// time it did not, because that constant was never applied by anything at all.
+// test/product-launcher.test.mjs now asserts the two lists agree, which is the only thing
+// stopping them drifting again.
+const IGNORED_NAMES = ['node_modules', '.git', '.ingress'];
+const IGNORED_FILES = ['.DS_Store'];
+
+/**
+ * Read the provenance declaration, if there is one.
+ *
+ * A malformed declaration is **ignored**, and announced, rather than refused. The reasoning
+ * is asymmetric on purpose: the workspace validates the provenance claim on arrival
+ * and refuses a malformed claim there — so a bad file costs this participant its
+ * refined scoping and falls back to the coarse check. It cannot cost anyone a commit
+ * they would otherwise have had, because the fallback is today's behaviour exactly.
+ */
+function readBuiltFrom() {
+  let raw;
+  try {
+    raw = fs.readFileSync(BUILT_FROM_PATH, 'utf8');
+  } catch {
+    return null;                       // no declaration is the common case, not an error
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    console.log('INGRESS-BUILT-FROM-IGNORED the declaration is not valid JSON; falling back to declared dependencies');
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    console.log('INGRESS-BUILT-FROM-IGNORED the declaration is not an object keyed by output path');
+    return null;
+  }
+  return parsed;
+}
+
 function headers() {
   return {
     'content-type': 'application/json',
@@ -278,6 +334,16 @@ async function seed() {
   }));
 }
 
+function ignored(rel, name) {
+  if (IGNORED_NAMES.indexOf(name) !== -1) return true;
+  if (IGNORED_FILES.indexOf(name) !== -1) return true;
+  // Matches the '*.swp' entry in ALWAYS_IGNORED, which is a glob on any path segment.
+  // The first version of this only matched *directories* ending in .swp, which is not a
+  // thing — swap files are files, named like engine.mjs.swp — so the pattern matched
+  // nothing. Caught by the assertion that compares this list against the canonical one.
+  return rel.split('/').some(function (segment) { return segment.slice(-4) === '.swp'; });
+}
+
 function walk(dir, base, out) {
   let entries;
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
@@ -286,6 +352,14 @@ function walk(dir, base, out) {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     const rel = base ? base + '/' + entry.name : entry.name;
+    // Never sent: dependency trees, VCS metadata, our own bookkeeping, editor droppings.
+    //
+    // This is the first time anything has actually applied that list. ALWAYS_IGNORED was
+    // exported from manifest.mjs and documented as "files the workspace never commits,
+    // whatever a participant says" — and neither the walk nor parseManifest consulted it,
+    // so a participant that ran npm install or git init sent the entire tree, and the
+    // workspace stored it.
+    if (ignored(rel, entry.name)) continue;
     if (entry.isSymbolicLink()) continue;          // never follow a link out of the tree
     // Our own bookkeeping is not workspace content.
     //
@@ -316,6 +390,9 @@ function walk(dir, base, out) {
 }
 
 async function commit() {
+  // What this participant says each output was built from, keyed by output path.
+  const declared = readBuiltFrom();
+
   // What the participant started from, per path. Absent for a path it was never
   // seeded with, which is exactly right: it has no base to claim.
   let revisions = {};
@@ -335,6 +412,22 @@ async function commit() {
   for (const file of files) {
     const base = revisions[file.path];
     if (base != null) file.baseRevision = base;
+
+    // Attach provenance only where it was declared. A file with no entry in the declaration
+    // is left alone, which the workspace reads as "did not declare" and answers with the
+    // participant-wide dependency check. Copying an absent claim across as an empty one
+    // would silently opt every unlisted file out of the check.
+    if (declared && Object.prototype.hasOwnProperty.call(declared, file.path)) {
+      file.builtFrom = declared[file.path];
+    }
+  }
+
+  const scoped = files.filter(function (f) { return f.builtFrom !== undefined; }).length;
+  if (declared) {
+    console.log('INGRESS-BUILT-FROM ' + JSON.stringify({
+      declared: Object.keys(declared).length,
+      attached: scoped,
+    }));
   }
   files.sort(function (a, b) { return a.path < b.path ? -1 : (a.path > b.path ? 1 : 0); });
 

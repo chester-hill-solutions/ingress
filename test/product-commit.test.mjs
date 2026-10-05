@@ -311,3 +311,157 @@ test('empty content is hashable and committable', async () => {
   assert.equal(files[0].byteLength, 0);
   assert.equal(files[0].contentHash, await sha256Hex(new Uint8Array(0)));
 });
+// --- per-file dependency provenance -------------------------------------------
+//
+// The defect this scopes around: dependencies were declared once per participant at `/join`
+// and held for that participant's whole life, and `evaluateCommit` applied that one list to
+// *every* file in the commit. So one stale declaration refused files that had nothing to do
+// with it. Fifty agents on one repo deadlocked the moment anyone moved a shared file — and
+// the pressure that deadlock creates is what drives people to `--force`, which is strictly
+// worse than the conflict the fence exists to prevent.
+
+test('a dependency that moved refuses only the file that declared it', async () => {
+  const ledger = await seedWorkspace();
+  ledger.recordWrite({ path: 'engine.mjs', revision: 2, contentHash: await sha256Hex(Buffer.from('v2')) });
+
+  // `unrelated.mjs` declares `builtFrom: []` — it must, to opt out. A file that declares
+  // nothing falls back to the participant-wide list and is refused, which is the deliberate
+  // fallback rather than an oversight: opting in per file is what makes this safe to adopt.
+  const verified = await verifyCommit({
+    participantId: 'builder',
+    files: [
+      { ...(await file('derived.mjs', 'export const derived = 1;')), builtFrom: [{ path: 'engine.mjs', revision: 1 }] },
+      { ...(await file('unrelated.mjs', 'export const unrelated = 1;')), builtFrom: [] },
+    ],
+  });
+
+  const decision = evaluateCommit(ledger, verified);
+  assert.equal(decision.admitted, false, 'the dependent file is stale, so the atomic commit is refused');
+
+  const derived = decision.refusals.find(r => r.path === 'derived.mjs');
+  assert.equal(derived.reason, 'dependency_moved');
+  assert.equal(derived.dependencyBasis, 'per_file');
+  // `author` is null because the seeded writes in this fixture carry no `actorId`. Asserted
+  // explicitly rather than omitted: the field is what tells an agent *who* moved the file it
+  // was built from, and it is the difference between "retry, this was a race" and "go find
+  // out what B did".
+  assert.deepEqual(derived.staleDependencies, [
+    { path: 'engine.mjs', readRevision: 1, currentRevision: 2, author: null },
+  ]);
+
+  const unrelated = decision.refusals.find(r => r.path === 'unrelated.mjs');
+  assert.equal(unrelated, undefined,
+    'a file that declared no inputs must not be refused for a dependency it does not have');
+});
+
+test('a file that declares nothing still gets the coarse check', async () => {
+  // The counterpart, and the reason the fallback exists: opting out is per file and
+  // explicit. Silence is not consent.
+  const ledger = await seedWorkspace();
+  ledger.recordWrite({ path: 'engine.mjs', revision: 2, contentHash: await sha256Hex(Buffer.from('v2')) });
+
+  const decision = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'builder',
+    files: [await file('silent.mjs', 'export const s = 1;')],
+  }));
+
+  assert.equal(decision.admitted, false);
+  assert.equal(decision.refusals[0].dependencyBasis, 'participant_declared');
+});
+
+test('builtFrom absent falls back to the participant-wide list', async () => {
+  const ledger = await seedWorkspace();
+  ledger.recordWrite({ path: 'engine.mjs', revision: 2, contentHash: await sha256Hex(Buffer.from('v2')) });
+
+  const decision = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'builder',
+    files: [await file('ui.mjs', 'export const ui = 1;')],
+  }));
+
+  assert.equal(decision.admitted, false);
+  assert.equal(decision.refusals.find(r => r.path === 'ui.mjs').dependencyBasis, 'participant_declared',
+    'and the refusal says which rule ran');
+});
+
+test('builtFrom: [] declares no inputs, and no dependency check applies', async () => {
+  const ledger = await seedWorkspace();
+  ledger.recordWrite({ path: 'engine.mjs', revision: 2, contentHash: await sha256Hex(Buffer.from('v2')) });
+
+  const decision = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'builder',
+    files: [{ ...(await file('standalone.mjs', 'export const s = 1;')), builtFrom: [] }],
+  }));
+
+  assert.equal(decision.admitted, true,
+    `an explicit declaration of no inputs must not be second-guessed: ${JSON.stringify(decision.refusals)}`);
+});
+
+test('a declared input that does not exist counts as stale', async () => {
+  // Otherwise `builtFrom: [{path: 'never-written.mjs', revision: 0}]` declares immunity.
+  const ledger = await seedWorkspace();
+  const decision = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'builder',
+    files: [{
+      ...(await file('sneaky.mjs', 'export const s = 1;')),
+      builtFrom: [{ path: 'never-written.mjs', revision: 0 }],
+    }],
+  }));
+
+  assert.equal(decision.admitted, false);
+  assert.equal(decision.refusals.find(r => r.path === 'sneaky.mjs').staleDependencies[0].currentRevision, null,
+    'and the evidence says the file is absent rather than pretending it is at r0');
+});
+
+test('the base-revision check is unaffected by scoping', async () => {
+  // Scoping is about *dependencies*. Two agents writing the same file is still a conflict,
+  // and must still be caught — otherwise scoping opens a hole in the one check that
+  // prevents clobbering.
+  const ledger = await seedWorkspace();
+  ledger.recordWrite({ path: 'engine.mjs', revision: 2, contentHash: await sha256Hex(Buffer.from('v2')) });
+
+  const decision = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'builder',
+    files: [{ ...(await file('engine.mjs', 'export const mine = 1;')), baseRevision: 1, builtFrom: [] }],
+  }));
+
+  assert.equal(decision.admitted, false);
+  assert.equal(decision.refusals[0].reason, 'write_base_stale');
+});
+
+test('a swarm: one agent moving a shared file does not block an unrelated agent', async () => {
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'agentA' });
+  ledger.register({ participantId: 'agentB' });
+  ledger.recordWrite({ path: 'shared.mjs', revision: 1, contentHash: await sha256Hex(Buffer.from('s1')) });
+
+  ledger.recordRead({ participantId: 'agentA', path: 'shared.mjs' });
+  const a = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'agentA',
+    files: [{
+      ...(await file('shared.mjs', 's2')),
+      baseRevision: 1,
+      builtFrom: [{ path: 'shared.mjs', revision: 1 }],
+    }],
+  }));
+  assert.equal(a.admitted, true, JSON.stringify(a.refusals));
+  applyCommit(ledger, a);
+
+  const b = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'agentB',
+    files: [{ ...(await file('other.mjs', 'export const o = 1;')), builtFrom: [] }],
+  }));
+  assert.equal(b.admitted, true,
+    `an unrelated agent must not be blocked by A landing: ${JSON.stringify(b.refusals)}`);
+
+  ledger.register({ participantId: 'agentC' });
+  const c = evaluateCommit(ledger, await verifyCommit({
+    participantId: 'agentC',
+    files: [
+      { ...(await file('derived.mjs', 'export const d = 1;')), builtFrom: [{ path: 'shared.mjs', revision: 1 }] },
+      { ...(await file('also-unrelated.mjs', 'export const u = 1;')), builtFrom: [] },
+    ],
+  }));
+  assert.equal(c.admitted, false, 'C is stale against shared.mjs');
+  assert.deepEqual(c.refusals.map(r => r.path), ['derived.mjs'],
+    'and only the file that declared the dependency is held for it');
+});

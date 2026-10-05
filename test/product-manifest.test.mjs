@@ -123,3 +123,78 @@ test('garbage is refused without throwing', () => {
     assert.deepEqual(result.files, []);
   }
 });
+// --- builtFrom: the provenance claim -------------------------------------------
+
+test('builtFrom is parsed into path/revision pairs', () => {
+  const parsed = parseManifest({
+    manifestVersion: String(MANIFEST_VERSION),
+    participantId: 'a',
+    participantExit: 0,
+    files: [{
+      path: 'x.mjs',
+      contentHash: 'a'.repeat(64),
+      contentBase64: 'eA==',
+      builtFrom: [{ path: 'engine.mjs', revision: 3 }],
+    }],
+  });
+
+  assert.equal(parsed.ok, true);
+  assert.deepEqual(parsed.files[0].builtFrom, [{ path: 'engine.mjs', revision: 3 }]);
+});
+
+test('absent builtFrom and an empty one are different claims', () => {
+  // The distinction is load-bearing. Absent means "fall back to the participant-wide
+  // dependency list"; empty means "I built this from nothing, check nothing". Collapsing
+  // them either drops the fallback (fail open) or coerces every caller into it (fail closed).
+  const files = payload => parseManifest({
+    manifestVersion: String(MANIFEST_VERSION),
+    participantId: 'a',
+    participantExit: 0,
+    files: [{ path: 'x.mjs', contentHash: 'a'.repeat(64), contentBase64: 'eA==', ...payload }],
+  }).files[0];
+
+  assert.equal(files({}).builtFrom, null, 'absent is null');
+  assert.deepEqual(files({ builtFrom: [] }).builtFrom, [], 'empty is an explicit no-inputs claim');
+});
+
+test('a malformed builtFrom is refused rather than dropped', () => {
+  // Dropping it would silently shrink a participant's declared dependency set — the
+  // workspace would refuse less than the participant asked to be held to, which is the
+  // direction that loses conflicts.
+  for (const bad of [
+    'engine.mjs',                                  // not an array
+    [{ path: 'engine.mjs' }],                      // no revision: Number(undefined) is NaN,
+                                                    // but a missing one must not read as r0
+    [{ revision: 1 }],                              // no path
+    [{ path: 'a.mjs', revision: 'x' }],             // revision not an integer
+    [{ path: 'a.mjs', revision: -1 }],              // negative
+    [{ path: 'a.mjs', revision: null }],            // Number(null) is 0 — must not pass as r0
+    Array.from({ length: 33 }, () => ({ path: 'a.mjs', revision: 1 })),  // over the cap
+  ]) {
+    const parsed = parseManifest({
+      manifestVersion: String(MANIFEST_VERSION),
+      participantId: 'a',
+      participantExit: 0,
+      files: [{ path: 'x.mjs', contentHash: 'a'.repeat(64), contentBase64: 'eA==', builtFrom: bad }],
+    });
+    assert.equal(parsed.ok, false, `${JSON.stringify(bad)} should be refused`);
+    assert.equal(parsed.reason, 'manifest_bad_built_from');
+    assert.equal(parsed.path, 'x.mjs', 'and the refusal names the offending path');
+  }
+});
+
+test('a valid builtFrom at exactly the cap is accepted', () => {
+  const parsed = parseManifest({
+    manifestVersion: String(MANIFEST_VERSION),
+    participantId: 'a',
+    participantExit: 0,
+    files: [{
+      path: 'x.mjs',
+      contentHash: 'a'.repeat(64),
+      contentBase64: 'eA==',
+      builtFrom: Array.from({ length: 32 }, (_, i) => ({ path: `f${i}.mjs`, revision: 1 })),
+    }],
+  });
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.files[0].builtFrom.length, 32);
+});

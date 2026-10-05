@@ -16,6 +16,7 @@
     "e2e:lease": "node scripts/lease-e2e.mjs",
     "e2e:seed": "node scripts/seed-e2e.mjs",
     "e2e:bounds": "node scripts/start-bounds-e2e.mjs",
+    "e2e:swarm": "node scripts/swarm-e2e.mjs",
     "squad:real": "node scripts/squad.mjs --real",
     "play": "node scripts/play-game.mjs",
     "benchmark:real": "node scripts/benchmark.mjs --real",

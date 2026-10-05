@@ -1,4 +1,34 @@
 /**
+ * Which of a file's declared inputs have moved since it was built.
+ *
+ * Compared against what the workspace currently holds, not against the participant's read
+ * record. That is deliberate: this claim is about *the file*, and a file's base is the
+ * revision it was built from. Using the read record would reintroduce exactly the coupling
+ * this scoping exists to remove — a read of something the output does not depend on would
+ * still block it.
+ *
+ * A declared input that **does not exist** counts as stale. A participant claiming to have
+ * built something from a file nobody has written is either confused or lying, and either
+ * way the claim cannot be satisfied. Treating a missing file as "not stale" would make
+ * `builtFrom: [{path: 'never-written.mjs', revision: 0}]` a way to declare immunity.
+ */
+function staleAmong(builtFrom, ledger) {
+  const stale = [];
+  for (const declared of builtFrom) {
+    const current = ledger.files.get(declared.path) ?? null;
+    if (current == null || current.revision !== declared.revision) {
+      stale.push({
+        path: declared.path,
+        readRevision: declared.revision,
+        currentRevision: current?.revision ?? null,
+        author: current?.author ?? null,
+      });
+    }
+  }
+  return stale;
+}
+
+/**
  * Commits: a batch of real file contents, admitted or refused as a unit.
  *
  * Why this exists separately from `ledger.admit`
@@ -145,6 +175,16 @@ export async function verifyCommit(payload) {
       // what it was building on would get a weaker fence than one that did not,
       // with no signal that anything had been dropped.
       baseRevision: typeof entry.baseRevision === 'number' ? entry.baseRevision : null,
+      // Carried through for the same reason, and it is the same class of bug twice over: the
+      // first version of the per-file dependency check read `file.builtFrom` from this
+      // object, which is rebuilt here, so every manifest's provenance was silently dropped
+      // and every scoped commit fell back to the coarse participant-wide check. The tests
+      // caught it because they asserted `per_file` and got `participant_declared`.
+      //
+      // `undefined` means "did not declare" and is preserved as such; `[]` means "declared
+      // no inputs". Collapsing them would either drop the fallback or coerce every caller
+      // into it.
+      builtFrom: entry.builtFrom === undefined ? null : entry.builtFrom,
     });
   }
 
@@ -225,19 +265,46 @@ export function evaluateCommit(ledger, verified) {
       continue;
     }
 
-    // Dependencies first: if what the participant relied on moved, nothing it
-    // produced can be trusted, including files that are themselves fine.
-    const stale = cut.reads.filter(entry => entry.stale === true);
+    // Dependencies: if what this file was built from moved, this file cannot be trusted.
+    //
+    // Scoped to the file. `file.builtFrom` is what the participant says *this output* was
+    // derived from, so a dependency that moved refuses the outputs that actually used it and
+    // nothing else.
+    //
+    // This was the defect that made the product unusable for a swarm. Dependencies were
+    // declared once per participant at `/join` and held for that participant's whole life,
+    // so one stale declaration refused *every* file that participant committed — including
+    // files with no relationship to it. Fifty agents sharing a repo deadlocked the moment
+    // anyone moved a shared file, and the pressure that deadlock creates is what drives
+    // people to `--force`, which bypasses the fence entirely. That is strictly worse than
+    // the merge conflict the fence was built to prevent.
+    //
+    // Two fallbacks, and they are not the same thing:
+    //
+    //   builtFrom absent (`null`)  fall back to the participant-wide list. Today's behaviour,
+    //                              which refuses more than necessary. Kept so adopting
+    //                              scoping is opt-in and cannot loosen anything silently.
+    //   builtFrom present          use it. `[]` means "built from nothing", and no dependency
+    //                              check applies to this file.
+    //
+    // `dependencyBasis` on the refusal says which of the two ran, so nobody has to guess
+    // why a file was held.
+    const basis = file.builtFrom === null || file.builtFrom === undefined ? 'participant_declared' : 'per_file';
+    const stale = basis === 'per_file'
+      ? staleAmong(file.builtFrom, ledger)
+      : cut.reads.filter(entry => entry.stale === true).map(entry => ({
+        path: entry.path,
+        readRevision: entry.readRevision,
+        currentRevision: entry.currentRevision,
+        author: entry.author,
+      }));
+
     if (stale.length > 0) {
       refusals.push({
         path: file.path,
         reason: 'dependency_moved',
-        staleDependencies: stale.map(entry => ({
-          path: entry.path,
-          readRevision: entry.readRevision,
-          currentRevision: entry.currentRevision,
-          author: entry.author,
-        })),
+        dependencyBasis: basis,
+        staleDependencies: stale,
       });
       continue;
     }

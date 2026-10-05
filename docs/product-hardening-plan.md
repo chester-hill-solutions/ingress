@@ -39,6 +39,7 @@ code-hygiene tier.
 | 10 | Model workspace ownership | P3 | M | done — **buys attribution, not squat prevention**; see the item |
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
+| 13 | Make the fence survive a swarm | P0 | M | **scoping done and verified live** (`e2e:swarm`); concurrency and merge still open — see below |
 
 ## Already recorded as a limit
 
@@ -1033,11 +1034,103 @@ that only a live call reached:
   `x-ingress-workspace` header the router normally stamps, and `call(coldInstance(...))` —
   the exact mistake that helper's own comment warns about.
 
+### 13. Make the fence survive a swarm
+
+Not in the original plan, and it should have been first.
+
+**What prompted it.** The owner described the actual use: *agents building out in a swarm, and
+if left alone they end up with 50 git merge issues.* That is a threat model this entire
+document had backwards. Every question above asked "can a stranger holding the token do
+damage?", and the answer was yes — arbitrary root on the account holder's machine. The real
+requirement is several **trusted** agents editing one repository without tripping over each
+other. Those need opposite fixes.
+
+**What was wrong.** Dependencies were declared once per participant at `/join` and held for
+that participant's whole life, and `evaluateCommit` applied that single list to **every file
+in a commit**:
+
+```js
+const stale = cut.reads.filter(entry => entry.stale === true);
+if (stale.length > 0) { refusals.push({ path: file.path, reason: 'dependency_moved', ... }); }
+```
+
+So one stale dependency refused files with no relationship to it. In a swarm, the first agent
+to move any shared file blocks every other agent's entire commit. The comment above it —
+*"nothing it produced can be trusted, including files that are themselves fine"* — is
+defensible for a participant doing one thing and exactly wrong for one doing fifty.
+
+That is not conflict prevention. It is a barrier, and the pressure a barrier creates is what
+makes people reach for `--force`, which is worse than the merge conflicts the fence exists to
+prevent. **The fence would not have prevented the 50 merge conflicts; it would have caused a
+deadlock that made `--force` look reasonable.**
+
+**The fix.** A manifest entry declares what *it* was built from:
+
+```js
+builtFrom: [{ path: 'engine.mjs', revision: 1 }]  // scoped to this file
+builtFrom: []                                     // built from nothing
+// absent                                         // fall back to the coarse check
+```
+
+Absent falls back rather than dropping the check, so adopting scoping is opt-in and cannot
+loosen anything silently. Every refusal carries `dependencyBasis: 'per_file' |
+'participant_declared'` so nobody has to guess which rule ran. A declared input that **does
+not exist** counts as stale — otherwise `builtFrom: [{path: 'never-written.mjs', revision:
+0}]` is a way to declare immunity.
+
+Reachable from a container via `.ingress/built-from.json`, which the reporter reads and
+attaches. It lives under `.ingress/` because that is already ignored by the walk, so a
+participant cannot smuggle provenance in as a file change.
+
+**Observed on the deployment** (`npm run e2e:swarm`, 18/18):
+
+```
+B declares no inputs and writes something unrelated
+  PASS  B is admitted — A landing does not block an unrelated agent
+
+C declares it was built from engine.mjs@r1
+  reason: dependency_moved | dependencyBasis: per_file
+  staleDependencies: [{path: engine.mjs, readRevision: 1, currentRevision: 2, author: A}]
+  PASS  only the file that declared it is refused
+
+two agents want engine.mjs at once
+  E -> 409 lease_conflict | blockedOn: ["D"]
+  PASS  no commit verdict is invented for a start that never happened
+```
+
+The `author` in the refusal is what makes it actionable: an agent can tell "this was a race,
+re-read and retry" from "find out what A did".
+
+**Two live bugs found on the way, both pre-existing:**
+
+- **`ALWAYS_IGNORED` was dead code.** Exported from `manifest.mjs` and documented as "files
+  the workspace never commits, whatever a participant says" — and applied by nothing, in
+  neither the reporter's walk nor `parseManifest`. A participant who ran `npm install` or
+  `git init` sent the entire tree and the workspace stored it. Now applied on both sides,
+  with a test asserting the reporter's inlined copy matches the canonical list — because it
+  runs in a container and cannot import.
+- **`verifyCommit` silently dropped `builtFrom`**, rebuilding each file object without it, so
+  the first version of the scoping did nothing and every commit fell back to the coarse path.
+  Caught by a test asserting `per_file` and receiving `participant_declared`.
+
+**What is still open, and both are structural:**
+
+1. **Concurrency.** One container per workspace, so the swarm is sequential. This is the
+   binding constraint on the actual use case, and it is a genuine conflict: the fence needs
+   one Durable Object to decide in a single turn against current state, and the container
+   needs exclusive use of that same object. The way out is visible in code that already
+   exists — the gate resolves a workspace by name from a header, so a container started from
+   *any* object routes into the one that decides. Shard execution across N objects, keep one
+   arbiter.
+2. **No merge.** `contentKey(path)` holds one version per path, so the base *content* is gone
+   and a 3-way merge is impossible. Two agents editing different parts of one file conflict
+   where git would merge cleanly. Content-per-revision is the prerequisite.
+
 ## Verification gates per tier
 
 | Tier | Gate before closing the last item |
 | --- | --- |
-| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface, which needs a product decision. |
+| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface. **Superseded:** the interface question, because the threat model was wrong — a trusted swarm, not a stranger with the token — and item 13's scoping is now the P0 work that matters. |
 | P1 | No write path admits without a lease check; no path exists by which a caller asserts its own read; the documented guarantee matches the mechanism. **P1 is complete.** |
 | P2 | A participant command longer than the default lease commits successfully; a manifest-contract break fails without an account. **P2 is complete** — items 7 and 8, both observed on the deployment. |
 | P3 | A clean clone installs the client and deploys without reading `product/wrangler.jsonc`; the cost ceiling refuses at its bound. **The second half is met** — the ceiling refused at its bound on the deployment, and `/usage` is visible on an authenticated route. Item 11 is open. |

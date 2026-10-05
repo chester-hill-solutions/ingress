@@ -25,6 +25,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { CONTAINER_REPORTER, launcherScript } from '../src/product/launcher.mjs';
+import { ALWAYS_IGNORED } from '../src/product/manifest.mjs';
 import { TIMEOUT_EXIT_STATUS } from '../src/product/start.mjs';
 
 const SECRET = 'reporter-test-token';
@@ -632,3 +633,94 @@ test('the reporter file is written to /tmp, not the read-only container root', (
   assert.doesNotMatch(script, /cat > \/ingress-reporter/);
 });
 
+
+// --- provenance declaration ---------------------------------------------------
+
+test('the declaration reaches the manifest, per output file', () => {
+  // The chain end to end: a participant writes .ingress/built-from.json during its run, the
+  // reporter attaches it to the matching entries, and the workspace scopes the dependency
+  // check to them. Without this the fence-side scoping is unreachable from a container, and
+  // only a hand-written HTTP client could use it.
+  const dir = mkdtempSync(join(tmpdir(), 'ingress-builtfrom-'));
+  mkdirSync(join(dir, '.ingress'), { recursive: true });
+  mkdirSync(join(dir, 'src'), { recursive: true });
+  writeFileSync(join(dir, 'src', 'parser.ts'), 'export const p = 1;');
+  writeFileSync(join(dir, 'src', 'types.ts'), 'export const t = 1;');
+  writeFileSync(join(dir, 'revisions.json'), JSON.stringify({ 'src/types.ts': 3 }));
+  writeFileSync(
+    join(dir, '.ingress', 'built-from.json'),
+    JSON.stringify({ 'src/parser.ts': [{ path: 'src/types.ts', revision: 3 }] }),
+  );
+
+  const result = runReporter({ workDir: dir, revisionsPath: join(dir, 'revisions.json') });
+  assert.match(result.log, /INGRESS-BUILT-FROM/);
+
+  const manifest = JSON.parse(result.calls[0].body);
+  const parser = manifest.files.find(f => f.path === 'src/parser.ts');
+  const types = manifest.files.find(f => f.path === 'src/types.ts');
+
+  assert.deepEqual(parser.builtFrom, [{ path: 'src/types.ts', revision: 3 }]);
+  assert.equal(types.builtFrom, undefined,
+    'a file the declaration does not mention is left alone, so the workspace still applies the coarse check to it');
+});
+
+test('the declaration is never committed as workspace content', () => {
+  // It lives under .ingress/, which is in the reporter's ignore list, so it cannot become a
+  // file change — a participant must not be able to smuggle its own declaration in as an
+  // edit.
+  const dir = mkdtempSync(join(tmpdir(), 'ingress-bf-ignored-'));
+  mkdirSync(join(dir, '.ingress'), { recursive: true });
+  writeFileSync(join(dir, '.ingress', 'built-from.json'), JSON.stringify({ 'a.mjs': [] }));
+  writeFileSync(join(dir, 'a.mjs'), 'export const a = 1;');
+  writeFileSync(join(dir, 'revisions.json'), '{}');
+
+  const result = runReporter({ workDir: dir, revisionsPath: join(dir, 'revisions.json') });
+  const paths = JSON.parse(result.calls[0].body).files.map(f => f.path);
+  assert.deepEqual(paths, ['a.mjs'], 'the declaration itself must not appear in the manifest');
+});
+
+test('a malformed declaration is ignored and announced, not fatal', () => {
+  // The fallback is exactly today's behaviour, so a bad declaration costs this participant
+  // its refined scoping and nothing else. Refusing the whole commit instead would be a
+  // self-inflicted outage for a typo.
+  const dir = mkdtempSync(join(tmpdir(), 'ingress-bf-bad-'));
+  mkdirSync(join(dir, '.ingress'), { recursive: true });
+  writeFileSync(join(dir, '.ingress', 'built-from.json'), 'not json at all');
+  writeFileSync(join(dir, 'a.mjs'), 'export const a = 1;');
+  writeFileSync(join(dir, 'revisions.json'), '{}');
+
+  const result = runReporter({ workDir: dir, revisionsPath: join(dir, 'revisions.json') });
+  assert.match(result.log, /INGRESS-BUILT-FROM-IGNORED/);
+  assert.equal(result.calls.length, 1, 'and the commit still goes out');
+  const manifest = JSON.parse(result.calls[0].body);
+  assert.equal(manifest.files[0].builtFrom, undefined, 'with no provenance attached');
+});
+
+test("the reporter's inlined ignore list matches ALWAYS_IGNORED", () => {
+  // The reporter runs in a container and cannot import, so it carries its own copy of the
+  // ignore list. Two copies drift silently — and they already had: `ALWAYS_IGNORED` was
+  // exported and documented as authoritative while **nothing applied it at all**, so a
+  // participant that ran `npm install` sent the whole tree and the workspace stored it.
+  //
+  // This is the assertion that keeps the copies honest. It reads the reporter's source and
+  // the canonical list and compares them, rather than trusting that someone remembered.
+  const source = CONTAINER_REPORTER;
+  const inlined = [
+    ...(source.match(/IGNORED_NAMES = \[([^\]]*)\]/) ?? ['', ''])[1].split(','),
+    ...(source.match(/IGNORED_FILES = \[([^\]]*)\]/) ?? ['', ''])[1].split(','),
+  ].map(entry => entry.trim().replace(/^'|'$/g, '')).filter(Boolean);
+
+  // The canonical list carries one glob, '*.swp', which the reporter matches by suffix. The
+  // comparison strips trailing slashes and drops globs on the canonical side, because the
+  // glob is a *pattern* rather than a path segment — comparing it literally would fail for a
+  // reason that has nothing to do with drift.
+  const canonical = [...new Set(ALWAYS_IGNORED
+    .filter(entry => !entry.includes('*'))
+    .map(entry => entry.replace(/\/$/, '')))];
+
+  assert.deepEqual(
+    [...inlined].sort(),
+    [...canonical].sort(),
+    'the reporter and the manifest must ignore the same paths, or one of the two guarantees is false',
+  );
+});
