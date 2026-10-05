@@ -16,6 +16,7 @@ import {
   TIMEOUT_EXIT_STATUS,
 } from '../start.mjs';
 import { LeaseConflict, DEFAULT_LEASE_MS, RENEW_INTERVAL_MS } from '../lease.mjs';
+import { startRefusal, usageSnapshot, recordStart, recordLeaseConflict } from '../usage.mjs';
 import * as leaseHandler from './leases.mjs';
 
 /**
@@ -78,6 +79,26 @@ export async function start(ctx, request, workspaceName) {
 
   const ledger = await ctx.getLedger();
 
+  // The cost ceiling, checked here — before the participant is registered, before a lease is
+  // granted, before a token is minted, before anything is booted.
+  //
+  // Order matters in one specific way: a refused start must not consume the quota it was
+  // refused for. The counter is incremented only on the success path, so a caller who
+  // retries cannot lock themselves out, and one who is over the ceiling gets a refusal that
+  // says which bound was reached rather than a generic failure they have to guess at.
+  const usage = await ctx.usage();
+  const overBudget = startRefusal(usage, ctx.ceiling(), { runMs: decision.runMs });
+  if (overBudget) {
+    return json(429, {
+      error: 'refused',
+      ...overBudget,
+      participantId,
+      // The whole point of the counter: a caller that has hit a ceiling needs to see what it
+      // has used to know whether the answer is "stop" or "this will not work for you either".
+      usage: usageSnapshot(usage, ctx.ceiling()),
+    });
+  }
+
   // The write lease is granted BEFORE the participant is registered, and that ordering is
   // the point.
   //
@@ -111,6 +132,11 @@ export async function start(ctx, request, workspaceName) {
       // only after the other party has already committed to waiting. Same as `checkout`.
       table.noteBlocked(participantId, error.blockedOn);
       await ctx.saveLeases();
+      // Counted here as well as in `checkout`. A start whose write lease is held by someone
+      // else is the most informative conflict there is — it is a caller that believes it owns
+      // a file — and counting only the public path would report a workspace as having no
+      // conflicts while it was being refused one per start.
+      await ctx.saveUsage(recordLeaseConflict(await ctx.usage()));
       return json(409, {
         error: 'refused',
         reason: 'lease_conflict',
@@ -127,6 +153,12 @@ export async function start(ctx, request, workspaceName) {
   // the note above: `grantWrite` registers the participant it hands files to.
   ledger.register({ participantId, kind: body.kind === 'human' ? 'human' : 'agent' });
   await ctx.saveLedger();
+
+  // Counted here, on the success path, so a start refused above consumes no quota. It is
+  // recorded before the container boots because a boot that then fails at the platform is
+  // still a start — the account was charged for the attempt, and a counter that only counted
+  // successes would under-report cost by exactly the number of failures.
+  await ctx.saveUsage(recordStart(usage, { runMs: decision.runMs }));
 
   const token = crypto.randomUUID();
   await ctx.state.storage.put(tokenKey(participantId), token);
@@ -253,6 +285,7 @@ export async function start(ctx, request, workspaceName) {
     // the useful number; this is the platform's phrasing of the same fact.
     ...(outcome.containerError ? { containerError: outcome.containerError } : {}),
     commit: verdict,
+    usage: usageSnapshot(await ctx.usage(), ctx.ceiling()),
   });
 }
 

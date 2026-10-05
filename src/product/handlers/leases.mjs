@@ -22,6 +22,7 @@ import {
 import { json, readJSON } from '../http.mjs';
 import { readContentMap } from '../keys.mjs';
 import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
+import { recordLeaseConflict } from '../usage.mjs';
 
 /**
  * Byte budget for a seed response.
@@ -99,6 +100,10 @@ export async function checkout(ctx, request) {
     // already committed to waiting.
     table.noteBlocked(participantId, error.blockedOn);
     await ctx.saveLeases();
+    // Counted, and deliberately not gated on. A workspace being refused a thousand times a
+    // second is a workspace whose callers are confused; cutting it off there would hide the
+    // confusion rather than fix it. It is a signal to look at, not a limit to enforce.
+    await ctx.saveUsage(recordLeaseConflict(await ctx.usage()));
     return json(409, {
       granted: false,
       reason: 'lease_conflict',

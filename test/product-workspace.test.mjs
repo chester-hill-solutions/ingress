@@ -757,6 +757,213 @@ test('a missing workspace token is refused like a wrong one', async () => {
   assert.match(response.detail, /workspaceToken/, 'and it must say what to present');
 });
 
+// --- usage and the cost ceiling -----------------------------------------------
+
+/**
+ * A Durable Object with a cost ceiling and a container that starts.
+ *
+ * The container is a stub because `/start` checks the ceiling *before* looking at
+ * `ctx.container`, and then records the start *after* the ledger write. With no binding at
+ * all every start answers 501 and nothing is ever counted — so a test written that way
+ * asserts nothing about the ceiling, which is how the first draft of this passed for the
+ * wrong reason.
+ *
+ * `monitor` resolves immediately: these tests are about bookkeeping, not about waiting.
+ */
+/**
+ * `POST /start`, as the router delivers it.
+ *
+ * Two things the router does and this file's `post` does not: it stamps
+ * `x-ingress-workspace`, without which `/start` answers 400 `unknown_workspace`. Calling the
+ * Durable Object directly has always skipped the router, which was invisible until `/start`
+ * became testable here.
+ */
+function startIn(call, body) {
+  return call(`https://x/start`, {
+    method: 'POST',
+    headers: { 'x-ingress-workspace': 'demo', 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+function mountCapped(maxStarts, maxRunSeconds) {
+  const data = new Map();
+  const env = {
+    INGRESS_MAX_STARTS_PER_WORKSPACE: String(maxStarts),
+    INGRESS_MAX_RUN_SECONDS: String(maxRunSeconds),
+  };
+  const container = {
+    intercepted: [],
+    started: [],
+    async interceptAllOutboundHttp(target) { this.intercepted.push(target); },
+    start(options) { this.started.push(options); },
+    async monitor() { return { exitCode: 0 }; },
+    // No `stop`, deliberately: that is the shape of this runtime, and `waitBounded` has to
+    // cope with it. A stub that provided one would test the other branch.
+  };
+  const agent = new WorkspaceAgent(memoryStorage(data), env, container);
+  return { instance: agent, call: makeCall(agent), data, container };
+}
+
+test('usage is visible, and it starts empty with the ceiling attached', async () => {
+  const { call } = mountCapped(5, 600);
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.status, 200);
+  assert.equal(usage.starts, 0);
+  assert.equal(usage.commitsAdmitted, 0);
+  assert.equal(usage.ceiling.maxStarts, 5);
+  assert.equal(usage.remaining.starts, 5);
+  assert.equal(usage.exhausted, false);
+});
+
+test('a refused start consumes no quota', async () => {
+  // The difference between a ceiling and a counter. A counter that increments on refusal
+  // lets a caller lock themselves out by retrying, and the resulting error is
+  // indistinguishable from the one that locked them out.
+  const { call } = mountCapped(2, 600);
+
+  // Refused for a reason unrelated to cost: a lease somebody else holds.
+  await join(call, 'holder');
+  const held = await post(call, '/lease/checkout', {
+    participantId: 'holder', paths: ['contested.mjs'], mode: 'write',
+  });
+  assert.equal(held.status, 200);
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const refused = await asResult(await startIn(call, {
+      participantId: 'blocked',
+      kind: 'agent',
+      writePaths: ['contested.mjs'],
+      runMs: 1000,
+      participantCommand: 'true',
+    }));
+    assert.equal(refused.status, 409, `attempt ${attempt} should be refused for the lease`);
+    assert.equal(refused.reason, 'lease_conflict');
+  }
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.starts, 0,
+    'three refused starts must not consume any of the two allowed');
+  assert.equal(usage.leaseConflicts, 3, 'though the conflicts themselves are counted');
+});
+
+test('the ceiling refuses at the bound and says which bound it was', async () => {
+  const { call } = mountCapped(2, 600);
+  await join(call, 'runner');
+
+  const start = () => startIn(call, {
+    participantId: 'runner', kind: 'agent', runMs: 1000, participantCommand: 'true',
+  });
+
+  const first = await start();
+  assert.equal(first.status, 200);
+  const second = await start();
+  assert.equal(second.status, 200);
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.starts, 2, 'both cleared the ceiling and are counted');
+  assert.equal(usage.remaining.starts, 0);
+
+  const third = await asResult(await start());
+  assert.equal(third.status, 429, 'the third is over the ceiling');
+  assert.equal(third.reason, 'cost_ceiling');
+  assert.equal(third.limit, 'starts');
+  assert.equal(third.used, 2);
+  assert.equal(third.allowed, 2);
+  // The refusal carries the usage, so the caller does not have to make a second request to
+  // find out what it has used — which is the whole reason the counters exist.
+  assert.equal(third.usage.starts, 2);
+});
+
+test('a workspace over the run-time ceiling cannot start a long command', async () => {
+  const { call } = mountCapped(100, 600);
+
+  // Burn most of the budget with three starts that clear the ceiling.
+  await join(call, 'spender');
+  for (const runMs of [300_000, 200_000, 100_000]) {
+    await startIn(call, { participantId: 'spender', kind: 'agent', runMs, participantCommand: 'true' });
+  }
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.runSecondsRequested, 600);
+
+  const refused = await asResult(await startIn(call, {
+    participantId: 'spender', kind: 'agent', runMs: 60_000, participantCommand: 'true',
+  }));
+  assert.equal(refused.status, 429);
+  assert.equal(refused.limit, 'runSeconds');
+  assert.equal(refused.allowed, 0, 'and it says there is no room left');
+});
+
+test('a ceiling set to nonsense falls back to the default rather than refusing everything', async () => {
+  const { call } = mountCapped(0, 'abc');
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.ceiling.maxStarts, 500, 'the default, not zero');
+
+  const response = await startIn(call, {
+    participantId: 'a', kind: 'agent', runMs: 1000, participantCommand: 'true',
+  });
+  assert.notEqual(response.status, 429, 'and a start is not refused for a configuration mistake');
+});
+
+test('commits are counted by verdict, including refusals', async () => {
+  const { call, data } = mountDO();
+  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  await join(call, 'writer');
+
+  await commitWithLease(call, data, 'writer', [{
+    path: 'engine.mjs',
+    contentBase64: b64('export const v = 2;'),
+    contentHash: await sha256Hex(Buffer.from('export const v = 2;')),
+  }]);
+
+  // Now a write the fence refuses: base the writer on revision 1 by reading, then move the
+  // file underneath them.
+  const usageAfterAdmit = await asResult(await call('https://x/usage'));
+  assert.equal(usageAfterAdmit.commitsAdmitted, 1);
+  assert.ok(usageAfterAdmit.bytesAdmitted > 0, 'and the stored bytes are counted');
+
+  await join(call, 'other');
+  await commitWithLease(call, data, 'other', [{
+    path: 'engine.mjs',
+    contentBase64: b64('export const v = 3;'),
+    contentHash: await sha256Hex(Buffer.from('export const v = 3;')),
+  }]);
+
+  // A commit with no lease at all is the refusal that needs no setup.
+  await join(call, 'unleased');
+  const unleased = await post(call, '/internal/commit', {
+    participantId: 'unleased',
+    token: issueToken(data, 'unleased'),
+    ...manifest('unleased', [{
+      path: 'engine.mjs',
+      contentBase64: b64('export const v = 4;'),
+      contentHash: await sha256Hex(Buffer.from('export const v = 4;')),
+    }]),
+  });
+  assert.equal(unleased.status, 409);
+
+  const usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.commitsAdmitted, 2);
+  assert.equal(usage.commitsRefused, 1,
+    'a refusal is counted as a refusal, not as an admission');
+});
+
+test('usage survives a reload', async () => {
+  // A counter held only in the instance that incremented it resets when the Durable Object
+  // is evicted, and a cost ceiling that resets is not a ceiling.
+  const { instance, call } = mountCapped(5, 600);
+  await join(call, 'ephemeral');
+  await startIn(call, {
+    participantId: 'ephemeral', kind: 'agent', runMs: 1000, participantCommand: 'true',
+  });
+
+  const cold = await asResult(await coldInstance(instance, await storageOf(instance))('https://x/usage'));
+  assert.equal(cold.starts, 1, 'the count must outlive the instance that made it');
+});
+
 test('the workspace fences a stale write', async () => {
   const { instance, call, data } = mountDO();
 

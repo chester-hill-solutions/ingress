@@ -16,6 +16,7 @@ import { verifyCommit, evaluateCommit, applyCommit } from '../commit.mjs';
 import { parseManifest, summariseManifest } from '../manifest.mjs';
 import { json, readJSON, MAX_COMMIT_BODY } from '../http.mjs';
 import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
+import { recordCommit } from '../usage.mjs';
 import {
   contentKey,
   commitKey,
@@ -54,6 +55,10 @@ export async function commit(ctx, request) {
       summary: summariseManifest(manifest),
     };
     await ctx.state.storage.put(commitKey(participantId), outcome);
+    // Counted, not lumped with an admission. A workspace whose participants all exit
+    // without writing anything is a usage signal in itself, and it looks identical to an
+    // admission in every other field of this route.
+    await ctx.saveUsage(recordCommit(await ctx.usage(), { admitted: null }));
     return json(200, { ...outcome, participantId });
   }
 
@@ -92,6 +97,7 @@ export async function commit(ctx, request) {
       hint: `POST /lease/checkout with ${JSON.stringify(unleased)} before committing`,
     };
     await ctx.state.storage.put(commitKey(participantId), refusal);
+    await ctx.saveUsage(recordCommit(await ctx.usage(), { admitted: false }));
     return json(409, { ...refusal, participantId });
   }
 
@@ -124,6 +130,7 @@ export async function commit(ctx, request) {
       unchanged: decision.unchanged,
     };
     await ctx.state.storage.put(commitKey(participantId), refusal);
+    await ctx.saveUsage(recordCommit(await ctx.usage(), { admitted: false }));
     return json(409, { ...refusal, participantId });
   }
 
@@ -157,6 +164,12 @@ export async function commit(ctx, request) {
     summary: summariseManifest(manifest),
   };
   await ctx.state.storage.put(commitKey(participantId), outcome);
+  // Byte count from the *admitted* files, which is what was stored. The manifest's own
+  // summary is what was offered; this is what cost something.
+  await ctx.saveUsage(recordCommit(await ctx.usage(), {
+    admitted: true,
+    bytes: files.reduce((total, file) => total + (file.byteLength ?? 0), 0),
+  }));
   return json(200, { ...outcome, participantId });
 }
 

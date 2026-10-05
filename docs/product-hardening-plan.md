@@ -36,9 +36,9 @@ code-hygiene tier.
 | 7 | Fix lease lifetime against participant runtime | P2 | M | done |
 | 8 | Put the cross-boundary path under test | P2 | M | done |
 | 9 | Make `/internal/gate-log` unwritable from outside | P2 | S | done (by item 2) |
-| 10 | Model workspace ownership | P3 | M | open |
+| 10 | Model workspace ownership | P3 | M | done — **buys attribution, not squat prevention**; see the item |
 | 11 | Package the client | P3 | M | open |
-| 12 | Usage signal, cost ceiling, then billing | P3 | L | open |
+| 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
 
 ## Already recorded as a limit
 
@@ -905,6 +905,43 @@ presented by its creator.
 **Verified by.** A test that bootstrapping a workspace with the wrong token is refused,
 and that a second bootstrap with the right token is still refused for the existing reason.
 
+**Done, and it does less than the item claimed.** The plan framed this as closing a
+name-squat hole: anyone holding the deployment credential can bootstrap any name, and the
+genuine owner is then locked out by `bootstrap_closed`. **It does not.** Whoever bootstraps
+first becomes the owner, because the credential is shared. What it buys is attribution and a
+stable owner identity. Preventing the squat needs per-caller credentials, which is a product
+decision and is the same family as item 3's command surface.
+
+The first bootstrap now mints a workspace token, returns it once, and stores only its digest
+(`ownerKey`, `digest`/`digestHex`/`bytesToHex`). A later bootstrap must present it: 403
+`not_workspace_owner` without, 409 `bootstrap_closed` with. A workspace holding files with
+no owner record — one from before this change — is refused as `workspace_exists_unowned`
+rather than adopted, because adopting hands it to whoever asks next.
+
+**Three traps in the verification, each of which made the check do nothing while looking
+correct:**
+
+- `new Uint8Array(hexString)` yields an **empty array** rather than throwing. Both digest
+  sides went zero-length, the comparison loop never ran, `diff` stayed 0, and `tokensMatch`
+  returned **true for every input including the empty token**.
+- `String(arrayBuffer)` is `"[object ArrayBuffer]"`. Comparing a *stored* digest against a
+  fresh one hashed that literal on one side. `digestHex` (hash then encode) and `bytesToHex`
+  (encode what you already have) now exist separately, each documenting which mistake it
+  causes — the first fails **closed** (locks the owner out), the second would have failed
+  **open**.
+- `tokensMatch` takes two *raw* credentials. Handed the stored digest it hashes it a second
+  time, which can never match — safe, but it locks the owner out of their own workspace.
+
+And one test bug of the same shape as the others: `await asJSON(await post(...)).reason`
+binds `.reason` to the `Response`, which has none, so the comparison inspected `undefined`
+and passed.
+
+**A test that asserted the wrong attack.** "A stranger cannot bootstrap an *empty* workspace
+someone else created" is unreachable — `/bootstrap` with zero files is refused as
+`empty_commit`, so an owned workspace always holds at least one file and the ledger rule
+alone would refuse. Replaced with a test asserting that consequence, which is the honest
+version and which is what bounds the feature's value.
+
 ### 11. Package the client
 
 **Now.** `package.json` is `private`, has zero dependencies, no `bin`, no install script,
@@ -937,6 +974,65 @@ P0 makes the deployment safe to sell.
 **Verified by.** The counter is visible on an authenticated route and the ceiling refuses
 at the bound. Billing has no test here; do not add one that mocks a payment provider.
 
+**The first two legs are done and verified on the deployment.** `src/product/usage.mjs` is a
+pure module — the arithmetic is tested without an account — and `GET /usage` serves it,
+authenticated like every workspace route.
+
+Counted: starts, run-seconds requested, commits admitted / refused / empty, lease conflicts,
+bytes admitted, first and last seen. The ceiling covers **starts** and **cumulative requested
+run time**, because those are the two things that bill. Commits and lease conflicts are
+counted but deliberately do not gate: a workspace being refused a thousand times a second is
+one whose callers are confused, and cutting it off there would hide the confusion rather
+than fix it.
+
+Four decisions that are the feature rather than the plumbing:
+
+- **A refused start consumes no quota.** The difference between a ceiling and a counter. A
+  counter that increments on refusal lets a caller lock themselves out by retrying, and the
+  resulting error is indistinguishable from the one that locked them out. Verified live: three
+  refusals, `starts` still 0.
+- **The counter is cached on the instance**, like the ledger and the lease table, because a
+  Durable Object can be evicted between requests and a counter that resets on eviction is not
+  a ceiling. Verified by reading `/usage` from a cold instance over the same storage.
+- **A record missing a newer counter folds in as zero, not `undefined`.** `undefined` in a sum
+  is `NaN`, and `NaN` compares false against every ceiling — so a workspace whose record
+  predates a field added later would be permanently under its limit and the counter would
+  never work again.
+- **Nonsense env values fall back to the default, never to infinity.** `MAX_STARTS=0` by
+  mistake should be bounded, not refusing every start with a configuration error.
+
+Observed on the deployment with the ceiling set to 2 so the bound was reachable in one run:
+
+```
+start 1 -> 200 | usage.starts 1
+start 2 -> 200 | usage.starts 2
+start 3 -> 429 | cost_ceiling | limit starts | used 2 of 2
+usage after -> {"starts":2,"exhausted":true,"remaining":{"starts":0,...}}
+a refused start consumed quota? no
+```
+
+**The defaults are a placeholder and say so.** `DEFAULT_MAX_STARTS = 500` and
+`DEFAULT_MAX_RUN_SECONDS = 100_000` are not derived from a price. What is defensible is the
+reasoning: each start is a container, a container bills for as long as it runs, and with the
+15-minute run ceiling one start can cost a quarter-hour. The numbers are a starting bound, set
+in one place, and the constants carry the caveat so whoever changes them reads it.
+
+**Billing is not built, and this is the reason to stop rather than a scheduling note.** It
+needs a price for a container-minute on this account, which is not something the repository
+knows and not something I should guess. The counters now give you the numbers such a price
+would be applied to; that is the whole of what this leg can honestly deliver.
+
+Three defects found while wiring it, two of them in my own tests and one in production code
+that only a live call reached:
+
+- `ceiling()` was added to the agent and never to `ctx`, so **every `/start` answered 500**
+  `ctx.ceiling is not a function`.
+- `/start`'s own lease conflict was not counted, only the public `checkout` path — a workspace
+  refused once per start would have reported zero conflicts.
+- Three test bugs: `/join` is GET-only (written as POST), `/start` needs the
+  `x-ingress-workspace` header the router normally stamps, and `call(coldInstance(...))` —
+  the exact mistake that helper's own comment warns about.
+
 ## Verification gates per tier
 
 | Tier | Gate before closing the last item |
@@ -944,7 +1040,7 @@ at the bound. Billing has no test here; do not add one that mocks a payment prov
 | P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface, which needs a product decision. |
 | P1 | No write path admits without a lease check; no path exists by which a caller asserts its own read; the documented guarantee matches the mechanism. **P1 is complete.** |
 | P2 | A participant command longer than the default lease commits successfully; a manifest-contract break fails without an account. **P2 is complete** — items 7 and 8, both observed on the deployment. |
-| P3 | A clean clone installs the client and deploys without reading `product/wrangler.jsonc`; the cost ceiling refuses at its bound. |
+| P3 | A clean clone installs the client and deploys without reading `product/wrangler.jsonc`; the cost ceiling refuses at its bound. **The second half is met** — the ceiling refused at its bound on the deployment, and `/usage` is visible on an authenticated route. Item 11 is open. |
 
 Run `npm test` and `npm run check` at every tier. On Node 26 the suite is expected green;
 the mission tests refuse to run below 26 and say so

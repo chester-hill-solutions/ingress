@@ -37,7 +37,8 @@
 import { WorkspaceLedger } from './fence.mjs';
 import { LeaseTable } from './lease.mjs';
 import { json, readJSON, MAX_BODY_BYTES } from './http.mjs';
-import { contentKey, ledgerKey, leasesKey, gateLogKey, GATE_LOG_HISTORY } from './keys.mjs';
+import { contentKey, ledgerKey, leasesKey, gateLogKey, usageKey, GATE_LOG_HISTORY } from './keys.mjs';
+import { usageFrom, usageSnapshot, ceilingFromEnv } from './usage.mjs';
 import * as commitHandler from './handlers/commit.mjs';
 import * as leaseHandler from './handlers/leases.mjs';
 import * as containerHandler from './handlers/container.mjs';
@@ -75,6 +76,9 @@ export class WorkspaceAgent {
       saveLedger: () => this.saveLedger(),
       leases: () => this.getLeases(),
       saveLeases: () => this.saveLeases(),
+      usage: () => this.getUsage(),
+      saveUsage: next => this.saveUsage(next),
+      ceiling: () => this.ceiling(),
     };
   }
 
@@ -104,6 +108,30 @@ export class WorkspaceAgent {
 
   async saveLeases() {
     await this.state.storage.put(leasesKey, this.leaseTable.toJSON());
+  }
+
+  /**
+   * What this workspace has consumed, and the ceiling it is held to.
+   *
+   * Cached on the instance like the ledger and the lease table, for the same reason: a
+   * Durable Object can be evicted between requests, so anything held only in memory would
+   * reset to zero — and a usage counter that resets to zero on eviction is a cost ceiling
+   * that does not hold.
+   */
+  async getUsage() {
+    if (this.usage) return this.usage;
+    this.usage = usageFrom(await this.state.storage.get(usageKey));
+    return this.usage;
+  }
+
+  async saveUsage(next) {
+    this.usage = next;
+    await this.state.storage.put(usageKey, next);
+  }
+
+  /** The bounds, read from the environment on every use so a change needs no redeploy state. */
+  ceiling() {
+    return ceilingFromEnv(this.env ?? {});
   }
 
   async fetch(request) {
@@ -172,6 +200,19 @@ export class WorkspaceAgent {
     }
     if (url.pathname === '/start' && method === 'POST') {
       return containerHandler.start(this.ctx, request, request.headers.get('x-ingress-workspace'));
+    }
+
+    // --- usage ---
+    //
+    // Authenticated like every other workspace route, and reachable by whoever holds the
+    // workspace credential. That is the same audience that can boot containers, so it is
+    // the audience that needs to know what it has used.
+    //
+    // It exposes the ceiling as well as the counters, deliberately. A limit a caller can
+    // only discover by hitting is a limit they cannot plan around, and the counters without
+    // the bound they are measured against are just numbers.
+    if (url.pathname === '/usage' && method === 'GET') {
+      return json(200, usageSnapshot(await this.getUsage(), this.ceiling()));
     }
 
     // --- the ledger's own read surface ---

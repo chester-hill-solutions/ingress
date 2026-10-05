@@ -27,6 +27,15 @@ export const startsKey = 'active-starts';
  */
 export const ownerKey = 'owner';
 
+/**
+ * What this workspace has consumed.
+ *
+ * One key, always written whole. The record is a fixed set of counters — see
+ * `usage.mjs` — so a per-counter key scheme would be eleven keys read to render one number
+ * and eleven chances to read a key that was never written.
+ */
+export const usageKey = 'usage';
+
 export const contentKey = path => `content:${path}`;
 export const tokenKey = participantId => `token:${participantId}`;
 export const commitKey = participantId => `commit:${participantId}`;
