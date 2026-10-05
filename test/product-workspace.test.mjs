@@ -173,8 +173,8 @@ async function asResult(response) {
 }
 
 /** Establish a starting tree the legitimate way. */
-async function bootstrap(base, files, author = 'creator') {
-  return asJSON(await post(base, '/bootstrap', { author, files }));
+async function bootstrap(base, files, author = 'creator', workspaceToken = undefined) {
+  return asJSON(await post(base, '/bootstrap', { author, files, ...(workspaceToken ? { workspaceToken } : {}) }));
 }
 
 /**
@@ -575,6 +575,188 @@ test('a start lease is a handover, so it records the read it implies', async () 
   );
 });
 
+// --- workspace ownership -------------------------------------------------------
+
+test('the first bootstrap claims the workspace and returns a token once', async () => {
+  const { call } = mountDO();
+
+  const response = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+
+  assert.equal(response.status, 200);
+  assert.equal(response.bootstrapped, 1);
+  assert.ok(response.workspaceToken, 'a claimed workspace must hand back the token that claims it');
+});
+
+test("a stranger cannot bootstrap a workspace someone else created", async () => {
+  // The squat, stated as the attack it is. Before ownership, this call succeeded and the
+  // genuine owner could never bootstrap the name again — the only rule was "an empty
+  // ledger", and the squatter's own bootstrap had made it non-empty.
+  const { call } = mountDO();
+  const owner = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+
+  const squatter = await asResult(await post(call, '/bootstrap', {
+    author: 'stranger',
+    files: [await entry('engine.mjs', 'export const mine = 1;')],
+  }));
+
+  assert.equal(squatter.status, 403);
+  assert.equal(squatter.reason, 'not_workspace_owner');
+});
+
+test('an owned workspace always holds at least one file, so the squat is unreachable', async () => {
+  // Which asserts a *consequence* rather than constructing the attack the ownership check
+  // was written for.
+  //
+  // The original reasoning was "the ownership check runs first, so a stranger cannot
+  // bootstrap an *empty* workspace someone else created". But `/bootstrap` with zero files
+  // is refused as `empty_commit`, so an owned workspace always holds at least one file —
+  // and a rule that only checked the ledger would have refused the stranger anyway.
+  //
+  // Worth stating plainly, because it bounds what ownership here is worth: it buys
+  // attribution and a stable owner identity. It does **not** prevent first-come squatting,
+  // because the deployment credential is shared and whoever bootstraps first becomes the
+  // owner. Preventing that needs per-caller credentials, which is a product decision and
+  // not this item.
+  const { call } = mountDO();
+
+  const noFiles = await asResult(await post(call, '/bootstrap', { author: 'creator', files: [] }));
+  assert.equal(noFiles.status, 400);
+  assert.equal(noFiles.error, 'empty_commit',
+    'an owned workspace therefore always has files, so the ledger rule alone refuses a stranger');
+
+  const created = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+  const state = await asResult(await call('https://x/state'));
+  assert.equal(state.files.length, 1);
+  assert.ok(created.workspaceToken, 'and it is claimed');
+});
+
+test('the owner can still bootstrap again, and is refused for the original reason', async () => {
+  const { call } = mountDO();
+  const created = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+
+  const again = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    workspaceToken: created.workspaceToken,
+    files: [await entry('other.mjs', 'export const o = 1;')],
+  }));
+
+  assert.equal(again.status, 409);
+  assert.equal(again.error, 'bootstrap_closed',
+    'the owner is authenticated but the ledger rule still applies');
+  assert.equal(again.files, 1);
+});
+
+test('the workspace token is stored only as a digest', async () => {
+  // A storage read — by this code, by an operator, by anything reaching the Durable Object
+  // — must not yield a credential that re-opens `/bootstrap`.
+  const { call, data } = mountDO();
+  const created = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+
+  const stored = data.get('owner');
+  assert.ok(stored, 'the owner record must be written');
+  assert.ok(stored.tokenDigest instanceof ArrayBuffer, 'the token must be stored as a digest');
+  assert.equal(JSON.stringify(stored).includes(created.workspaceToken), false,
+    'the token itself must not appear anywhere in the stored record');
+  assert.equal(stored.author, 'creator', 'and the record says who created it');
+  assert.ok(stored.createdAt, 'and when');
+});
+
+test('two workspaces get different tokens', async () => {
+  // Otherwise a token from one workspace would authenticate against another, and the
+  // ownership record would be a naming convention rather than a boundary.
+  //
+  // Each workspace gets its own storage, which is what makes two Durable Objects out of one
+  // module. An earlier version of this test reused a single mount and asserted two
+  // bootstraps of it produced two tokens — which is not two workspaces at all, and the
+  // second bootstrap is refused. `assert.notEqual(undefined, undefined)` then failed, as it
+  // should have.
+  const a = mountDO();
+  const b = mountDO();
+  const tree = [await entry('engine.mjs', 'export const v = 1;')];
+
+  const first = await asResult(await post(a.call, '/bootstrap', { author: 'x', files: tree }));
+  const second = await asResult(await post(b.call, '/bootstrap', { author: 'x', files: tree }));
+
+  assert.equal(first.status, 200);
+  assert.equal(second.status, 200);
+  assert.ok(first.workspaceToken);
+  assert.ok(second.workspaceToken);
+  assert.notEqual(first.workspaceToken, second.workspaceToken);
+});
+
+test('a workspace holding files but no owner is refused rather than adopted', async () => {
+  // A workspace from before ownership existed. Adopting it would hand it to whoever asked
+  // next, which is the squat the rule exists to prevent — so it fails closed and says an
+  // operator is needed. No such workspace exists on this deployment, which is exactly why
+  // the state has to be handled rather than ignored.
+  const { call, data } = mountDO();
+  await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+  data.delete('owner');
+
+  const response = await asResult(await post(call, '/bootstrap', {
+    author: 'stranger',
+    files: [await entry('mine.mjs', 'export const m = 1;')],
+  }));
+
+  assert.equal(response.status, 409);
+  assert.equal(response.error, 'workspace_exists_unowned');
+  assert.match(response.reason, /operator/, 'and it must say who can fix it');
+
+  // Refusing to adopt must not mean the workspace is stuck forever. It is recoverable, but
+  // only by an operator writing the owner record — so the check that matters is that the
+  // route never mints one on its own.
+  const fresh = mountDO();
+  const created = await asResult(await post(fresh.call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+  assert.ok(created.workspaceToken, 'an ordinary workspace is claimable');
+  // Parenthesised. `await asJSON(await post(...)).reason` binds `.reason` to the *Response*,
+  // which has none, rather than to the parsed body — so the comparison silently inspected
+  // `undefined`.
+  const guessed = await asJSON(await post(fresh.call, '/bootstrap', {
+    author: 'creator',
+    workspaceToken: 'a-guess',
+    files: [await entry('mine.mjs', 'export const m = 1;')],
+  }));
+  assert.equal(guessed.reason, 'not_workspace_owner', 'and a guessed token is refused');
+});
+
+test('a missing workspace token is refused like a wrong one', async () => {
+  const { call } = mountDO();
+  await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('engine.mjs', 'export const v = 1;')],
+  }));
+
+  const response = await asResult(await post(call, '/bootstrap', {
+    author: 'creator',
+    files: [await entry('other.mjs', 'export const o = 1;')],
+  }));
+
+  assert.equal(response.status, 403);
+  assert.equal(response.reason, 'not_workspace_owner');
+  assert.match(response.detail, /workspaceToken/, 'and it must say what to present');
+});
+
 test('the workspace fences a stale write', async () => {
   const { instance, call, data } = mountDO();
 
@@ -823,10 +1005,11 @@ test('bootstrap may only run once, so it cannot become an overwrite route', asyn
   const first = await bootstrap(call, [await entry('a.txt', 'first tree')]);
   assert.equal(first.bootstrapped, 1);
 
-  const second = await bootstrap(call, [await entry('a.txt', 'replaced')]);
-  assert.equal(second.status ?? 409, 409);
-  assert.equal((await asJSON(await post(call, '/bootstrap', { files: [await entry('a.txt', 'replaced')] }))).error,
-    'bootstrap_closed');
+  // With the owner's token, so this reaches the *ledger* rule rather than stopping at the
+  // ownership check. Both refusals are correct; this test is about the overwrite route, and
+  // the ledger rule is the one that blocks it.
+  const second = await bootstrap(call, [await entry('a.txt', 'replaced')], 'creator', first.workspaceToken);
+  assert.equal(second.error, 'bootstrap_closed');
 
   const content = await asJSON(await call('https://x/content?path=a.txt'));
   assert.equal(Buffer.from(content.contentBase64, 'base64').toString('utf8'), 'first tree');
