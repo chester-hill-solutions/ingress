@@ -1286,6 +1286,24 @@ concurrent / shared:   1/6 admitted   31s      5 refused lease_conflict
 The architecture the trial supports: **the model loop lives outside, the container is a
 deterministic build/test sandbox, and the fence arbitrates what lands.** Not what is built.
 
+That model was unimplementable with the network closed, because `enableInternet` was false and
+every external host's request returned 409 from the gate — the container could not fetch a
+dependency, so no project whose `package.json` was not fully vendored could build. The posture
+of 2026-10-05 v `5e5ed04b`, therefore:
+
+- Container starts with `enableInternet: true`. The egress interception stays, but the gate
+  now **proxies** non-`workspace.internal` traffic instead of answering 409 — preserving
+  method and body, stripping the container's own Host header. Verified live:
+  `npm install lodash` and `curl -sI https://example.com` both succeed from inside.
+- What the gate now guarantees: every workspace route still goes through the allow-list and
+  the participant's token, and every byte that lands in the workspace was admitted by the
+  fence. What it no longer guarantees: that the container talks to nothing else. The old
+  egress-wall argument is retired, because the sandbox model requires outreach.
+
+The one cost that is now real, and not a footnote: `enableInternet: true` means a participant
+can publish anything, including the workspace tree, to anywhere. The fence is a registry and
+an audit of what lands; it is not a containment boundary.
+
 #### Output visibility (the first gap the inversion exposed)
 
 An external harness driving `/start` got back a commit verdict and an exit code — no output.

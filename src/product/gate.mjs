@@ -2,18 +2,28 @@
  * The gate.
  *
  * Everything a participant does to make its work visible to anyone else goes
- * through here, and this is the only way that happens. The container starts with
- * `enableInternet: false`, so there is no route out of it except the interception
- * the Durable Object installs before boot — which lands on this WorkerEntrypoint.
+ * through here, and this is the only way that happens. The container
+ * intercepts all outbound HTTP into this WorkerEntrypoint, so every request —
+ * workspace traffic and external traffic — arrives here first.
  *
- * That topology is the enforcement argument, and it is about routing and attribution:
+ * For workspace traffic that topology is still the enforcement argument, and
+ * it is about routing and attribution:
  *
  *   a participant cannot publish a byte it did not send here
- *   it cannot reach any other workspace, because the only exit is this gate
+ *   it cannot reach another workspace's routes, because the allow-list ends here
  *   it cannot be someone else, because the token is issued by the workspace that
  *   owns this container and checked on arrival
  *
- * The second of those was false until the public router refused `/internal/*`; an
+ * External traffic is *proxied*, not refused. That is the change the sandbox
+ * model asked for: a participant whose command is `npm install` has to reach
+ * the registry, and a gate that answered 409 to every external request meant no
+ * dependency could ever be fetched. The cost is recorded rather than hidden: the
+ * container can now publish anything it wants to the internet. The fence's job
+ * is attribution and ordering of what lands in the workspace, not egress
+ * control, and treating it as an egress wall was the part the sandbox model
+ * discarded.
+ *
+ * That second guarantee was false until the public router refused `/internal/*`; an
  * authenticated caller could once post straight to `/internal/commit` and skip this
  * gate entirely. See `product/router.mjs`.
  *
@@ -67,8 +77,32 @@ export class CommitGate extends WorkerEntrypoint {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // An allow-list, and the method with it. The container has no internet and this gate
-    // is its only exit, so anything not listed is refused rather than left to chance.
+    // External traffic is proxied, not adjudicated. The allow-list below covers
+    // only traffic addressed at `workspace.internal`; anything else is forwarded
+    // as-is. That is what the sandbox model needs -- a participant that can only
+    // reach a 409 cannot install anything -- and the workspace routes remain the
+    // only place a participant token is checked.
+    //
+    // The proxy preserves method, headers and body. GET/HEAD have no body; every
+    // other method forwards the request stream unchanged, which keeps payloads
+    // out of the gate's memory.
+    if (url.hostname !== 'workspace.internal') {
+      // The intercepted request carries the container's Host header, and a copied-through
+      // Host would be wrong for the external host -- it has to arrive as the name the caller
+      // actually asked for.
+      const headers = new Headers(request.headers);
+      headers.delete('host');
+      return fetch(url.toString(), {
+        method: request.method,
+        headers,
+        body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+        duplex: 'half',
+      });
+    }
+
+    // An allow-list, and the method with it. The workspace path prefixes are the only
+    // things a participant may ask for; anything not listed is refused rather than left
+    // to chance. See the note above for why external hosts are not subject to it.
     //
     // `/seed` is a read, added because a participant that cannot see the workspace
     // is working blind: it could commit changes built on nothing, and the fence

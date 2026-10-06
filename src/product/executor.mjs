@@ -59,7 +59,11 @@ export async function runOne(container, gate, run) {
 
   container.start({
     entrypoint: ['/bin/sh', '-c', launcherEntry(run)],
-    enableInternet: false,
+    // Egress is intercepted all the same, so the gate still sees every request — but it now
+    // proxies external traffic instead of only refusing it. The gate's job with this
+    // setting is routing and attribution for workspace traffic; it is no longer a wall, and
+    // the record should stop claiming it is.
+    enableInternet: true,
     env: containerEnv(run),
   });
 

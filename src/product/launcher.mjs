@@ -23,8 +23,11 @@
  *   - The workspace stores the bytes it received, never bytes described by a hash. The
  *     hash is recomputed on arrival, so a commit cannot be stored under a hash its
  *     content does not match.
- *   - A participant cannot reach another workspace. Its egress is intercepted into the
- *     gate, and the gate resolves the workspace itself rather than accepting a name.
+ *   - A participant cannot reach another workspace *through the gate's workspace
+ *     routes*. Its internal egress is intercepted into the gate, and the gate resolves
+ *     the workspace itself rather than accepting a name. It can reach the open
+ *     internet -- the sandbox model asks for that now -- but another workspace's
+ *     `/internal/*` stays behind the same allow-list.
  *   - A participant cannot act as another. The container token is minted by the
  *     workspace for exactly one container and checked on every commit.
  *
@@ -93,9 +96,9 @@ export function launcherScript({
     'LEASE_RENEWER=\'\'',
     '',
     // The reporter is inlined rather than fetched. A container is booted with an
-    // entrypoint and has no route out except the gate, so a reporter that had to
-    // be downloaded would be one that could not be trusted to arrive. Quoted
-    // heredoc, so nothing in the JS below is expanded by the shell.
+    // entrypoint, and what gets executed must not depend on what the image happened to
+    // ship — a missing file fails at boot, not at commit time.
+    // Written as a quoted heredoc, so nothing in the JS below is expanded by the shell.
     //
     // It goes in /tmp, not /. The container filesystem root is read-only, so a
     // reporter written to / fails after the participant has already run — and the
