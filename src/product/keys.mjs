@@ -39,6 +39,8 @@ export const usageKey = 'usage';
 export const contentKey = path => `content:${path}`;
 export const tokenKey = participantId => `token:${participantId}`;
 export const commitKey = participantId => `commit:${participantId}`;
+/** The captured output of one participant's command. */
+export const logKey = participantId => `log:${participantId}`;
 
 /**
  * One revision of one path.

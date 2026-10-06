@@ -247,6 +247,21 @@ const REVISIONS_PATH = process.env.INGRESS_REVISIONS_PATH || '/tmp/ingress-revis
 const BUILT_FROM_PATH = process.env.INGRESS_BUILT_FROM_PATH
   || path.join(workDir, '.ingress', 'built-from.json');
 
+// The participant's captured output.
+//
+// Bounded, and the tail kept rather than the head: a build failure lives at the end of the
+// log, and a bound that kept the beginning would send back the preamble and not the cause.
+const OUTPUT_PATH = process.env.INGRESS_OUTPUT_PATH || '/tmp/ingress-participant.log';
+const MAX_OUTPUT_BYTES = 256 * 1024;
+function readLog() {
+  let text;
+  try { text = fs.readFileSync(OUTPUT_PATH, 'utf8'); }
+  catch { return null; }                    // missing output is common: the command never ran
+  if (Buffer.byteLength(text) <= MAX_OUTPUT_BYTES) return text;
+  // Say what was dropped rather than hiding that the text is a slice.
+  return '...[truncated, head dropped]\n' + text.slice(-MAX_OUTPUT_BYTES);
+}
+
 // Files this reporter never sends, however the participant asks.
 //
 // Inlined rather than imported, because this string runs in a container and cannot import
@@ -436,6 +451,14 @@ async function commit() {
     participantId: participantId,
     participantExit: participantExit,
     baseKnown: baseKnown,
+    // The captured output, so the harness can read what its command did without a second
+    // round trip through the container. Absent when the command produced no output file.
+    //
+    // Without this an external caller drives the sandbox blind: the start route used to
+    // return only the commit verdict, and a failing build looked identical to a green one
+    // unless the caller already knew where in the container to look -- which it cannot,
+    // because the container is gone by then.
+    log: readLog(),
     files: files,
   });
 

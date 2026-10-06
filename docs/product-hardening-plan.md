@@ -39,7 +39,7 @@ code-hygiene tier.
 | 10 | Model workspace ownership | P3 | M | done — **buys attribution, not squat prevention**; see the item |
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
-| 13 | Make the fence survive a swarm | P0 | M | **leg 1 scoping done** (`e2e:swarm` 18/18); **leg 2 concurrency done** (`e2e:concurrency` 16/16, four 30s commands in 33s); **leg 3 content-per-revision done** (`e2e:content`) — the base survives; **the merge itself open** — see below |
+| 13 | Make the fence survive a swarm | P0 | M | **scoping, concurrency and content-per-revision done** (`e2e:swarm`, `e2e:concurrency`, `e2e:content`); **the trial says the swarm use case is not reachable as deployed** — no model inside the container; **output visibility shipped**; merge deferred to the trial's number |
 
 ## Already recorded as a limit
 
@@ -1247,11 +1247,75 @@ merge that is subtly wrong lands a file nobody wrote, which is worse than a refu
 true is that the base is retrievable, so the decision can be made and reviewed on its own
 merits.
 
+#### The trial: can this product host the swarm it exists for?
+
+Run (`npm run trial`, `scripts/trial.mjs`). It measures the substrate, because something else
+settles the more important question first.
+
+**The container cannot reach a model — measured, not read.** A probe from inside:
+
+```
+api.anthropic.com -> 000      api.openai.com -> 000
+example.com        -> 409     registry.npmjs.org -> 000
+DNS resolves fine. env: only INGRESS_TOKEN.
+```
+
+`000` is connection refused; `409` is the gate, which answers anything that is not a workspace
+route. `enableInternet` is false on top of that. **So there is no agent inside the product, and
+the merge — the whole point of the swarm fence — would arbitrate the output of something that
+cannot exist.**
+
+And the sandbox itself is offline in a way that needs stating: the seed excludes
+`node_modules`, and dependency fetching is impossible with `enableInternet` off, so every start
+is a cold offline build. The model is only buildable against vendored or image-baked
+dependencies.
+
+What the trial measured on the substrate, and what it means:
+
+```
+concurrent / disjoint: 4/6 admitted   25s      2 refused too_many_concurrent_starts
+serial     / disjoint: 6/6 admitted  190s
+concurrent / shared:   1/6 admitted   31s      5 refused lease_conflict
+```
+
+- **Concurrency is real** — 190s down to 25s. It is not decorative.
+- **One shared file costs five disjoint edits.** Each agent inserted at its own anchor line, so
+  git would have merged all six; five did not land. That is the merge's ceiling, and it is a
+  narrow one — it fixes the same-file case, and no other failure mode.
+
+The architecture the trial supports: **the model loop lives outside, the container is a
+deterministic build/test sandbox, and the fence arbitrates what lands.** Not what is built.
+
+#### Output visibility (the first gap the inversion exposed)
+
+An external harness driving `/start` got back a commit verdict and an exit code — no output.
+The launcher appended the participant's stdout to `/tmp/ingress-participant.log` and `cat`ed
+it into a stream no route read. A failing build and a green one returned identical response
+shapes.
+
+Fixed: the reporter now carries the captured log (bounded, tail kept, its own field) in the
+commit POST, the gate stores it, and `/start` returns it. Verified live — a command printing
+`BUILD_OK` comes back in `log`. This is why the launcher date-stamped three times before a
+failing build was diagnosable; it is now one.
+
+#### The trial's limits
+
+- The agents are scripted, not models. It measured contention and refusal cost, not output
+  quality — a trial with real agents cannot run until the output gap above is exercised
+  against a real agent harness, and the sandbox's offline constraint is acknowledged.
+- `too_many_concurrent_starts` is the cap of four doing its job, not a defect.
+
+**Next on this leg, not the same-file merge:** a real-agent trial through the output path.
+Everything else this document asks about — whether the fence beats serial, whether a thinner
+abstraction suffices, whether multi-file conflicts dominate — remains unmeasured, and that
+is the right thing to measure next.
+
+
 ## Verification gates per tier
 
 | Tier | Gate before closing the last item |
 | --- | --- |
-| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface. **Superseded:** the interface question, because the threat model was wrong — a trusted swarm, not a stranger with the token — so item 13 is the P0 work that matters, and two of its three legs are done. **Remaining:** content-per-revision, without which a swarm still collides where git would merge. |
+| P0 | Every public route refuses an unauthenticated caller; no `/internal/` route reaches a Durable Object from outside; `/start` refuses an over-long, non-terminating, over-concurrent or malformed request. Items 1, 2, 9 and the caps in 3 are confirmed deployed. **Not met:** item 3's command surface. **Superseded:** the interface question, because the threat model was wrong — a trusted swarm, not a stranger with the token — so item 13 is the P0 work that matters, and its three engineering legs are done. **Reframed by the trial:** no agent can exist inside the container, so the architecture is an outside harness driving a deterministic sandbox, and the same-file merge is deferred beyond the trial's number — five disjoint same-file edits did not land. |
 | P1 | No write path admits without a lease check; no path exists by which a caller asserts its own read; the documented guarantee matches the mechanism. **P1 is complete.** |
 | P2 | A participant command longer than the default lease commits successfully; a manifest-contract break fails without an account. **P2 is complete** — items 7 and 8, both observed on the deployment. |
 | P3 | A clean clone installs the client and deploys without reading `product/wrangler.jsonc`; the cost ceiling refuses at its bound. **The second half is met** — the ceiling refused at its bound on the deployment, and `/usage` is visible on an authenticated route. Item 11 is open. |

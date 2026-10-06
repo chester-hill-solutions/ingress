@@ -20,6 +20,7 @@ import { commitDelta } from '../usage.mjs';
 import {
   commitKey,
   manifestsKey,
+  logKey,
   MANIFEST_HISTORY,
 } from '../keys.mjs';
 import { storeRevisions } from '../content-store.mjs';
@@ -40,11 +41,19 @@ export async function commit(ctx, request) {
   if (!manifest.ok) {
     const refusal = { admitted: false, reason: manifest.reason, detail: manifest.detail ?? null };
     await ctx.state.storage.put(commitKey(participantId), refusal);
+    // Even a refused manifest carries the output that was there. A build that could not be
+    // parsed still wants to be read -- its log is the thing a harness acts on.
+    if (typeof body.log === 'string') await ctx.state.storage.put(logKey(participantId), body.log);
     return json(422, { ...refusal, error: 'refused' });
   }
 
   const exitCode = manifest.participantExit;
   await recordManifestRun(ctx, participantId, exitCode, manifest);
+
+  // The output is stored on every path. A participant that produces nothing to commit is the
+  // case the harness most wants to see the output of -- "empty" is a verdict, and the log is
+  // the evidence for it.
+  if (typeof body.log === 'string') await ctx.state.storage.put(logKey(participantId), body.log);
 
   if (manifest.files.length === 0) {
     const outcome = {

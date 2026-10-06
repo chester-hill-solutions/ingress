@@ -50,6 +50,7 @@ function runReporter({
   mode = 'commit',
   leaseId = '',
   leaseMs = 0,
+  outputPath,
 }) {
   const dir = mkdtempSync(join(tmpdir(), 'ingress-reporter-'));
   const script = join(dir, 'reporter.cjs');
@@ -85,6 +86,11 @@ ${CONTAINER_REPORTER}
       // keeps the two from drifting.
       INGRESS_LEASE_ID: leaseId,
       ...(leaseMs ? { INGRESS_LEASE_MS: String(leaseMs) } : {}),
+      // The deterministic default is *no* output file: a fresh path that will never exist.
+      // The production default, /tmp/ingress-participant.log, is a real file on any machine
+      // that has ever run a container — so a test that did not override this picks up
+      // output from real runs and fails depending on what someone ran last.
+      INGRESS_OUTPUT_PATH: outputPath ?? join(mkdtempSync(join(tmpdir(), 'ingress-noout-')), 'none.log'),
     },
   });
 
@@ -213,6 +219,25 @@ async function waitFor(predicate, budgetMs) {
   return predicate();
 }
 
+test('the captured output rides the commit the way the verdict does', () => {
+  // The output file the launcher appends the participant's stdout to. Without this field on
+  // the wire, `/start` answers with only a verdict and the harness is blind -- a failing
+  // build looks identical to a green one.
+  const dir = mkdtempSync(join(tmpdir(), 'ingress-reporter-'));
+  const workDir = join(dir, 'work');
+  mkdirSync(workDir, { recursive: true });
+  const revisions = join(dir, 'revisions.json');
+  writeFileSync(revisions, '{}');
+  const outputPath = join(dir, 'out.log');
+  writeFileSync(outputPath, 'compiling...\nsrc/app.ts:4:9 - error TS2339: Property slug does not exist\n');
+
+  const result = runReporter({ workDir, revisionsPath: revisions, outputPath });
+  const [call] = result.calls;
+  const manifest = JSON.parse(call.body);
+
+  assert.ok(manifest.log.includes('TS2339'), `the error survived transport, got: ${manifest.log}`);
+});
+
 test('the seed fetch carries the three gate headers and nothing else', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ingress-seed-'));
   const result = runReporter({
@@ -301,6 +326,10 @@ test('the commit sends a manifest the gate can parse', () => {
   assert.equal(manifest.participantId, 'builder');
   assert.equal(manifest.participantExit, 0);
   assert.equal(manifest.baseKnown, true);
+  // A harness driving this product is blind without the command's output -- the start route
+  // returns only the verdict. The reporter must therefore carry the captured log, and this
+  // is its exact place: absent is a bug, left silent because the field exists either way.
+  assert.equal(manifest.log, null, 'no output file means the log is null, not absent');
 
   assert.deepEqual(manifest.files.map(f => f.path), ['a.mjs', 'nested/b.mjs'],
     'paths must be sorted and relative');

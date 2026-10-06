@@ -21,7 +21,7 @@
  */
 
 import { json, readJSON } from '../http.mjs';
-import { tokenKey, commitKey, startsKey } from '../keys.mjs';
+import { tokenKey, commitKey, startsKey, logKey } from '../keys.mjs';
 import { lastContainerExit } from './commit.mjs';
 import { decideStart, waitBounded, StartRefusal, EXIT_GRACE_MS, TIMEOUT_EXIT_STATUS } from '../start.mjs';
 import { LeaseConflict, DEFAULT_LEASE_MS, RENEW_INTERVAL_MS } from '../lease.mjs';
@@ -260,6 +260,10 @@ const token = crypto.randomUUID();
   // refusal and one that has to go and ask.
   const verdict = (await ctx.state.storage.get(commitKey(participantId))) ?? null;
   const participantExit = await lastContainerExit(ctx.state);
+  // The command's captured output. Stored by the gate when the manifest arrived, so it is
+  // available whether the verdict was admitted, empty, or refused -- a failed build's log is
+  // the one a harness most wants.
+  const log = (await ctx.state.storage.get(logKey(participantId))) ?? null;
 
   return json(200, {
     participantId,
@@ -297,6 +301,10 @@ const token = crypto.randomUUID();
     // the useful number; this is the platform's phrasing of the same fact.
     ...(outcome.containerError ? { containerError: outcome.containerError } : {}),
     commit: verdict,
+    // Omitted when the participant produced no output file, rather than `null`. `null` and
+    // `""` look the same to a caller deciding whether to read `.log`, and the honest answer is
+    // "there was no output", which is better expressed as absence.
+    ...(log === null ? {} : { log }),
     usage: usageSnapshot(await ctx.usage(), ctx.ceiling()),
   });
 }
