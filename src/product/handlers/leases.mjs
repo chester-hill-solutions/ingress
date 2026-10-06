@@ -20,7 +20,7 @@ import {
   MAX_LEASE_PATHS,
 } from '../lease.mjs';
 import { json, readJSON } from '../http.mjs';
-import { readContentMap } from '../keys.mjs';
+import { readContentMap, contentKey } from '../keys.mjs';
 import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
 import { leaseConflictDelta } from '../usage.mjs';
 
@@ -421,23 +421,28 @@ export async function seed(ctx, participantId) {
   const now = Date.now();
   table.sweep(now);
 
-  const paths = [...new Set(
-    table.leasesFor(participantId, { now }).flatMap(lease => [...lease.paths])
+  // Every file in the workspace is delivered, so a build can run against the tree. Whether a
+  // participant may *change* a file is settled later, at commit time, by the lease check --
+  // an unleased write is refused there no matter what the seed showed. The old contract only
+  // shipped leased paths, which made the seed itself a gate; for the sandbox model that gate
+  // is backwards, and asking a build to fetch a manifest named "nothing to build" is not a
+  // security property. A read-only participant sees the workspace; it cannot write to it.
+  //
+  // `leasedPaths` still tells the caller what it is entitled to rely upon long-term: anything
+  // with an active lease, of any mode. A zero-lease participant gets the tree to understand
+  // but `leasedPaths: []` declares no protected access to any of it.
+  const leasedPaths = [...new Set(
+    table.leasesFor(participantId, { now }).flatMap(lease => [...lease.paths]),
   )].sort();
 
-  if (paths.length === 0) {
-    return { refused: false, participantId, files: [], revisions: {}, fingerprint: null, leasedPaths: [] };
-  }
-
-  const content = await readContentMap(ctx.state.storage, paths);
-
+  const paths = [...ledger.files.keys()].sort();
   const files = [];
   let bytes = 0;
   const oversized = [];
 
   for (const path of paths) {
     const record = ledger.files.get(path) ?? null;
-    const entry = content.get(path);
+    const entry = await ctx.state.storage.get(contentKey(path)).then(v => v ?? null);
     const encoded = entry?.contentBase64 ?? null;
     bytes += encoded ? encoded.length : 0;
     if (bytes > MAX_SEED_BYTES) oversized.push(path);
@@ -465,7 +470,7 @@ export async function seed(ctx, participantId) {
       budgetBytes: MAX_SEED_BYTES,
       requestedPaths: paths.length,
       exceedingPaths: oversized.slice(0, 32),
-      detail: `the leased tree needs more than ${MAX_SEED_BYTES} bytes; release some paths and check them out again`,
+      detail: `the workspace tree needs more than ${MAX_SEED_BYTES} bytes; trim the fixture or the max-seed setting`,
     };
   }
 
@@ -479,6 +484,6 @@ export async function seed(ctx, participantId) {
     // compares what the participant started from against what is there now.
     revisions: Object.fromEntries(files.map(file => [file.path, file.revision])),
     fingerprint: ledger.decisionCut(participantId).fingerprint,
-    leasedPaths: paths,
+    leasedPaths,
   };
 }

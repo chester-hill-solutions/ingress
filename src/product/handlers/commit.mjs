@@ -88,8 +88,20 @@ export async function commit(ctx, request) {
   const table = await ctx.leases();
   const now = Date.now();
   table.sweep(now);
+  // Whether a path counts as a write is what `no_change` already knows: identical bytes
+  // are not a write. Apply the same rule before the lease check.
+  //
+  // A whole-tree walk commits every file the participant has, not only the ones it
+  // changed — `package.json`, `tsconfig.json`, and the edited source are all in the
+  // same manifest. Requiring a lease on an *unchanged* byte recurrence is what
+  // blocked every integration test, since a fresh container re-walks its seeded tree
+  // wholesale.
+  const changedFiles = verified.files.filter(file => {
+    const target = ledger.files.get(file.path);
+    return target == null || target.contentHash !== file.contentHash;
+  });
   const held = table.leasesFor(participantId, { now });
-  const unleased = verified.files
+  const unleased = changedFiles
     .filter(file => !held.some(entry => entry.mode === 'write' && entry.paths.has(file.path)))
     .map(file => file.path);
 

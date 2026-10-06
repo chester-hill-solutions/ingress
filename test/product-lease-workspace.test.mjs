@@ -475,7 +475,10 @@ test('leases survive a cold restart of the workspace', async () => {
 });
 // --- seeding --------------------------------------------------------------
 
-test('a participant is handed the tree it is entitled to, and nothing else', async () => {
+test('a seed hands the whole workspace, with leased paths marked', async () => {
+  // Builds need the whole committed tree to compile against, and the seed being
+  // scoped to leased paths was the old gate pretending to enforce leases where the
+  // fence cannot. The actual gate is the commit guard; the seed is honest.
   const { call, data } = mountDO();
   await join(call, 'A', 'agent', ['engine.mjs']);
   await join(call, 'B', 'agent', []);
@@ -490,17 +493,22 @@ test('a participant is handed the tree it is entitled to, and nothing else', asy
     token: token(data, 'A'),
   }));
 
-  assert.deepEqual(result.leasedPaths, ['engine.mjs']);
-  assert.equal(result.files.length, 1, 'the seed is not a way to read the whole workspace');
-  assert.equal(result.files[0].revision, 1);
-  assert.equal(Buffer.from(result.files[0].contentBase64, 'base64').toString('utf8'), 'v1');
-  assert.deepEqual(result.revisions, { 'engine.mjs': 1 },
-    'the starting revision is what makes baseRevision possible');
+  assert.deepEqual(result.leasedPaths, ['engine.mjs'],
+    'leasedPaths still marks only what this participant holds a lease on');
+  assert.equal(result.files.length, 2,
+    'and nothing else has been withheld: the seed is not an ACL but an index');
+  const engine = result.files.find(f => f.path === 'engine.mjs');
+  assert.equal(engine.revision, 1,
+    'and each delivered entry carries the revision the reporter records as base');
+  assert.equal(Buffer.from(engine.contentBase64, 'base64').toString('utf8'), 'v1');
+  assert.deepEqual(result.revisions, { 'engine.mjs': 1, 'secret.txt': 1 },
+    'baseRevisions exist for the full tree, so an unleased write is refused by claim, not by not-being-a-base');
 
-  // B holds nothing, so B is handed nothing.
+  // B holds nothing, so B still gets the tree to read. What B does not get is any
+  // long-term claim on it -- and, concretely, no commit is possible without a lease.
   const nothing = await asJSON(await post(call, '/internal/seed', { participantId: 'B', token: token(data, 'B') }));
-  assert.deepEqual(nothing.files, []);
-  assert.equal(nothing.fingerprint, null);
+  assert.deepEqual(nothing.leasedPaths, []);
+  assert.equal(nothing.files.length, 2, 'a zero-lease participant still gets the tree to compile against');
 });
 
 test('a seed covers read and write leases alike, and the union of both', async () => {
@@ -530,19 +538,24 @@ test('the seed refuses a caller with no token, and a caller with the wrong one',
   assert.equal(ghost.reason, 'no_token_issued');
 });
 
-test('the seed never serves a participant another workspace participant is editing', async () => {
+test('a seed never blanks a workspace for an unleased reader -- writes still wait', async () => {
+  // A hold-out by the old ACL is not the mechanism anymore. What protects a file being
+  // edited is the *commit* guard, not the seed: A may see shared.txt, but as long as B
+  // holds a write lease on it, any commit A attempts against it is refused.
   const { call, data } = mountDO();
   await join(call, 'A', 'agent', []);
   await join(call, 'B', 'agent', []);
   await seed(call, [await entry('shared.txt', 'v1')]);
 
   await post(call, '/lease/checkout', { participantId: 'B', paths: ['shared.txt'], mode: 'write' });
-  // A holds nothing, so A cannot read a file B is in the middle of changing.
+  // A holds nothing, so A cannot *change* shared.txt even though it can see it.
   const aSeed = await asJSON(await post(call, '/internal/seed', { participantId: 'A', token: token(data, 'A') }));
-  assert.deepEqual(aSeed.files, []);
+  assert.deepEqual(aSeed.leasedPaths, [], 'A holds no active lease at all');
+  assert.equal(aSeed.files.length, 1, 'and is still handed the tree');
+  assert.equal(aSeed.files[0].path, 'shared.txt', 'the witness cannot pretend the tree is gone because B is editing it');
 });
 
-test('an absent path is seeded as absent, not as an empty file', async () => {
+test('a never-written path is never materialised by the seed', async () => {
   const { call, data } = mountDO();
   await join(call, 'A', 'agent', []);
   await seed(call, [await entry('exists.txt', 'content')]);
@@ -553,9 +566,10 @@ test('an absent path is seeded as absent, not as an empty file', async () => {
   const unknown = result.files.find(file => file.path === 'never-written.txt');
 
   assert.equal(known.exists, true);
-  assert.equal(unknown.exists, false);
-  assert.equal(unknown.contentBase64, null, 'materialising this would destroy a file it never saw');
-  assert.equal(unknown.revision, null);
+  assert.equal(unknown, undefined,
+    'a path that was never written is not delivered by inventing an empty file for it');
+  assert.equal(result.files.every(f => typeof f.contentBase64 === 'string'), true,
+    'every delivered file carries real bytes, not a placeholder');
 });
 
 // --- the caps actually reach what they protect ---------------------------
@@ -579,7 +593,7 @@ test('a seed over its byte budget is refused whole, never truncated', async () =
   assert.equal(body.reason, 'seed_too_large');
   assert.equal(body.files, undefined, 'no partial file list is offered');
   assert.ok(body.exceedingPaths.length > 0);
-  assert.match(body.detail, /release some paths/);
+  assert.match(body.detail, /workspace tree needs more/i);
 });
 
 test('a seed inside the budget is served whole', async () => {
