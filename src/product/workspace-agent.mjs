@@ -43,6 +43,7 @@ import { executorName } from './slots.mjs';
 import { readIndex, readRevision } from './content-store.mjs';
 import * as commitHandler from './handlers/commit.mjs';
 import * as leaseHandler from './handlers/leases.mjs';
+import * as cacheHandler from './handlers/cache.mjs';
 import * as containerHandler from './handlers/container.mjs';
 import * as bootstrapHandler from './handlers/bootstrap.mjs';
 
@@ -221,6 +222,14 @@ export class WorkspaceAgent {
     }
     if (url.pathname === '/internal/lease/release' && method === 'POST') {
       return leaseHandler.containerRelease(this.ctx, request);
+    }
+    // The build cache. Not workspace content, so not fenced: a cache miss costs time, not
+    // correctness. See `handlers/cache.mjs`.
+    if (url.pathname === '/internal/cache' && method === 'GET') {
+      return cacheHandler.get(this.ctx, request);
+    }
+    if (url.pathname === '/internal/cache' && method === 'POST') {
+      return cacheHandler.put(this.ctx, request);
     }
     if (url.pathname === '/gate-log') {
       // Was public. Removed: an unauthenticated route on a public worker that

@@ -33,6 +33,13 @@
   "services": [
     { "binding": "GATE", "service": "ingress-workspace", "entrypoint": "CommitGate" }
   ],
+  // The build cache. Artifacts a participant produces that are not workspace content --
+  // `node_modules`, compiler caches -- so a later `/start` does not pay the install cost
+  // again. Not versioned, not fenced, and not stored in the Durable Object: a
+  // `node_modules` is far past the 128 KiB per-value limit of DO storage.
+  "r2_buckets": [
+    { "binding": "CACHE", "bucket_name": "ingress-cache" }
+  ],
   // WORKSPACE_TOKEN is a secret, not a var, and is deliberately absent here.
   //
   // Every `/w/:workspace` route requires it as `x-ingress-workspace-token`. The router

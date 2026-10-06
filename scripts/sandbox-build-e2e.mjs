@@ -52,6 +52,9 @@ const brokenBuild = [
 /** The same build, after the fix. */
 const fixedBuild = [
   'cd /workspace',
+  // Proves the cache, not the install: a second cold container with a warm cache has
+  // `node_modules` before this command runs.
+  'if [ -x node_modules/.bin/tsc ]; then echo CACHE_HIT; else echo CACHE_MISS; fi',
   'npm install --no-audit --no-fund 2>&1 | tail -1 || true',
   'npx tsc --noEmit && echo "TSC_CLEAN"',
 ].join('\n');
@@ -92,6 +95,11 @@ const broken = await post('/start', {
   kind: 'agent',
   writePaths: [],
   runMs: 240_000,
+  // Declare the cache on every run. The third build must find `node_modules` already
+  // restored rather than installing it again -- that is the whole point of the cache, and
+  // the assertion at step 3 is what makes it a claim rather than a hope.
+  cachePaths: ['node_modules'],
+  cacheKey: 'sandbox-probe',
   participantCommand: brokenBuild,
 });
 const brokenLog = broken.body.log ?? '';
@@ -110,6 +118,8 @@ const fixed = await post('/start', {
   kind: 'agent',
   writePaths: ['src/index.ts'],
   runMs: 240_000,
+  cachePaths: ['node_modules'],
+  cacheKey: 'sandbox-probe',
   participantCommand: "sed -i 's/\"seven\"/7/' /workspace/src/index.ts",
 });
 if (fixed.body.log) {
@@ -136,6 +146,8 @@ const rerun = await post('/start', {
   kind: 'agent',
   writePaths: [],
   runMs: 240_000,
+  cachePaths: ['node_modules'],
+  cacheKey: 'sandbox-probe',
   participantCommand: fixedBuild,
 });
 const cleanLog = rerun.body.log ?? '';
@@ -144,9 +156,15 @@ console.log(logPreview(cleanLog).split('\n').slice(0, 8).join('\n') + '\n');
 
 expectResult('the typecheck passed this time', cleanLog.includes('TSC_CLEAN'),
   'a harness can only assert on what it can read, so the proof travels as bytes');
-expectResult('and the build ran against the live registry, not a vendored copy',
-  /added [1-9]/i.test(cleanLog) || /up to date/.test(cleanLog) || cleanLog.includes('TSC_CLEAN'),
-  'the install step was reached -- the container is not fetching from a baked-in tree');
+expectResult('and the dependency tree survived from the previous start',
+  cleanLog.includes('CACHE_HIT'),
+  'a cold container with a warm cache is the difference between a usable loop and one that re-installs every step');
+// The registry assertion belongs on the *first* run, which is the one with a cold cache.
+// Asserting it here would pass on `TSC_CLEAN` even if nothing had ever been fetched -- the
+// cache makes the second install a no-op, so this run cannot prove reachability.
+expectResult('and the first, cold run fetched from the live registry',
+  /added [1-9]\d* package/i.test(brokenLog),
+  'the first start has no cache, so a real install is the only way it could succeed');
 
 finish(
   results,

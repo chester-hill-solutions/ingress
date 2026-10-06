@@ -69,6 +69,10 @@ const PERMITTED = new Map([
   ['/commit', { method: 'POST', forwards: '/internal/commit' }],
   ['/lease/heartbeat', { method: 'POST', forwards: '/internal/lease/heartbeat' }],
   ['/lease/release', { method: 'POST', forwards: '/internal/lease/release' }],
+  // The build cache. A binary body in both directions, and the only route here that is
+  // not JSON. It carries no workspace content -- see `handlers/cache.mjs` -- so it is a
+  // transport, not an admission, and the fence is not involved.
+  ['/cache', { methods: ['GET', 'POST'], forwards: '/internal/cache' }],
 ]);
 
 export class CommitGate extends WorkerEntrypoint {
@@ -115,7 +119,10 @@ export class CommitGate extends WorkerEntrypoint {
         { status: 409, headers: { 'content-type': 'application/json' } },
       );
     }
-    if (request.method !== permitted.method) {
+    if (!permitted.methods && request.method !== permitted.method) {
+      return new Response('method_not_allowed', { status: 405 });
+    }
+    if (permitted.methods && !permitted.methods.includes(request.method)) {
       return new Response('method_not_allowed', { status: 405 });
     }
 
@@ -148,6 +155,41 @@ export class CommitGate extends WorkerEntrypoint {
     }
 
     const stub = this.env.WORKSPACE.get(this.env.WORKSPACE.idFromName(workspace));
+
+    // The build cache: binary in both directions, so it cannot go through `readJSON`.
+    // Streamed rather than buffered -- a `node_modules` tarball is the one payload here
+    // that can be tens of megabytes, and reading it into the gate's memory to re-emit it
+    // would be the difference between a cache and an out-of-memory.
+    if (url.pathname === '/cache') {
+      const response = await stub.fetch(`https://workspace.internal/internal/cache${url.search}`, {
+        method: request.method,
+        headers: {
+          'content-type': request.headers.get('content-type') ?? 'application/octet-stream',
+          'x-ingress-participant': participantId,
+          'x-ingress-token': token,
+          // The workspace the gate resolved, not one the body claims. A cache is stored per
+          // workspace, so this is what keeps one workspace's `node_modules` out of another's.
+          'x-ingress-workspace': workspace,
+        },
+        body: request.method === 'POST' ? request.body : undefined,
+        duplex: 'half',
+      });
+      await this.record({
+        workspace,
+        participantId,
+        path: url.pathname,
+        method: request.method,
+        outcome: 'cache',
+        status: response.status,
+      });
+      return new Response(response.body, {
+        status: response.status,
+        headers: {
+          'content-type': response.headers.get('content-type') ?? 'application/octet-stream',
+          'x-ingress-gate': 'cache',
+        },
+      });
+    }
 
     if (url.pathname === '/seed') {
       // The Durable Object checks the token against what it issued when it started

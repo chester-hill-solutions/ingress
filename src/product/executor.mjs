@@ -103,6 +103,10 @@ function containerEnv(run) {
     // command slightly less than was asked for.
     INGRESS_RUN_SECONDS: String(Math.ceil((run.runMs ?? 0) / 1000)),
     INGRESS_KILL_GRACE_SECONDS: String(KILL_GRACE_SECONDS),
+    // The declared build cache. Empty means the launcher skips both cache steps entirely,
+    // so a workspace that does not want a cache pays nothing for the feature existing.
+    INGRESS_CACHE_PATHS: (run.cachePaths ?? []).join(','),
+    INGRESS_CACHE_KEY: run.cacheKey ?? 'default',
   };
 }
 

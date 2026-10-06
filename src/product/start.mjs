@@ -239,6 +239,45 @@ export function decideStart(request, activeSlots = [], now = Date.now()) {
     }
   }
 
+  // The build cache the participant declares. Directories, workspace-relative, that should
+  // survive to the next start: `node_modules`, a compiler cache. Optional, and empty means
+  // the launcher skips both cache steps.
+  //
+  // Validated with the same shape rule as a write path, and for a sharper reason: these
+  // strings reach `tar` as arguments. A path that is not a plain relative name is a way to
+  // hand `tar` an absolute path or a flag, and `tar` would run it.
+  const cachePaths = request.cachePaths === undefined ? [] : request.cachePaths;
+  if (!Array.isArray(cachePaths)) {
+    throw new StartRefusal('invalid_cache_paths', {
+      participantId,
+      detail: 'cachePaths must be an array of workspace-relative directory paths',
+    });
+  }
+  if (cachePaths.length > MAX_LEASE_PATHS) {
+    throw new StartRefusal('too_many_cache_paths', {
+      participantId,
+      requested: cachePaths.length,
+      cap: MAX_LEASE_PATHS,
+    });
+  }
+  for (const path of cachePaths) {
+    if (typeof path !== 'string' || Buffer.byteLength(path, 'utf8') > MAX_PATH_BYTES || !WORKSPACE_PATH.test(path)) {
+      throw new StartRefusal('invalid_cache_path', {
+        participantId,
+        cachePath: typeof path === 'string' ? path : null,
+        detail: 'a cache path must be a workspace-relative path; it is passed to tar',
+      });
+    }
+  }
+
+  const cacheKey = request.cacheKey === undefined ? 'default' : request.cacheKey;
+  if (typeof cacheKey !== 'string' || !/^[A-Za-z0-9._-]{1,128}$/.test(cacheKey) || cacheKey === '.' || cacheKey === '..') {
+    throw new StartRefusal('invalid_cache_key', {
+      participantId,
+      detail: 'cacheKey must be 1-128 characters of letters, digits, dot, underscore or dash',
+    });
+  }
+
   // Abandoned slots are pruned before counting, not after. A Durable Object can be
   // evicted mid-run, and the next instance must not inherit a full quota from a
   // process that no longer exists. Anything past its deadline is treated as gone.
@@ -260,6 +299,11 @@ export function decideStart(request, activeSlots = [], now = Date.now()) {
     // Deduplicated here rather than in the table, so the caller is told exactly how many
     // paths it now holds and the grant cannot depend on array identity.
     writePaths: [...new Set(writePaths)],
+    // The cache the executor will restore before the command and save after it. Deduplicated
+    // for the same reason `writePaths` is: two entries naming one directory would tar it
+    // twice, and the archive would carry a duplicate.
+    cachePaths: [...new Set(cachePaths)],
+    cacheKey,
     releasedAt: now + SLOT_TTL_MS,
     released: live.filter(expiry => expiry > now),
   };

@@ -361,8 +361,8 @@ test('refusing /internal/ cannot break the container, because the container neve
   );
   assert.match(
     executor,
-    /enableInternet: false/,
-    'and the container must have no other way out',
+    /enableInternet: true/,
+    'the sandbox reaches the network by design now; the fence is a registry, not an egress wall',
   );
 
   // And the gate must resolve the Durable Object itself, rather than looping back

@@ -200,6 +200,11 @@ const token = crypto.randomUUID();
       leaseId: startLease?.leaseId ?? '',
       leaseMs: startLease?.leaseMs ?? DEFAULT_LEASE_MS,
       renewIntervalMs: RENEW_INTERVAL_MS,
+      // The build cache the participant declared. Not fenced, not versioned -- it is an
+      // optimisation, so the executor carries it without the arbiter inspecting it beyond
+      // the path validation `decideStart` already did.
+      cachePaths: decision.cachePaths,
+      cacheKey: decision.cacheKey,
       // Past `runMs`, not at it: the launcher kills the command at `runMs` measured from when
       // *it* starts, which is after container boot, so the container outlives `runMs` by the
       // boot duration. The executor waits the grace period too, so this object stops watching

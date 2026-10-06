@@ -116,6 +116,14 @@ export function launcherScript({
     '# is a legitimate state, and refusing to work would be worse than working blind.',
     'node /tmp/ingress-reporter.cjs --seed >>/tmp/ingress-participant.log 2>&1',
     '',
+    '# Step 1b: restore the build cache, so a second start does not re-install.',
+    '#',
+    '# Before the participant runs, so `npm test` finds `node_modules` already there. A miss',
+    '# is normal and logged; the run proceeds either way.',
+    'if [ -n "$INGRESS_CACHE_PATHS" ]; then',
+    '  node /tmp/ingress-reporter.cjs --cache-restore >>/tmp/ingress-participant.log 2>&1',
+    'fi',
+    '',
     '# Step 2: keep the write lease alive while the participant runs.',
     '#',
     '# Only when the workspace issued one at /start. The lease it issued is short by',
@@ -151,6 +159,15 @@ export function launcherScript({
     '  sh -c "$PARTICIPANT_COMMAND" >>/tmp/ingress-participant.log 2>&1',
     'fi',
     'PARTICIPANT_EXIT=$?',
+    '',
+    '# Step 3b: save the build cache for the next start.',
+    '#',
+    '# Before the commit report, and after the participant ran, so what gets cached is what',
+    '# the participant actually installed. It is not part of the commit: a cache carries no',
+    '# revision and the fence never sees it.',
+    'if [ -n "$INGRESS_CACHE_PATHS" ]; then',
+    '  node /tmp/ingress-reporter.cjs --cache-save >>/tmp/ingress-participant.log 2>&1',
+    'fi',
     '',
     '# Step 4: report what changed, carrying the revisions the participant started from.',
     '#',
@@ -197,6 +214,7 @@ export const CONTAINER_REPORTER = String.raw`
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { spawnSync } = require('child_process');
 
 /**
  * Four modes, chosen by the first argument:
@@ -214,7 +232,9 @@ const arg = process.argv[2];
 const SEED_MODE = arg === '--seed';
 const RENEW_MODE = arg === '--renew';
 const RELEASE_MODE = arg === '--release';
-const participantExit = SEED_MODE || RENEW_MODE || RELEASE_MODE
+const CACHE_RESTORE_MODE = arg === '--cache-restore';
+const CACHE_SAVE_MODE = arg === '--cache-save';
+const participantExit = SEED_MODE || RENEW_MODE || RELEASE_MODE || CACHE_RESTORE_MODE || CACHE_SAVE_MODE
   ? null
   // Number(arg) is NaN for anything unrecognised, and NaN is what the gate would store
   // as an exit code. Absent rather than silently coerced to zero: zero means success.
@@ -264,6 +284,15 @@ function readLog() {
   // Say what was dropped rather than hiding that the text is a slice.
   return '...[truncated, head dropped]\n' + text.slice(-MAX_OUTPUT_BYTES);
 }
+
+// The build cache: directories whose contents make the next start cheap.
+//
+// Declared by the caller, not guessed. A cache is an optimisation, so the failure mode is
+// "the next run installs again" and never "the workspace is wrong" -- which is why none of
+// the cache code touches the fence.
+const CACHE_PATHS = (process.env.INGRESS_CACHE_PATHS || '')
+  .split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+const CACHE_KEY = process.env.INGRESS_CACHE_KEY || 'default';
 
 // Files this reporter never sends, however the participant asks.
 //
@@ -477,6 +506,77 @@ async function commit() {
 }
 
 /**
+ * Restore the declared cache, if the workspace has one.
+ *
+ * A miss is normal -- the first start of a workspace has no cache -- and is logged, not
+ * treated as a failure. The whole point is that a cache is optional, so a restore that
+ * cannot happen costs a slow start and never a failed one.
+ */
+async function cacheRestore() {
+  if (CACHE_PATHS.length === 0) return;
+  let res;
+  try {
+    res = await fetch('http://workspace.internal/cache?key=' + encodeURIComponent(CACHE_KEY), { headers: headers() });
+  } catch (error) {
+    console.log('INGRESS-CACHE-RESTORE-UNREACHABLE ' + (error && error.message));
+    return;
+  }
+  if (res.status === 404) {
+    console.log('INGRESS-CACHE-MISS ' + JSON.stringify({ key: CACHE_KEY }));
+    return;
+  }
+  if (!res.ok) {
+    console.log('INGRESS-CACHE-RESTORE-REFUSED ' + res.status + ' ' + await res.text());
+    return;
+  }
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const tarball = '/tmp/ingress-cache-in.tgz';
+  fs.writeFileSync(tarball, buffer);
+  const extracted = spawnSync('tar', ['xzf', tarball, '-C', workDir], { encoding: 'utf8' });
+  console.log('INGRESS-CACHE-RESTORED ' + JSON.stringify({
+    key: CACHE_KEY,
+    bytes: buffer.length,
+    tarStatus: extracted.status,
+  }));
+}
+
+/**
+ * Save the declared cache for the next start.
+ *
+ * Tarred from the work directory. A path that does not exist makes tar exit non-zero, and
+ * that is skipped with a reason rather than retried -- there is nothing to cache, which is
+ * a legitimate outcome for a project that never installed anything.
+ */
+async function cacheSave() {
+  if (CACHE_PATHS.length === 0) return;
+  const tarball = '/tmp/ingress-cache-out.tgz';
+  const packed = spawnSync('tar', ['czf', tarball, '-C', workDir].concat(CACHE_PATHS), { encoding: 'utf8' });
+  if (packed.status !== 0) {
+    console.log('INGRESS-CACHE-SAVE-SKIPPED ' + JSON.stringify({
+      status: packed.status,
+      stderr: (packed.stderr || '').slice(0, 200),
+    }));
+    return;
+  }
+  let buffer;
+  try { buffer = fs.readFileSync(tarball); }
+  catch { console.log('INGRESS-CACHE-SAVE-SKIPPED no tarball was written'); return; }
+
+  let res;
+  try {
+    res = await fetch('http://workspace.internal/cache?key=' + encodeURIComponent(CACHE_KEY), {
+      method: 'POST',
+      headers: Object.assign(headers(), { 'content-type': 'application/gzip' }),
+      body: buffer,
+    });
+  } catch (error) {
+    console.log('INGRESS-CACHE-SAVE-UNREACHABLE ' + (error && error.message));
+    return;
+  }
+  console.log('INGRESS-CACHE-SAVED ' + res.status + ' ' + await res.text());
+}
+
+/**
  * Keep the lease alive until this process is killed.
  *
  * Sleeps first, then renews: the workspace issued the lease moments ago and it is not
@@ -550,6 +650,8 @@ function sleep(ms) {
 (async function () {
   try {
     if (SEED_MODE) await seed();
+    else if (CACHE_RESTORE_MODE) await cacheRestore();
+    else if (CACHE_SAVE_MODE) await cacheSave();
     else if (RENEW_MODE) await renew(Number(process.argv[3]) || 15000);
     else if (RELEASE_MODE) await release();
     else await commit();

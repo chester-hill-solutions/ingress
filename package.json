@@ -20,7 +20,7 @@
     "e2e:concurrency": "node scripts/concurrency-e2e.mjs",
     "e2e:content": "node scripts/content-e2e.mjs",
     "trial": "node scripts/trial.mjs",
-    "sandbox:test": "node scripts/sandbox-test.mjs",
+    "sandbox:test": "node scripts/sandbox-build-e2e.mjs",
     "squad:real": "node scripts/squad.mjs --real",
     "play": "node scripts/play-game.mjs",
     "benchmark:real": "node scripts/benchmark.mjs --real",
