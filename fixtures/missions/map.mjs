@@ -42,7 +42,7 @@ styles.mjs: themeNames(documents) -> theme keys whose document has a sources.bas
 
 measure.mjs: haversineMeters(a,b) -> great-circle metres for {lon,lat} using an Earth radius of 6371008.8. pathLengthMeters(points) -> the summed path, 0 for fewer than two points. etaSeconds(meters,speedKph) -> metres divided by speedKph converted to m/s; throw on a non-finite or negative distance or a non-positive speed.
 
-graph.mjs: buildGraph(roads) -> {nodes,adjacency} where adjacency maps every node id to a symmetric list of {to,road}; throw on a duplicate node id, a non-finite coordinate, or an edge naming an unknown node. nearestNode(graph,{lon,lat}) -> the id of the node with the smallest great-circle distance, ties broken by ascending id; null for an empty graph.
+graph.mjs: buildGraph(roads) -> {nodes,adjacency}, where nodes is an array of {id,name,lon,lat} in the order given and adjacency maps every node id to a symmetric list of {to,road}; throw on a duplicate node id, a non-finite coordinate, or an edge naming an unknown node. nearestNode(graph,{lon,lat}) -> the id of the node with the smallest great-circle distance, ties broken by ascending id; null for an empty graph.
 
 routing.mjs: shortestRoute(graph,fromId,toId) -> {nodes,meters} for the least-distance path, where meters is the summed great-circle length of its edges, or null when a node is unknown or no path exists. The result must be deterministic: where two paths tie, the one whose node ids sort first wins. A route must not repeat a node.
 
@@ -50,7 +50,7 @@ directions.mjs: bearingDegrees(a,b) -> the initial bearing in [0,360) from a to 
 
 geocode.mjs: both functions read the FeatureCollection directly and return a fresh {name,lon,lat}. findPlace(places,query) -> the best match, or null; an exact case-insensitive name wins, then the shortest name with the query as a prefix, then the shortest name containing it, ties by ascending name. nearestPlace(places,{lon,lat}) -> the nearest place by great-circle distance, ties by ascending name, or null for no places.
 
-view.mjs: renderNavigation({theme,origin,destination,route,directions,etaSeconds,attribution,places,style}) -> a complete HTML string with exactly one <main>, an <h1>, a map container <div id="map" data-theme="THEME">, a route form (method get) whose origin and destination text inputs each have an id and a matching <label for>, the escaped origin and destination with the distance in kilometres and the ETA in minutes, an ordered escaped turn list, and the escaped attribution notice with its source links. Escape all dynamic content; no data may become markup.
+view.mjs: renderNavigation({theme,origin,destination,route,directions,etaSeconds,attribution,places,style}) -> a complete HTML string with exactly one <main>, an <h1>, a map container <div id="map" data-theme="THEME">, a route form (method get) whose origin and destination text inputs each have an id and a matching <label for>, the escaped origin and destination with the distance in kilometres and the ETA in minutes, an ordered escaped turn list, and the escaped attribution combined notice (record.combined) with its source links. Escape all dynamic content; no data may become markup.
 
 app.mjs: runScenario({documents,places,roads,attribution,theme='light',archiveUrl,speedKph=90,size,commands=[]}) -> async {responses,state,html}. state {theme,archiveUrl,origin,destination,route,directions,etaSeconds}. commands {id,op,...}: route{origin,destination}->{origin,destination,route,directions,etaSeconds}, geocoding each name and snapping it to the nearest graph node, with error code PLACE_NOT_FOUND for an unknown name and NO_ROUTE when no path exists; geocode{query}->{place}; theme{theme}->{theme}. An unknown op is UNKNOWN_OP; invalid input is INVALID; a rejected command leaves state unchanged. html is renderNavigation over the current state and the built style. No model, author or team identifiers in the view.`;
 
@@ -217,14 +217,20 @@ async function gradeDrive(fixture, { invoke, check }) {
   };
   const need = result => { assert.ok(result.ok, `invocation failed: ${result.error?.message}`); return result.value; };
 
+  // Dependencies are guarded rather than asserted at this point. `need()` throws, and a
+  // throw here would abandon the whole evaluation -- one unimplemented module would report
+  // every other contract as failed, which is a lie about the submission and makes the
+  // result unreadable. A failed dependency instead marks its dependents failed and the
+  // rest of the grading proceeds.
+  const failed = error => ({ ok: false, error });
   const names = await call('styles.mjs', 'themeNames', [documents]);
   const built = await call('styles.mjs', 'buildStyle', [documents, { theme: 'light', archiveUrl: ARCHIVE }]);
   const order = await call('styles.mjs', 'layerOrder', [light]);
   const graph = await call('graph.mjs', 'buildGraph', [roads]);
-  const nearest = await call('graph.mjs', 'nearestNode', [need(graph), { lon: -79.3733, lat: 43.7417 }]);
-  const route = await call('routing.mjs', 'shortestRoute', [need(graph), 'toronto', 'ottawa']);
+  const nearest = graph.ok ? await call('graph.mjs', 'nearestNode', [graph.value, { lon: -79.3733, lat: 43.7417 }]) : failed(graph.error);
+  const route = graph.ok ? await call('routing.mjs', 'shortestRoute', [graph.value, 'toronto', 'ottawa']) : failed(graph.error);
   const unreachable = await call('routing.mjs', 'shortestRoute', [disconnected, 'a', 'b']);
-  const steps = await call('directions.mjs', 'directionsFor', [need(graph), need(route)]);
+  const steps = graph.ok && route.ok ? await call('directions.mjs', 'directionsFor', [graph.value, route.value]) : failed(route.error ?? graph.error);
   const found = await call('geocode.mjs', 'findPlace', [places, 'timm']);
   const near = await call('geocode.mjs', 'nearestPlace', [places, { lon: -79.3733, lat: 43.7417 }]);
   const meters = await call('measure.mjs', 'haversineMeters', [{ lon: -79.3733, lat: 43.7417 }, { lon: -75.58429, lat: 45.33339 }]);
