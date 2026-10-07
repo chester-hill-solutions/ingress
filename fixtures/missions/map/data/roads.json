@@ -1,0 +1,322 @@
+{
+ "nodes": [
+  {
+   "id": "barrie",
+   "name": "Barrie",
+   "lon": -79.67697,
+   "lat": 44.37124
+  },
+  {
+   "id": "blind-river",
+   "name": "Blind River",
+   "lon": -82.87795,
+   "lat": 46.30227
+  },
+  {
+   "id": "brockville",
+   "name": "Brockville",
+   "lon": -75.6855,
+   "lat": 44.59733
+  },
+  {
+   "id": "cochrane",
+   "name": "Cochrane",
+   "lon": -81.0630555,
+   "lat": 49.1747223
+  },
+  {
+   "id": "cornwall",
+   "name": "Cornwall",
+   "lon": -74.7263889,
+   "lat": 45.0263889
+  },
+  {
+   "id": "elliot-lake",
+   "name": "Elliot Lake",
+   "lon": -82.6572222,
+   "lat": 46.3811111
+  },
+  {
+   "id": "greater-sudbury",
+   "name": "Greater Sudbury",
+   "lon": -81.06958,
+   "lat": 46.57789
+  },
+  {
+   "id": "hamilton",
+   "name": "Hamilton",
+   "lon": -79.8418,
+   "lat": 43.24504
+  },
+  {
+   "id": "kenora",
+   "name": "Kenora",
+   "lon": -94.5066667,
+   "lat": 49.7638889
+  },
+  {
+   "id": "kingston",
+   "name": "Kingston",
+   "lon": -76.5108334,
+   "lat": 44.2347222
+  },
+  {
+   "id": "kitchener",
+   "name": "Kitchener",
+   "lon": -80.4727778,
+   "lat": 43.4186111
+  },
+  {
+   "id": "london",
+   "name": "London",
+   "lon": -81.2325,
+   "lat": 42.9675
+  },
+  {
+   "id": "marathon",
+   "name": "Marathon",
+   "lon": -86.38051,
+   "lat": 48.71733
+  },
+  {
+   "id": "markham",
+   "name": "Markham",
+   "lon": -79.2634,
+   "lat": 43.87653
+  },
+  {
+   "id": "mississauga",
+   "name": "Mississauga",
+   "lon": -79.65711,
+   "lat": 43.58566
+  },
+  {
+   "id": "nipigon",
+   "name": "Nipigon",
+   "lon": -88.266111,
+   "lat": 49.011389
+  },
+  {
+   "id": "north-bay",
+   "name": "North Bay",
+   "lon": -79.459167,
+   "lat": 46.314444
+  },
+  {
+   "id": "ottawa",
+   "name": "Ottawa",
+   "lon": -75.58429,
+   "lat": 45.33339
+  },
+  {
+   "id": "sault-ste.-marie",
+   "name": "Sault Ste. Marie",
+   "lon": -84.346944,
+   "lat": 46.558889
+  },
+  {
+   "id": "thunder-bay",
+   "name": "Thunder Bay",
+   "lon": -89.2677778,
+   "lat": 48.4013889
+  },
+  {
+   "id": "timmins",
+   "name": "Timmins",
+   "lon": -81.33132,
+   "lat": 48.47153
+  },
+  {
+   "id": "toronto",
+   "name": "Toronto",
+   "lon": -79.3733,
+   "lat": 43.7417
+  },
+  {
+   "id": "vaughan",
+   "name": "Vaughan",
+   "lon": -79.5354,
+   "lat": 43.85281
+  },
+  {
+   "id": "wawa",
+   "name": "Wawa",
+   "lon": -84.7738889,
+   "lat": 47.9936111
+  },
+  {
+   "id": "windsor",
+   "name": "Windsor",
+   "lon": -82.99348,
+   "lat": 42.30227
+  },
+  {
+   "id": "woodstock",
+   "name": "Woodstock",
+   "lon": -80.7377778,
+   "lat": 43.1372222
+  }
+ ],
+ "edges": [
+  {
+   "from": "windsor",
+   "to": "london",
+   "road": "401"
+  },
+  {
+   "from": "london",
+   "to": "woodstock",
+   "road": "401"
+  },
+  {
+   "from": "woodstock",
+   "to": "kitchener",
+   "road": "401"
+  },
+  {
+   "from": "kitchener",
+   "to": "mississauga",
+   "road": "401"
+  },
+  {
+   "from": "mississauga",
+   "to": "toronto",
+   "road": "401"
+  },
+  {
+   "from": "toronto",
+   "to": "markham",
+   "road": "407"
+  },
+  {
+   "from": "markham",
+   "to": "vaughan",
+   "road": "407"
+  },
+  {
+   "from": "vaughan",
+   "to": "barrie",
+   "road": "400"
+  },
+  {
+   "from": "barrie",
+   "to": "greater-sudbury",
+   "road": "400"
+  },
+  {
+   "from": "toronto",
+   "to": "kingston",
+   "road": "401"
+  },
+  {
+   "from": "kingston",
+   "to": "brockville",
+   "road": "401"
+  },
+  {
+   "from": "brockville",
+   "to": "cornwall",
+   "road": "401"
+  },
+  {
+   "from": "cornwall",
+   "to": "ottawa",
+   "road": "417"
+  },
+  {
+   "from": "ottawa",
+   "to": "brockville",
+   "road": "416"
+  },
+  {
+   "from": "greater-sudbury",
+   "to": "north-bay",
+   "road": "17"
+  },
+  {
+   "from": "north-bay",
+   "to": "barrie",
+   "road": "11"
+  },
+  {
+   "from": "north-bay",
+   "to": "ottawa",
+   "road": "17"
+  },
+  {
+   "from": "greater-sudbury",
+   "to": "sault-ste.-marie",
+   "road": "17"
+  },
+  {
+   "from": "sault-ste.-marie",
+   "to": "wawa",
+   "road": "17"
+  },
+  {
+   "from": "wawa",
+   "to": "marathon",
+   "road": "17"
+  },
+  {
+   "from": "marathon",
+   "to": "thunder-bay",
+   "road": "17"
+  },
+  {
+   "from": "thunder-bay",
+   "to": "nipigon",
+   "road": "11"
+  },
+  {
+   "from": "nipigon",
+   "to": "kenora",
+   "road": "17"
+  },
+  {
+   "from": "north-bay",
+   "to": "cochrane",
+   "road": "11"
+  },
+  {
+   "from": "cochrane",
+   "to": "timmins",
+   "road": "101"
+  },
+  {
+   "from": "timmins",
+   "to": "wawa",
+   "road": "101"
+  },
+  {
+   "from": "hamilton",
+   "to": "toronto",
+   "road": "403"
+  },
+  {
+   "from": "hamilton",
+   "to": "london",
+   "road": "403"
+  },
+  {
+   "from": "kitchener",
+   "to": "hamilton",
+   "road": "8"
+  },
+  {
+   "from": "elliot-lake",
+   "to": "greater-sudbury",
+   "road": "17"
+  },
+  {
+   "from": "blind-river",
+   "to": "sault-ste.-marie",
+   "road": "17"
+  },
+  {
+   "from": "blind-river",
+   "to": "elliot-lake",
+   "road": "17"
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+  "notice": "This basemap is derived from the sources below. Attribution must be displayed to users of any product built on it.",
+  "combined": "Road attributes \u00a9 Government of Ontario, OGL-Ontario \u00b7 CanVec and Canadian Geographical Names Database \u00a9 Government of Canada, OGL-Canada \u00b7 Building footprints \u00a9 Microsoft, CDLA-Permissive 2.0",
+  "sources": [
+    {
+      "text": "Road attributes \u00a9 Government of Ontario",
+      "licence": "Open Government Licence \u2013 Ontario",
+      "licence_url": "https://www.ontario.ca/page/open-government-licence-ontario"
+    },
+    {
+      "text": "CanVec and Canadian Geographical Names Database \u00a9 Government of Canada",
+      "licence": "Open Government Licence \u2013 Canada",
+      "licence_url": "https://open.canada.ca/en/open-government-licence-canada"
+    },
+    {
+      "text": "Building footprints \u00a9 Microsoft",
+      "licence": "CDLA-Permissive 2.0",
+      "licence_url": "https://cdla.dev/permissive-2-0/"
+    }
+  ]
+}

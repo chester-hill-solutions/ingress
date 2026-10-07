@@ -1,11 +1,12 @@
 import { researchMissions, verifyResearchMission } from './missions/research.mjs';
 import { mathMissions, verifyMathMission } from './missions/math.mjs';
 import { saasMissions, verifySaasMission } from './missions/saas.mjs';
+import { mapMissions, verifyMapMission } from './missions/map.mjs';
 import { missionPath, missionBounds } from '../src/mission-verifier.mjs';
 
-export const missionFixtures = [...researchMissions, ...mathMissions, ...saasMissions];
+export const missionFixtures = [...researchMissions, ...mathMissions, ...saasMissions, ...mapMissions];
 export function validateMission(fixture) {
-  if (!/^[a-z][a-z0-9-]{2,80}$/.test(fixture.id) || !['research', 'math', 'saas'].includes(fixture.domain) || typeof fixture.title !== 'string' || typeof fixture.goal !== 'string' || Buffer.byteLength(fixture.goal) > 7000 || !Array.isArray(fixture.workstreams) || fixture.workstreams.length !== 8) throw Error('invalid_mission');
+  if (!/^[a-z][a-z0-9-]{2,80}$/.test(fixture.id) || !['research', 'math', 'saas', 'map'].includes(fixture.domain) || typeof fixture.title !== 'string' || typeof fixture.goal !== 'string' || Buffer.byteLength(fixture.goal) > 7000 || !Array.isArray(fixture.workstreams) || fixture.workstreams.length !== 8) throw Error('invalid_mission');
   const paths = Object.keys(fixture.files), protectedPaths = new Set(fixture.protectedPaths), editablePaths = new Set(fixture.editablePaths);
   if (paths.length > missionBounds.files || protectedPaths.size !== fixture.protectedPaths.length || editablePaths.size !== fixture.editablePaths.length || paths.some(path => !protectedPaths.has(path) && !editablePaths.has(path)) || [...protectedPaths, ...editablePaths].some(path => !paths.includes(path)) || [...protectedPaths].some(path => editablePaths.has(path))) throw Error('invalid_mission_scope');
   let bytes = 0;
@@ -29,5 +30,5 @@ if (new Set(missionFixtures.map(value => value.id)).size !== missionFixtures.len
 export function verifyMissionFixture(id, root) {
   const fixture = missionFixtures.find(value => value.id === id);
   if (!fixture) throw Error('unknown_mission');
-  return ({ research: verifyResearchMission, math: verifyMathMission, saas: verifySaasMission })[fixture.domain](id, root);
+  return ({ research: verifyResearchMission, math: verifyMathMission, saas: verifySaasMission, map: verifyMapMission })[fixture.domain](id, root);
 }
