@@ -1252,6 +1252,56 @@ test('a stale commit is refused in full and stores nothing', async () => {
   assert.equal((await call('https://x/content?path=mine.mjs')).status, 404);
 });
 
+test('a stale base with disjoint edits is merged, not refused', async () => {
+  // The case the fence used to discard: two participants edit different lines of one file.
+  // The second commit declares the revision it built from; the base moved; the merge combines
+  // them instead of throwing the second away.
+  const { call, data } = mountDO();
+  await join(call, 'alice', 'agent', []);
+  await join(call, 'bob', 'agent', []);
+  await bootstrap(call, [await entry('doc.mjs', 'one\ntwo\nthree\nfour\nfive\n')]);
+  await read(call, 'alice', 'doc.mjs');
+
+  await commitWithLease(call, data, 'bob', [await entry('doc.mjs', 'one\ntwo\nthree\nfour\nFIVE\n')]);
+
+  const aliceEntry = { ...(await entry('doc.mjs', 'one\nTWO\nthree\nfour\nfive\n')), baseRevision: 1 };
+  const response = await commitWithLease(call, data, 'alice', [aliceEntry]);
+  const body = await asJSON(response);
+  assert.equal(body.admitted, true, JSON.stringify(body));
+  assert.equal(body.merged.length, 1, 'the outcome must record that a merge happened');
+  assert.equal(body.merged[0].path, 'doc.mjs');
+
+  const content = await asJSON(await call('https://x/content?path=doc.mjs'));
+  assert.equal(
+    Buffer.from(content.contentBase64, 'base64').toString('utf8'),
+    'one\nTWO\nthree\nfour\nFIVE\n',
+    'both edits must survive the merge',
+  );
+});
+
+test('a stale base that conflicts is refused with the material to resolve it', async () => {
+  const { call, data } = mountDO();
+  await join(call, 'alice', 'agent', []);
+  await join(call, 'bob', 'agent', []);
+  await bootstrap(call, [await entry('doc.mjs', 'one\ntwo\nthree\n')]);
+  await read(call, 'alice', 'doc.mjs');
+
+  await commitWithLease(call, data, 'bob', [await entry('doc.mjs', 'one\nBOB\nthree\n')]);
+
+  const aliceEntry = { ...(await entry('doc.mjs', 'one\nALICE\nthree\n')), baseRevision: 1 };
+  const response = await commitWithLease(call, data, 'alice', [aliceEntry]);
+  assert.equal(response.status, 409);
+  const body = await asJSON(response);
+  assert.equal(body.admitted, false);
+  assert.equal(body.reason, 'merge_conflict');
+  assert.equal(body.conflicts[0].path, 'doc.mjs');
+  assert.equal(body.conflicts[0].currentRevision, 2);
+
+  // Bob's revision stands; alice's conflicting edit did not land.
+  const content = await asJSON(await call('https://x/content?path=doc.mjs'));
+  assert.equal(Buffer.from(content.contentBase64, 'base64').toString('utf8'), 'one\nBOB\nthree\n');
+});
+
 test('a refusal is retained as a receipt, because an audit trail of successes only is worthless', async () => {
   const { call, data } = mountDO();
   await join(call, 'builder', 'agent', ['engine.mjs']);

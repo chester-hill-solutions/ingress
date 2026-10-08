@@ -12,7 +12,7 @@
  * admitted without a lease, and `/internal/commit` was reachable from outside.
  */
 
-import { verifyCommit, evaluateCommit, applyCommit } from '../commit.mjs';
+import { verifyCommit, evaluateCommit, applyCommit, sha256Hex } from '../commit.mjs';
 import { parseManifest, summariseManifest } from '../manifest.mjs';
 import { json, readJSON, MAX_COMMIT_BODY } from '../http.mjs';
 import { authenticateContainer, containerRefusal } from '../container-auth.mjs';
@@ -23,9 +23,67 @@ import {
   logKey,
   MANIFEST_HISTORY,
 } from '../keys.mjs';
-import { storeRevisions } from '../content-store.mjs';
+import { storeRevisions, readRevision } from '../content-store.mjs';
 import { retentionFromEnv } from '../content.mjs';
+import { mergeBytes } from '../merge.mjs';
 import * as leaseHandler from './leases.mjs';
+
+/** Base64 to bytes, the inverse of what the manifest decoder does. */
+function decodeBase64(value) {
+  const binary = atob(value.replace(/\s+/g, ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+/**
+ * Reconcile files whose declared base moved, instead of refusing them.
+ *
+ * The old behaviour was `write_base_stale`: a file whose base revision had advanced was
+ * refused and the participant's work was discarded. That cost correct work -- the contention
+ * trial measured five of six *disjoint* same-file edits refused -- when the two edits could
+ * simply be combined. This merges them.
+ *
+ * The base is exact, not inferred: `file.baseRevision` is the revision the participant
+ * declared it built from, and the content store retains those bytes. So this is a three-way
+ * merge with a known base, which is the one thing git has to guess at.
+ *
+ * A clean merge replaces the file's bytes with the merged result and moves its base to the
+ * current revision, so `evaluateCommit` sees a file that is up to date. A conflict is
+ * collected, not thrown, so the caller can refuse with the material to resolve it.
+ */
+async function resolveStaleBases(ctx, ledger, verified) {
+  const storage = ctx.state.storage;
+  const merged = [];
+  const conflicts = [];
+  for (const file of verified.files) {
+    const declared = file.baseRevision;
+    if (declared == null) continue;
+    const target = ledger.files.get(file.path) ?? null;
+    if (target == null || target.revision === declared) continue;
+
+    const base = await readRevision(storage, file.path, declared);
+    const current = await readRevision(storage, file.path, target.revision);
+    if (!base || !current) {
+      // The base was trimmed before the merge ran. Refused rather than guessed; the participant
+      // must re-read the current revision and rebuild.
+      conflicts.push({ path: file.path, reason: 'merge_base_unavailable', baseRevision: declared, currentRevision: target.revision });
+      continue;
+    }
+
+    const result = mergeBytes(decodeBase64(base.contentBase64), file.bytes, decodeBase64(current.contentBase64));
+    if (result.binary) { conflicts.push({ path: file.path, reason: 'merge_binary', baseRevision: declared, currentRevision: target.revision }); continue; }
+    if (result.refused) { conflicts.push({ path: file.path, reason: 'merge_too_large', baseRevision: declared, currentRevision: target.revision }); continue; }
+    if (!result.clean) { conflicts.push({ path: file.path, reason: 'merge_conflict', baseRevision: declared, currentRevision: target.revision, regions: result.conflicts.length }); continue; }
+
+    file.bytes = result.bytes;
+    file.byteLength = result.bytes.byteLength;
+    file.contentHash = await sha256Hex(result.bytes);
+    file.baseRevision = target.revision;
+    merged.push({ path: file.path, baseRevision: declared, currentRevision: target.revision });
+  }
+  return { merged, conflicts };
+}
 
 export async function commit(ctx, request) {
   const body = await readJSON(request, MAX_COMMIT_BODY);
@@ -122,6 +180,23 @@ export async function commit(ctx, request) {
     return json(409, { ...refusal, participantId });
   }
 
+  // A base that moved is reconciled, not refused. See `resolveStaleBases`: this is the merge
+  // the product was missing, and it is what makes the fence non-lossy.
+  const merge = await resolveStaleBases(ctx, ledger, verified);
+  if (merge.conflicts.length > 0) {
+    const refusal = {
+      admitted: false,
+      reason: 'merge_conflict',
+      participantExit: exitCode,
+      conflicts: merge.conflicts,
+      detail: 'a base moved while this participant worked, and the changes could not be merged automatically',
+      hint: 're-read the current revision of each path, merge it with your change, and commit again against it',
+    };
+    await ctx.state.storage.put(commitKey(participantId), refusal);
+    await ctx.addUsage(commitDelta({ admitted: false }));
+    return json(409, { ...refusal, participantId });
+  }
+
   const decision = evaluateCommit(ledger, verified);
 
   if (!decision.admitted) {
@@ -196,6 +271,9 @@ export async function commit(ctx, request) {
     fingerprint: decision.fingerprint,
     receipt: summary,
     summary: summariseManifest(manifest),
+    // What was reconciled rather than refused. A landing that merged two participants' edits
+    // is not the same event as one that simply stored bytes, and the outcome should say so.
+    ...(merge.merged.length > 0 ? { merged: merge.merged } : {}),
   };
   await ctx.state.storage.put(commitKey(participantId), outcome);
   // Byte count from the *admitted* files, which is what was stored. The manifest's own
