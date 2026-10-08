@@ -157,6 +157,27 @@ export async function start(ctx, request, workspaceName) {
         cycle: error.cycle ?? null,
         detail: `the write lease was held elsewhere: ${error.detail}`,
       };
+
+      // Grant the paths that are *free*, so the participant still holds a lease on the files
+      // only it will write -- its own new files -- and lands the contended ones by merging.
+      // Without this a single held path would cost the participant every lease, and a new file
+      // it alone owns would be refused `lease_required` for want of a lease it never needed.
+      const contended = new Set((error.conflicts ?? []).map(conflict => conflict.path));
+      const free = decision.writePaths.filter(path => !contended.has(path));
+      if (free.length > 0) {
+        try {
+          startLease = await leaseHandler.grantWrite(ctx, {
+            participantId,
+            paths: free,
+            leaseMs: DEFAULT_LEASE_MS,
+            kind: body.kind === 'human' ? 'human' : 'agent',
+          });
+        } catch (retry) {
+          // Raced between the refusal and the retry. Start with no lease at all and merge
+          // everything that moved.
+          if (!(retry instanceof LeaseConflict)) throw retry;
+        }
+      }
     }
   }
 

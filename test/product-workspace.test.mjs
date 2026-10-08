@@ -1339,6 +1339,36 @@ test('a participant with no write lease lands by merging — the case the start 
   );
 });
 
+test('a leased new file and a merged contended file land in one commit', async () => {
+  // The partial grant: a start refused one path is still granted the paths that are free, so a
+  // participant holds a lease on the file only it writes and merges the one it does not.
+  const { call, data } = mountDO();
+  await join(call, 'worker', 'agent', []);
+  await join(call, 'holder', 'agent', []);
+  await bootstrap(call, [await entry('shared.mjs', 'one\ntwo\nthree\n')]);
+  await read(call, 'worker', 'shared.mjs');
+  await commitWithLease(call, data, 'holder', [await entry('shared.mjs', 'one\ntwo\nTHREE\n')]);
+
+  const lease = await post(call, '/lease/checkout', { participantId: 'worker', paths: ['own.mjs'], mode: 'write' });
+  assert.equal(lease.status, 200, 'the worker holds a lease on its own file');
+
+  const response = await post(call, '/internal/commit', {
+    participantId: 'worker',
+    token: issueToken(data, 'worker'),
+    ...manifest('worker', [
+      await entry('own.mjs', "export const name = 'worker';\n"),
+      { ...(await entry('shared.mjs', 'one\nTWO\nthree\n')), baseRevision: 1 },
+    ]),
+  });
+  const body = await asJSON(response);
+  assert.equal(body.admitted, true, JSON.stringify(body));
+  assert.equal(body.merged.length, 1, 'the contended file landed by merging');
+  assert.equal(body.merged[0].path, 'shared.mjs');
+
+  const own = await asJSON(await call('https://x/content?path=own.mjs'));
+  assert.equal(Buffer.from(own.contentBase64, 'base64').toString('utf8'), "export const name = 'worker';\n");
+});
+
 test('a refusal is retained as a receipt, because an audit trail of successes only is worthless', async () => {
   const { call, data } = mountDO();
   await join(call, 'builder', 'agent', ['engine.mjs']);
