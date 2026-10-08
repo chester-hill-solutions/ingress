@@ -96,6 +96,9 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   const evaluatorTimeoutMs = fixture.evaluatorTimeoutMs ?? 6000;
   if (!Number.isInteger(evaluatorTimeoutMs) || evaluatorTimeoutMs < 1000 || evaluatorTimeoutMs > 35000) throw Error('invalid_evaluator_budget');
   const usesPlugin = fixture.nativePlugin !== false && !['stock', 'native-stock'].includes(assignment.condition);
+  // The ingress treatment may fence native writes. `null` means it does not -- see
+  // `nativeWritesFenced` in the evidence and `src/native-fence.mjs` for what a refusal costs.
+  const fenceTtlMs = usesPlugin ? (fixture.nativeFenceTtlMs ?? null) : null;
   const expectedContext = usesPlugin && (fixture.awareness ?? assignment.condition === 'awareness-on');
   const contextBytes = usesPlugin ? fixture.contextBytes ?? 32768 : 0;
   const cacheIntervalMs = usesPlugin ? fixture.cacheIntervalMs ?? 50 : 0;
@@ -117,7 +120,7 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
     // injects peer context but does not arbitrate native writes, so a collision on a shared
     // file is possible and was observed. Named to match `squad.mjs`'s `nativeWritesFenced`,
     // which makes the same statement about the same absence.
-    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-ingress-plugin', sourceCoverage: 'unknown', observationMode: true, nativeWritesFenced: false,
+    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-ingress-plugin', sourceCoverage: 'unknown', observationMode: true, nativeWritesFenced: fenceTtlMs !== null,
     configID: fixture.configurationID ?? assignment.configID ?? null, system: usesPlugin ? 'ingress' : 'stock',
     modelSet: [...new Set(actorModels.map(model => model.providerID + '/' + model.id))].sort().join('+'), actorModels: structuredClone(actorModels),
     nativePlugin: usesPlugin, contextBytes, cacheIntervalMs, phases: structuredClone(phases), phaseEvidence: [], contextProjections: [],
@@ -209,7 +212,7 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
     result.workGoalHash = createHash('sha256').update(fixture.canonicalGoal ?? JSON.stringify(fixture.tasks.map(task => task.text))).digest('hex');
     result.canonicalGoalHash = result.workGoalHash;
     if (usesPlugin) {
-      plugin = await installBenchmarkPlugin(root, bridgeDirectory);
+      plugin = await installBenchmarkPlugin(root, bridgeDirectory, { fenceTtlMs });
       result.pluginSHA256 = createHash('sha256').update(plugin.source).digest('hex');
     } else result.pluginSHA256 = null;
     observer = await (runtime.observeFiles ?? observeFiles)({ root, paths: Object.keys(fixture.files), epoch: state.epoch, intervalMs: 100,

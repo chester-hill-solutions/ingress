@@ -1,17 +1,39 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { extractBenchmarkToolPaths } from './benchmark-tool-paths.mjs';
+import { createWriteFence, DEFAULT_LEASE_TTL_MS, WRITE_ACTIONS } from './native-fence.mjs';
 
-/** Diagnostic bridge: bounded metadata only; request-local context is not a durable message. */
-export async function installBenchmarkPlugin(root, bridgeDirectory) {
+/**
+ * Diagnostic bridge: bounded metadata only; request-local context is not a durable message.
+ *
+ * When `fenceTtlMs` is a positive number, the plugin also arbitrates native writes: it
+ * registers the runtime's permission-evaluation hook and refuses a write to a path another
+ * session holds. That is the difference between observing the swarm and fencing it -- see
+ * `src/native-fence.mjs` for why, and for what a refusal costs.
+ */
+export async function installBenchmarkPlugin(root, bridgeDirectory, { fenceTtlMs = null } = {}) {
+  if (fenceTtlMs !== null && (!Number.isFinite(fenceTtlMs) || fenceTtlMs <= 0)) throw new RangeError('invalid_fence_ttl');
   const cachePath = join(bridgeDirectory, 'context.json'), receiptPath = join(bridgeDirectory, 'receipts.jsonl');
   await mkdir(join(root, '.opencode/plugins/ingress-benchmark'), { recursive: true });
   await writeFile(cachePath, JSON.stringify({ revision: 0, compiledAt: Date.now(), actors: {} }), { mode: 0o600 });
   await writeFile(receiptPath, '', { mode: 0o600 });
+  // The fence policy is inlined, not imported: the plugin runs inside the OpenCode process,
+  // which cannot resolve this repository's modules. Same reason `extractPaths` is inlined.
+  const fenceSource = fenceTtlMs === null ? '' : `
+const WRITE_ACTIONS=${JSON.stringify(WRITE_ACTIONS)};
+const DEFAULT_LEASE_TTL_MS=${DEFAULT_LEASE_TTL_MS};
+const createWriteFence=${createWriteFence.toString().replace(/^export /, '')};
+const fence=createWriteFence({ttlMs:${fenceTtlMs}});`;
+  const fenceHook = fenceTtlMs === null ? '' : `
+ await ctx.permission.hook('evaluate',event=>{
+  const verdict=fence.evaluate({sessionID:event.sessionID,action:event.action,resources:event.resources});
+  record({type:'fence',sessionID:event.sessionID,action:event.action,resources:event.resources,decision:verdict.decision,heldBy:verdict.heldBy??null});
+  if(verdict.decision==='deny'){event.effect='deny';event.message='file held by another agent: '+verdict.heldBy;}
+ });`;
   const source = `
 import {readFileSync,appendFileSync,statSync} from 'node:fs';
 const path=${JSON.stringify(cachePath)}, output=${JSON.stringify(receiptPath)};
-let count=0;const contexts=new Map();
+let count=0;const contexts=new Map();${fenceSource}
 function record(row){if(count++<4096)appendFileSync(output,JSON.stringify({time:Date.now(),...row})+'\\n');}
 function snapshot(){if(statSync(path).size>1024*1024)throw Error('bounded context');return JSON.parse(readFileSync(path,'utf8'));}
 const extractPaths=${extractBenchmarkToolPaths.toString()};
@@ -45,9 +67,9 @@ export default {id:'ingress.benchmark',async setup(ctx){
  await ctx.tool.hook('execute.before',event=>{const targets=extractPaths(event.input,event.tool);record({type:'tool.before',sessionID:event.sessionID,
  tool:event.tool,id:event.id,messageID:event.messageID,paths:targets.paths,pathsComplete:targets.complete});});
  await ctx.tool.hook('execute.after',event=>{const targets=extractPaths(event.input,event.tool);record({type:'tool.after',sessionID:event.sessionID,
- tool:event.tool,id:event.id,messageID:event.messageID,paths:targets.paths,pathsComplete:targets.complete,status:event.status});});
+ tool:event.tool,id:event.id,messageID:event.messageID,paths:targets.paths,pathsComplete:targets.complete,status:event.status});});${fenceHook}
  return ()=>record({type:'cleanup'});
 }};`;
   await writeFile(join(root, '.opencode/plugins/ingress-benchmark/index.ts'), source);
-  return { cachePath, receiptPath, source };
+  return { cachePath, receiptPath, source, fenceTtlMs };
 }

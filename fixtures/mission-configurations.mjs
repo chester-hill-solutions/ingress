@@ -22,6 +22,9 @@ export function configureMission(base, configID) {
   return { ...structuredClone(base), files, protectedPaths: [...base.protectedPaths, 'MISSION.md'], tasks, canonicalGoal: base.goal,
     configurationID: configID, configurationTitle: configID, nativePlugin: config.nativePlugin, awareness: config.nativePlugin,
     contextBytes: config.nativePlugin ? 32768 : 0, cacheIntervalMs: config.nativePlugin ? 100 : 0,
+    // The ingress treatment fences native writes: one agent per path at a time, refused
+    // otherwise. Stock does not. See `src/native-fence.mjs`.
+    nativeFenceTtlMs: config.nativePlugin ? (base.nativeFenceTtlMs ?? 90_000) : null,
     phases: [tasks.map(task => task.id)], plannedAgentCount: config.agentCount, peakPlannedConcurrency: config.agentCount,
     directiveHash: digest(files['MISSION.md']), seedHash: digest(files) };
 }
