@@ -113,14 +113,18 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
   Object.assign(result, { actors: fixture.tasks.map(task => ({ id: task.id, role: task.role ?? null, assigned: true, admitted: false, outcome: 'not-run', processStopped: null,
     tools: {}, usage: { input: null, output: null, cost: null, observedSteps: 0, missingInput:0,missingOutput:0,missingCost:0 }, context: { hookCount: 0, serializedCount: 0, unknownCount: 0 } })),
     errors, verification: { correct: false, checks: [], instructionChecks: [] }, complexity: null, deadlineMs,
-    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-ingress-plugin', sourceCoverage: 'unknown', observationMode: true, writesFenced: false,
+    // `nativeWritesFenced` describes the treatment, not a per-run measurement: this harness
+    // injects peer context but does not arbitrate native writes, so a collision on a shared
+    // file is possible and was observed. Named to match `squad.mjs`'s `nativeWritesFenced`,
+    // which makes the same statement about the same absence.
+    deliveryProfile: usesPlugin ? 'native-primary-context-hook' : 'stock-native-no-ingress-plugin', sourceCoverage: 'unknown', observationMode: true, nativeWritesFenced: false,
     configID: fixture.configurationID ?? assignment.configID ?? null, system: usesPlugin ? 'ingress' : 'stock',
     modelSet: [...new Set(actorModels.map(model => model.providerID + '/' + model.id))].sort().join('+'), actorModels: structuredClone(actorModels),
     nativePlugin: usesPlugin, contextBytes, cacheIntervalMs, phases: structuredClone(phases), phaseEvidence: [], contextProjections: [],
     evidenceBounds: { nativeEvents: MAX_NATIVE_EVENTS, pluginReceipts: MAX_RECEIPTS, nativeSelection: 'execution_step_tool_metadata', receiptBytes: 8 * 1024 * 1024 } });
   result.actors.forEach((actor, index) => { actor.model = structuredClone(actorModels[index]); });
   const publish = () => { try { onUpdate(result); } catch {} };
-  const issue = (code, error, actor = null) => { if(errors.length<128)errors.push({ code, actor, ...(error ? { diagnostic: safeRuntimeError(error) } : {}) });else result.errorOmissions=(result.errorOmissions??0)+1; publish(); };
+  const issue = (code, error = null, actor = null, extra = null) => { if(errors.length<128)errors.push({ code, actor, ...(error ? { diagnostic: safeRuntimeError(error) } : {}), ...(extra ?? {}) });else result.errorOmissions=(result.errorOmissions??0)+1; publish(); };
   let root, bridgeDirectory, plugin, observer, host, client, feed, pollTimer, cacheTimer, cacheWriter = Promise.resolve(), dirty = true;
   const clients = [];
   let receiptBytes = 0, receiptRemainder = '', lastStateVersion = -1, workStart, workEnd, stopUnconfirmed = false;
@@ -281,6 +285,12 @@ export async function runBenchmarkCohort({ assignment, fixture, profile, deadlin
         await actor.client.prompt(actor.sessionID, actor.task.text, { id: messageID(), signal: activeSignal }); actor.evidence.admitted = true; publish();
         const terminal = await actor.client.wait(actor.sessionID, activeSignal, { pollIntervalMs: 250 });
         actor.evidence.outcome = terminal.outcome; actor.evidence.idle = terminal.idle;
+        // A session that ends non-succeeded without throwing used to leave no trace: the
+        // outcome was recorded and nothing said why. A four-second `failed` with zero steps
+        // was indistinguishable from a model that produced nothing, and the cause was
+        // unrecoverable from the evidence. Record the terminal outcome so the difference
+        // between "the session errored" and "the model did nothing" is legible.
+        if (terminal.outcome !== 'succeeded') issue('actor_terminal_not_succeeded', null, actor.id, { outcome: terminal.outcome });
         control(actor, terminal.outcome === 'succeeded' ? 'completed' : 'failed');
       } catch (error) { actor.evidence.outcome = activeSignal.aborted ? 'deadline-or-cancel' : 'runtime-failed'; issue('actor_runtime_failure', error, actor.id); control(actor, 'failed'); }
       finally { actor.evidence.elapsedMs = Date.now() - actor.evidence.startedAt; dirty = true; publish(); }
