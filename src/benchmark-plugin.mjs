@@ -51,7 +51,10 @@ export default {id:'ingress.benchmark',async setup(ctx){
  const availableToolNames=Object.keys(event.tools).filter(name=>/^[a-zA-Z0-9_.-]{1,128}$/.test(name)).slice(0,128);
  const toolNameOmissions=Object.keys(event.tools).length-availableToolNames.length;
  try{current=snapshot();}catch{record({type:'bridge.error',sessionID:event.sessionID});return;}
- const actor=current.actors[event.sessionID];if(!actor)return;
+ // A session may be absent from the per-session map -- subagent sessions are created at
+ // runtime and cannot be enumerated up front -- so a default entry carries the shared
+ // context to them. When no default is set (the benchmark's case) this is unchanged.
+ const actor=current.actors[event.sessionID]??current.default;if(!actor)return;
  const injected=actor.condition==='awareness-on';
  if(injected)event.system.push({type:'text',text:'GCCTX:'+actor.contextID+'\\n'+actor.text});
  contexts.set(event.sessionID,{contextID:actor.contextID,injected});
