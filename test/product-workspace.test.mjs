@@ -1319,9 +1319,11 @@ test('a participant with no write lease lands by merging — the case the start 
 
   await commitWithLease(call, data, 'bob', [await entry('doc.mjs', 'one\ntwo\nTHREE\n')]);
 
-  // No `/lease/checkout` for alice. The declared base and a per-file provenance are what she
-  // sends instead, and the merge does the rest.
-  const aliceEntry = { ...(await entry('doc.mjs', 'one\nTWO\nthree\n')), baseRevision: 1, builtFrom: [] };
+  // No `/lease/checkout` for alice, and no per-file provenance either: the declared base is
+  // the whole claim, and the read of the file she is editing does not refuse her for it. That
+  // is the real path -- the reporter declares `baseRevision` from the seed and nothing else is
+  // required.
+  const aliceEntry = { ...(await entry('doc.mjs', 'one\nTWO\nthree\n')), baseRevision: 1 };
   const response = await post(call, '/internal/commit', {
     participantId: 'alice', token: issueToken(data, 'alice'), ...manifest('alice', [aliceEntry]),
   });

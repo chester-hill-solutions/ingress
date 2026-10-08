@@ -290,9 +290,19 @@ export function evaluateCommit(ledger, verified) {
     // `dependencyBasis` on the refusal says which of the two ran, so nobody has to guess
     // why a file was held.
     const basis = file.builtFrom === null || file.builtFrom === undefined ? 'participant_declared' : 'per_file';
+    // A file that declared its base is governed by the base check above, not by the read
+    // record. Reading a file in order to write it is not a dependency on it, and after a merge
+    // brought the file up to date its own read is stale by construction -- so without this a
+    // participant that read the very file it is editing is refused for having read it, and the
+    // merge that would have reconciled it never runs.
+    //
+    // Scoped tightly on purpose: only the file's *own* path, and only when it declared a base.
+    // A file that declares nothing is still held by its stale read, which is what keeps the
+    // read check's teeth.
+    const notOwnRead = entry => !(file.baseRevision != null && entry.path === file.path);
     const stale = basis === 'per_file'
       ? staleAmong(file.builtFrom, ledger)
-      : cut.reads.filter(entry => entry.stale === true).map(entry => ({
+      : cut.reads.filter(entry => entry.stale === true).filter(notOwnRead).map(entry => ({
         path: entry.path,
         readRevision: entry.readRevision,
         currentRevision: entry.currentRevision,
@@ -309,7 +319,7 @@ export function evaluateCommit(ledger, verified) {
       continue;
     }
 
-    const unknown = cut.reads.filter(entry => entry.readBasis === 'unknown');
+    const unknown = cut.reads.filter(entry => entry.readBasis === 'unknown').filter(notOwnRead);
     if (unknown.length > 0) {
       refusals.push({
         path: file.path,
