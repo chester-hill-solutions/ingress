@@ -125,6 +125,7 @@ export async function start(ctx, request, workspaceName) {
   // someone who has not joined is a decision about them as well as the file. One writer of
   // the roster instead of two callers guessing at its order.
   let startLease = null;
+  let intentConflict = null;
   if (decision.writePaths.length > 0) {
     try {
       startLease = await leaseHandler.grantWrite(ctx, {
@@ -135,25 +136,27 @@ export async function start(ctx, request, workspaceName) {
       });
     } catch (error) {
       if (!(error instanceof LeaseConflict)) throw error;
+      // Advisory: the paths are held by someone else, so this participant starts **without** a
+      // write lease and lands by merging rather than by exclusion.
+      //
+      // Refusing the start was the old behaviour, and it discarded the work entirely -- the
+      // contention trial measured five of six *disjoint* same-file edits refused, each one
+      // correct. A participant that cannot start produces nothing to merge, so the merge can
+      // only help if the participant is allowed to work. The lease keeps its role as
+      // coordination -- it orders and warns -- and stops being the thing that decides who may
+      // produce work at all.
       const table = await ctx.leases();
-      // Recorded even on refusal, so a cycle is findable on the next attempt rather than
-      // only after the other party has already committed to waiting. Same as `checkout`.
+      // Recorded even now, so a cycle is findable on the next attempt rather than only after
+      // the other party has already committed to waiting.
       table.noteBlocked(participantId, error.blockedOn);
       await ctx.saveLeases();
-      // Counted here as well as in `checkout`. A start whose write lease is held by someone
-      // else is the most informative conflict there is — it is a caller that believes it owns
-      // a file — and counting only the public path would report a workspace as having no
-      // conflicts while it was being refused one per start.
       await ctx.addUsage(leaseConflictDelta());
-      return json(409, {
-        error: 'refused',
-        reason: 'lease_conflict',
-        conflicts: error.conflicts,
-        blockedOn: error.blockedOn,
+      intentConflict = {
+        blockedOn: error.blockedOn ?? null,
+        conflicts: error.conflicts ?? [],
         cycle: error.cycle ?? null,
-        detail: `the write lease needed to start was refused: ${error.detail}`,
-        hint: 'release the paths, retrieve them once their holder has gone, or start without writePaths',
-      });
+        detail: `the write lease was held elsewhere: ${error.detail}`,
+      };
     }
   }
 
@@ -310,6 +313,10 @@ const token = crypto.randomUUID();
     // `""` look the same to a caller deciding whether to read `.log`, and the honest answer is
     // "there was no output", which is better expressed as absence.
     ...(log === null ? {} : { log }),
+    // Present only when the write lease was held elsewhere and this participant started
+    // without one. It is not a failure -- the participant ran -- but it is the fact a caller
+    // needs to know the commit will land by merging rather than by holding the file.
+    ...(intentConflict ? { intentConflict } : {}),
     usage: usageSnapshot(await ctx.usage(), ctx.ceiling()),
   });
 }

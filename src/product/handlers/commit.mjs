@@ -131,18 +131,33 @@ export async function commit(ctx, request) {
 
   const verified = await verifyCommit({ participantId, files: manifest.files });
 
-  // A commit must be authorised by a write lease on every file it touches.
+  // A base that moved is reconciled first, before the lease is considered. See
+  // `resolveStaleBases`: this is the merge the product was missing, and running it before the
+  // lease check is what makes the fence non-lossy -- a file a clean merge brought up to date
+  // is no longer counted as a change the participant must hold a lease to land.
+  const merge = await resolveStaleBases(ctx, ledger, verified);
+  if (merge.conflicts.length > 0) {
+    const refusal = {
+      admitted: false,
+      reason: 'merge_conflict',
+      participantExit: exitCode,
+      conflicts: merge.conflicts,
+      detail: 'a base moved while this participant worked, and the changes could not be merged automatically',
+      hint: 're-read the current revision of each path, merge it with your change, and commit again against it',
+    };
+    await ctx.state.storage.put(commitKey(participantId), refusal);
+    await ctx.addUsage(commitDelta({ admitted: false }));
+    return json(409, { ...refusal, participantId });
+  }
+  const mergedPaths = new Set(merge.merged.map(entry => entry.path));
+
+  // A commit is authorised by a write lease on every file it changes -- **except** a file whose
+  // change a clean merge reconciled against a base that moved. That exception is the whole
+  // point of the merge: a participant refused a lease at `/start` can still produce work and
+  // land it, because the merge proves the write is compatible with what landed while it worked.
   //
-  // This is the line that makes leases load-bearing rather than decorative. A
-  // lease that participants merely *hold* is a protocol, and this repository has a
-  // long record of protocols that agents route around — the MCP probe made 16
-  // native tool calls and zero mediated ones. If the commit did not check the
-  // lease, holding one would change nothing and the whole layer would be advisory
-  // in the way everything else here has been.
-  //
-  // Checked before the fence and refused as a whole, for the same reason the
-  // commit is atomic: a participant with no lease has not earned the right to land
-  // bytes, so nothing lands, not even the files it did have leases for.
+  // The lease keeps its role everywhere else. A file with no lease and no merge to justify it
+  // is still refused, which is what keeps the lease from being decorative.
   const table = await ctx.leases();
   const now = Date.now();
   table.sweep(now);
@@ -160,6 +175,7 @@ export async function commit(ctx, request) {
   });
   const held = table.leasesFor(participantId, { now });
   const unleased = changedFiles
+    .filter(file => !mergedPaths.has(file.path))
     .filter(file => !held.some(entry => entry.mode === 'write' && entry.paths.has(file.path)))
     .map(file => file.path);
 
@@ -174,23 +190,6 @@ export async function commit(ctx, request) {
         ? 'no write lease is held'
         : `write leases cover ${[...new Set(writable)].sort().join(', ') || 'nothing'}; these were not leased for writing`,
       hint: `POST /lease/checkout with ${JSON.stringify(unleased)} before committing`,
-    };
-    await ctx.state.storage.put(commitKey(participantId), refusal);
-    await ctx.addUsage(commitDelta({ admitted: false }));
-    return json(409, { ...refusal, participantId });
-  }
-
-  // A base that moved is reconciled, not refused. See `resolveStaleBases`: this is the merge
-  // the product was missing, and it is what makes the fence non-lossy.
-  const merge = await resolveStaleBases(ctx, ledger, verified);
-  if (merge.conflicts.length > 0) {
-    const refusal = {
-      admitted: false,
-      reason: 'merge_conflict',
-      participantExit: exitCode,
-      conflicts: merge.conflicts,
-      detail: 'a base moved while this participant worked, and the changes could not be merged automatically',
-      hint: 're-read the current revision of each path, merge it with your change, and commit again against it',
     };
     await ctx.state.storage.put(commitKey(participantId), refusal);
     await ctx.addUsage(commitDelta({ admitted: false }));

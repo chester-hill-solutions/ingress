@@ -321,13 +321,14 @@ test('a refused start mints no token, registers no participant and takes no slot
   assert.equal(data.get('active-starts'), undefined, 'and must not take a slot');
   assert.equal(calls.length, 0, 'and must not delegate to an executor');
 
-  // The lease-refusal path too, because it gets much further before it stops — and a
-  // participant left registered there was a real bug, found only by running the product.
+  // The lease-held path is advisory now, and this is the change the contention trial forced:
+  // refusing the start discarded the work entirely -- five of six *disjoint* same-file edits
+  // lost. A participant that cannot start produces nothing to merge, so a held path starts
+  // the participant anyway, without a lease, to land by merging.
   //
   // The blocking lease is taken over the public route, not by a finished start: a completed
   // start releases its own lease on the way out, so a second start finds nothing held and is
-  // admitted. That is correct, and the first version of this test asserted the opposite
-  // because it used a finished start as the blocker.
+  // admitted.
   const conflict = await mountStartable();
   const joined = await conflict.call('/join?name=first&kind=agent&dependencies=');
   assert.equal(joined.status, 200);
@@ -342,12 +343,15 @@ test('a refused start mints no token, registers no participant and takes no slot
   const second = await postStart(conflict.call, {
     participantId: 'second', writePaths: ['f.mjs'], runMs: 30_000, participantCommand: 'true',
   });
-  assert.equal(second.status, 409);
-  assert.equal((await second.json()).reason, 'lease_conflict');
+  assert.equal(second.status, 200, 'a held path must not refuse the start');
+  const secondBody = await second.json();
+  assert.equal(secondBody.started, true);
+  assert.ok(secondBody.intentConflict, 'the conflict is reported, not hidden');
+  assert.deepEqual(secondBody.intentConflict.blockedOn, ['first'], 'and it names the holder');
 
   const ledger = conflict.data.get('ledger');
-  assert.equal(ledger.participants.some(p => p.participantId === 'second'), false,
-    'the refused participant must not be left in the roster');
+  assert.equal(ledger.participants.some(p => p.participantId === 'second'), true,
+    'the participant ran, so it is in the roster');
 });
 
 test('a completed start leaves no slot behind, so the next one is not refused', async () => {

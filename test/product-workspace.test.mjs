@@ -912,35 +912,40 @@ test('usage is visible, and it starts empty with the ceiling attached', async ()
   assert.equal(usage.exhausted, false);
 });
 
-test('a refused start consumes no quota', async () => {
+test('a refused start consumes no quota, and an advisory lease conflict is still counted', async () => {
   // The difference between a ceiling and a counter. A counter that increments on refusal
   // lets a caller lock themselves out by retrying, and the resulting error is
   // indistinguishable from the one that locked them out.
   const { call } = mountCapped(2, 600);
 
-  // Refused for a reason unrelated to cost: a lease somebody else holds.
+  // Refused for a reason unrelated to cost: a malformed run bound.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const refused = await asResult(await startIn(call, {
+      participantId: 'blocked', kind: 'agent', runMs: 999, participantCommand: 'true',
+    }));
+    assert.equal(refused.status, 409, `attempt ${attempt} should be refused`);
+    assert.equal(refused.reason, 'invalid_run_ms');
+  }
+  let usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.starts, 0, 'three refused starts must not consume any of the two allowed');
+
+  // A lease held elsewhere is advisory now: the start proceeds, and the conflict is reported
+  // and counted rather than being the thing that discards the participant's work.
   await join(call, 'holder');
   const held = await post(call, '/lease/checkout', {
     participantId: 'holder', paths: ['contested.mjs'], mode: 'write',
   });
   assert.equal(held.status, 200);
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const refused = await asResult(await startIn(call, {
-      participantId: 'blocked',
-      kind: 'agent',
-      writePaths: ['contested.mjs'],
-      runMs: 1000,
-      participantCommand: 'true',
-    }));
-    assert.equal(refused.status, 409, `attempt ${attempt} should be refused for the lease`);
-    assert.equal(refused.reason, 'lease_conflict');
-  }
+  const advisory = await asResult(await startIn(call, {
+    participantId: 'blocked', kind: 'agent', writePaths: ['contested.mjs'], runMs: 1000, participantCommand: 'true',
+  }));
+  assert.equal(advisory.status, 200, 'a held path no longer refuses the start');
+  assert.ok(advisory.intentConflict, 'the conflict is reported rather than hidden');
 
-  const usage = await asResult(await call('https://x/usage'));
-  assert.equal(usage.starts, 0,
-    'three refused starts must not consume any of the two allowed');
-  assert.equal(usage.leaseConflicts, 3, 'though the conflicts themselves are counted');
+  usage = await asResult(await call('https://x/usage'));
+  assert.equal(usage.starts, 1, 'the advisory start ran, so it is counted once');
+  assert.equal(usage.leaseConflicts, 1, 'and the conflict is counted even though the start proceeded');
 });
 
 test('the ceiling refuses at the bound and says which bound it was', async () => {
@@ -1300,6 +1305,36 @@ test('a stale base that conflicts is refused with the material to resolve it', a
   // Bob's revision stands; alice's conflicting edit did not land.
   const content = await asJSON(await call('https://x/content?path=doc.mjs'));
   assert.equal(Buffer.from(content.contentBase64, 'base64').toString('utf8'), 'one\nBOB\nthree\n');
+});
+
+test('a participant with no write lease lands by merging — the case the start refusal used to discard', async () => {
+  // Alice never holds a write lease: at `/start` the path was held, so she ran without one.
+  // Under the old rule her commit was refused with `lease_required` and her work was lost.
+  // The clean merge against the revision that landed while she worked is what authorises it.
+  const { call, data } = mountDO();
+  await join(call, 'alice', 'agent', []);
+  await join(call, 'bob', 'agent', []);
+  await bootstrap(call, [await entry('doc.mjs', 'one\ntwo\nthree\n')]);
+  await read(call, 'alice', 'doc.mjs');
+
+  await commitWithLease(call, data, 'bob', [await entry('doc.mjs', 'one\ntwo\nTHREE\n')]);
+
+  // No `/lease/checkout` for alice. The declared base and a per-file provenance are what she
+  // sends instead, and the merge does the rest.
+  const aliceEntry = { ...(await entry('doc.mjs', 'one\nTWO\nthree\n')), baseRevision: 1, builtFrom: [] };
+  const response = await post(call, '/internal/commit', {
+    participantId: 'alice', token: issueToken(data, 'alice'), ...manifest('alice', [aliceEntry]),
+  });
+  const body = await asJSON(response);
+  assert.equal(body.admitted, true, `a clean merge must authorise the landing: ${JSON.stringify(body)}`);
+  assert.equal(body.merged.length, 1);
+
+  const content = await asJSON(await call('https://x/content?path=doc.mjs'));
+  assert.equal(
+    Buffer.from(content.contentBase64, 'base64').toString('utf8'),
+    'one\nTWO\nTHREE\n',
+    'both edits must survive, and neither writer needed a lease to produce its half',
+  );
 });
 
 test('a refusal is retained as a receipt, because an audit trail of successes only is worthless', async () => {
