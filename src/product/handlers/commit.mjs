@@ -280,6 +280,7 @@ export async function commit(ctx, request) {
   await ctx.addUsage(commitDelta({
     admitted: true,
     bytes: files.reduce((total, file) => total + (file.byteLength ?? 0), 0),
+    merged: merge.merged.length,
   }));
   return json(200, { ...outcome, participantId });
 }

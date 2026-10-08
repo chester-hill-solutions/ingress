@@ -196,10 +196,12 @@ const shared = await Promise.all(AGENTS.map(async name => {
 shared.elapsedMs = Date.now() - sharedStarted;
 const sharedSummary = report('concurrent / shared:', shared);
 
-step('5. what does one shared file cost?');
+step('5. does one shared file still cost anything, now that a moved base is merged?');
 const lost = AGENTS.length - sharedSummary.admitted;
-check('the disjoint edits to the shared file did NOT all land', lost > 0,
-  `${lost} of ${AGENTS.length} refused`);
+// Before the merge this read `lost > 0`: five of six were refused at `/start` and the file
+// carried one edit. The merge is what this line now tests.
+check('every disjoint edit to the shared file landed', lost === 0,
+  `${sharedSummary.admitted} of ${AGENTS.length} admitted, ${lost} lost`);
 
 const ledger = await get('/state');
 const sharedRecord = ledger.body.files.find(f => f.path === SHARED);
@@ -210,18 +212,24 @@ const present = AGENTS.filter(name => text.includes(`"${name}":`));
 console.log(`\n  ${SHARED} is at r${sharedRecord?.revision}, written by ${sharedRecord?.author}`);
 console.log(`  ${present.length} of ${AGENTS.length} edits are present: ${present.join(', ') || 'none'}`);
 
+check('and the merged file carries all six edits', present.length === AGENTS.length,
+  `${present.length} of ${AGENTS.length}`);
+
 check('every refusal names a conflict rather than a crash',
   sharedSummary.refused.every(r => ['lease_conflict', 'too_many_concurrent_starts'].includes(r.reason)),
   `reasons: ${[...new Set(sharedSummary.refused.map(r => r.reason))].join(', ') || 'none'}`);
 
-step('6. the number that decides whether a merge is worth building');
-console.log(`
-  Six agents made six edits to one file.
-  ${AGENTS.length - present.length} of them did not land, and none of them conflicted with
-  anything -- every one inserts at its own anchor line, so git would have merged all six.
+const usage = await get('/usage');
+const merges = usage.body.mergesAdmitted ?? 0;
+// The first writer lands without a merge; each of the rest reconciles a base that moved.
+check('the landings after the first were merges, not overwrites', merges >= AGENTS.length - 1,
+  `${merges} merge(s) admitted`);
 
-  That is ${lost} changes a merge would have absorbed. If it is worth building, this is the
-  measurement to justify it by. If it is near zero, the merge is not the bottleneck.
+step('6. the number the merge was justified by');
+console.log(`
+  Six agents made six disjoint edits to one file.
+  Before the merge: 1 of 6 landed; 5 refused at \`/start\` with \`lease_conflict\`.
+  Now: ${present.length} of 6 landed, ${merges} of them by merging a base that moved.
 `);
 
 finish(

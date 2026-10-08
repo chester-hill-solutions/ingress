@@ -38,6 +38,10 @@ export const USAGE_FIELDS = [
   'commitsEmpty',
   'leaseConflicts',
   'bytesAdmitted',
+  // Commits whose landing reconciled a base that moved. Counted separately from
+  // `commitsAdmitted` because a merge is the event the fence used to refuse, and a workspace
+  // that merges is doing something a workspace that merely admits is not.
+  'mergesAdmitted',
 ];
 
 /**
@@ -186,8 +190,10 @@ export function startDelta({ runMs = 0 } = {}) {
  * signal in itself — lumping it with a refusal would make the two indistinguishable in the
  * one place someone looks to tell them apart.
  */
-export function commitDelta({ admitted = null, bytes = 0 } = {}) {
-  if (admitted === true) return { commitsAdmitted: 1, bytesAdmitted: Number(bytes) || 0 };
+export function commitDelta({ admitted = null, bytes = 0, merged = 0 } = {}) {
+  if (admitted === true) {
+    return { commitsAdmitted: 1, bytesAdmitted: Number(bytes) || 0, mergesAdmitted: Number(merged) || 0 };
+  }
   if (admitted === false) return { commitsRefused: 1 };
   return { commitsEmpty: 1 };
 }
