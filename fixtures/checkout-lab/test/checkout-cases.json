@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "corpus": "checkout-lab-v1",
+  "oracleOnly": true,
+  "description": "Independent prospective checkout expectations. The graph producer and arbiter must not consume this file as dependency evidence. Dynamic cases require refusal or an explicit conservative scope, rather than invented certainty.",
+  "cases": [
+    {
+      "id": "disjoint-same-file",
+      "a": { "path": "src/pricing.mjs", "symbol": "discountSubtotal" },
+      "b": { "path": "src/pricing.mjs", "symbol": "shippingFee" },
+      "expected": "allow",
+      "reason": "Separate function bodies; shared configuration/readers do not make their modification ranges overlap."
+    },
+    {
+      "id": "same-function-overlap",
+      "a": { "path": "src/pricing.mjs", "symbol": "discountSubtotal" },
+      "b": { "path": "src/pricing.mjs", "symbol": "discountSubtotal" },
+      "expected": "block",
+      "reason": "Both request the same modification scope."
+    },
+    {
+      "id": "shared-utility-readers",
+      "a": { "path": "src/notifications.mjs", "symbol": "format" },
+      "b": { "path": "src/reports.mjs", "symbol": "format" },
+      "expected": "allow",
+      "reason": "Both read formatMoney; neither modifies it, and the format functions are different symbols."
+    },
+    {
+      "id": "utility-provider-first",
+      "a": { "path": "src/money.mjs", "symbol": "formatMoney" },
+      "b": { "path": "src/reports.mjs", "symbol": "format" },
+      "expected": "block",
+      "reason": "The report formatter calls formatMoney."
+    },
+    {
+      "id": "utility-consumer-first",
+      "a": { "path": "src/reports.mjs", "symbol": "format" },
+      "b": { "path": "src/money.mjs", "symbol": "formatMoney" },
+      "expected": "block",
+      "reason": "The reverse request order must protect the same dependency."
+    },
+    {
+      "id": "renamed-reexport-dependency",
+      "a": { "path": "src/pricing.mjs", "symbol": "discountSubtotal" },
+      "b": { "path": "src/orders.mjs", "symbol": "createOrder" },
+      "expected": "block",
+      "reason": "createOrder calls netSubtotal, imported through discountedTotal in pricing-index.mjs."
+    },
+    {
+      "id": "transitive-inventory-impact",
+      "a": { "path": "src/inventory.mjs", "symbol": "available" },
+      "b": { "path": "src/checkout.mjs", "symbol": "checkout" },
+      "expected": "block",
+      "reason": "checkout calls fulfillOrder, which calls reserve, which calls available."
+    },
+    {
+      "id": "stored-order-contract",
+      "a": { "path": "src/orders.mjs", "symbol": "createOrder" },
+      "b": { "path": "src/refunds.mjs", "symbol": "issueRefund" },
+      "expected": "block",
+      "contract": "stored-order-money-v1",
+      "reason": "A persisted record crosses the import graph; contracts.json supplies explicit versioned evidence."
+    },
+    {
+      "id": "shadowed-notifier",
+      "a": { "path": "src/notifier.mjs", "symbol": "sendCustomReceipt" },
+      "b": { "path": "src/notifications.mjs", "symbol": "notify" },
+      "expected": "unknown",
+      "forbiddenEdge": { "from": "src/notifier.mjs#sendCustomReceipt", "to": "src/notifications.mjs#notify" },
+      "reason": "The callback parameter shadows the import. Its actual target needs runtime/contract evidence or conservative handling."
+    },
+    {
+      "id": "computed-promotion-dispatch",
+      "a": { "path": "src/promotions.mjs", "symbol": "selectPromotion" },
+      "b": { "path": "src/promotions.mjs", "symbol": "fixedDiscount" },
+      "expected": "unknown",
+      "reason": "policies[name] needs an evidenced dispatch-target scope or refusal; an absent direct call edge is insufficient."
+    },
+    {
+      "id": "new-dependency-after-checkout",
+      "a": { "path": "src/notifier.mjs", "symbol": "sendDefaultReceipt" },
+      "b": { "path": "src/reports.mjs", "symbol": "format" },
+      "expected": "scope_expansion_required",
+      "mutation": {
+        "path": "src/notifier.mjs",
+        "search": "export function sendDefaultReceipt(receipt) {\n  return notify(receipt);\n}",
+        "replace": "export function sendDefaultReceipt(receipt) {\n  return { ...notify(receipt), preview: formatOrder({ id: receipt.orderId, status: 'captured', totalPaidCents: receipt.amountCents, currency: receipt.currency }) };\n}",
+        "prepend": "import { format as formatOrder } from './reports.mjs';\n"
+      },
+      "reason": "The candidate adds a dependency on a symbol already being modified by B."
+    },
+    {
+      "id": "malformed-source",
+      "a": { "path": "src/pricing.mjs", "symbol": "discountSubtotal" },
+      "expected": "validation_refuse",
+      "mutation": {
+        "path": "src/pricing.mjs",
+        "search": "  return Math.round(subtotalCents * (100 - percent) / 100);",
+        "replace": "  return Math.round(subtotalCents * (100 - percent) / 100;"
+      },
+      "reason": "A populated partial graph must not make invalid syntax eligible."
+    },
+    {
+      "id": "textually-clean-contract-break",
+      "a": { "path": "src/orders.mjs", "symbol": "createOrder" },
+      "expected": "validation_refuse",
+      "mutation": {
+        "path": "src/orders.mjs",
+        "search": "  const totalPaidCents = discountedSubtotalCents + shippingCents;",
+        "replace": "  const totalPaidCents = (discountedSubtotalCents + shippingCents) / 100;"
+      },
+      "reason": "The edit is valid JavaScript and can merge cleanly, but violates the independent cents contract and workflow assertions."
+    }
+  ]
+}

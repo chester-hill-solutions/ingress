@@ -29,6 +29,64 @@ Node 26+; no runtime packages or Stow checkout required for the initial probe.
 Private working repository, Apache-2.0. Source provenance is in
 [the transfer record](docs/source-provenance.json).
 
+The separate [checkout arbiter experiment](docs/checkout-arbiter-prototype.md) explores
+revision-pinned block grants. Planned v1 uses structural dependency graphs and explicit
+contract evidence; the optional embedding trial remains available as a retained experiment:
+
+```sh
+npm run checkout:prototype
+npm run checkout:evaluate
+```
+
+The [comparative replay](docs/checkout-comparison-results.md) completed 108 assignments
+and found no overall improvement before grant expansion: current rules completed
+30/36 missions, block scopes 24/36 and graph scopes 22/36. Missing scope expansion and
+unresolved callback targets prevented valid work. Run it with
+`npm run checkout:compare -- --python=/path/to/isolated/python`.
+
+The subsequent [grant expansion increment](docs/checkout-expansion-results.md)
+completed a fresh 108-assignment replay: current 30/36, blocks 30/36, graph 28/36.
+Explicit expansion recovers new-import work while preserving conflict and validation
+checks. Graph still excludes unknown callbacks and has no overall advantage.
+
+The graph-backed lab qualifier has passed all 13 independent checkout scenarios,
+15 adversarial binding cases and concurrent same-file publication/outside-scope checks.
+The [native DeepSeek V4.1 pilot](docs/checkout-native-results.md) completed nine real
+four-agent cohorts: current rules and block checkouts each produced 2/3 correct
+missions, graph checkouts 1/3. Graph needed 30 model turns versus 12 for each other
+arm. This small pilot establishes no overall improvement. Earlier V4 provider
+failures remain retained. `npm run checkout:agents -- --plan --python=/path/to/python`
+prepares an assignment manifest without model calls.
+
+The [varied native study](docs/checkout-varied-results.md) completed 27 cohorts across
+three workflows: current 3/9 correct missions, blocks 1/9, graph 2/9. Graph used 73
+native turns versus current 36, with higher reported cost. All cohorts stopped; a setup
+interruption and continuation remain recorded. Completed policy consumers became stale
+after later provider changes, making versioned validation and dependent-output
+invalidation the next proposed mechanism to qualify. No RT status changes.
+
+Its private copies and publication decisions live in memory; it is not wired into
+the deployed product or the observation harness.
+
+The standalone [checkout lab corpus](fixtures/checkout-lab/README.md) has a working
+order/fulfillment application, independent behavior checks, explicit data contracts,
+and 13 prospective checkout scenarios. Materialize it outside this repository:
+
+```sh
+npm run checkout:lab -- --destination=/absolute/path/checkout-arbiter-lab
+```
+
+Run fresh extraction and arbiter qualification on that repository with an isolated
+Python containing `graphifyy==0.9.62`, `tree-sitter==0.25.2` and
+`tree-sitter-javascript==0.25.0`:
+
+```sh
+npm run checkout:qualify -- --python=/path/to/isolated/python --repo=/absolute/path/checkout-arbiter-lab
+```
+
+Ordinary `npm test` checks the graph boundary using frozen source-hashed facts and needs
+only Node. Dynamic or unresolved call targets are conservatively refused; durable,
+authenticated checkout integration remains open.
 
 Ingress dispatches a declared OpenCode squad into one shared project and can assign
 an integration agent after independent prechecks. The default runs the whole roster

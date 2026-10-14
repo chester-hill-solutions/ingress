@@ -1,0 +1,954 @@
+{
+  "seed": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return 1; }\nexport function second() { return 2; }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 4; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 78,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 86,
+          "endByte": 117,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 118,
+            "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [],
+      "calls": [],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  },
+  "helper": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return helper(); }\nexport function second() { return 2; }\nfunction helper() { return target(); }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 4; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 85,
+          "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 93,
+          "endByte": 124,
+          "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+        },
+        {
+          "id": "main.mjs#helper",
+          "path": "main.mjs",
+          "name": "helper",
+          "kind": "function",
+          "startLine": 4,
+          "endLine": 4,
+          "startByte": 125,
+          "endByte": 163,
+          "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 164,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "main.mjs#helper",
+          "relation": "call",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 82,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "main.mjs#helper",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 80,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "provider.mjs#target",
+          "relation": "call",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 152,
+            "endByte": 160,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "provider.mjs#target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 152,
+            "endByte": 158,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "main.mjs#@binding:target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 152,
+            "endByte": 158,
+            "fileHash": "f75dffbdcea7975a6122afe4504b9024605c8d06f8a85b5f1c9c50f12ae8afe3"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [],
+      "calls": [
+        {
+          "blockId": "main.mjs#first",
+          "path": "main.mjs",
+          "line": 2,
+          "callee": "helper",
+          "target": "main.mjs#helper"
+        },
+        {
+          "blockId": "main.mjs#helper",
+          "path": "main.mjs",
+          "line": 4,
+          "callee": "target",
+          "target": "provider.mjs#target"
+        }
+      ],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  },
+  "dependency": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return target(); }\nexport function second() { return 2; }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 4; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 85,
+          "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 93,
+          "endByte": 124,
+          "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 125,
+            "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "provider.mjs#target",
+          "relation": "call",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 82,
+            "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "provider.mjs#target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 80,
+            "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "main.mjs#@binding:target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 80,
+            "fileHash": "112bd73ad02b05fc25cb87caf9fcf2fdcdc28fb34e3bd95aa020f6c1d2c3024c"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [],
+      "calls": [
+        {
+          "blockId": "main.mjs#first",
+          "path": "main.mjs",
+          "line": 2,
+          "callee": "target",
+          "target": "provider.mjs#target"
+        }
+      ],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  },
+  "outside": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return helper(); }\nexport function second() { return 99; }\nfunction helper() { return target(); }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 4; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 85,
+          "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 93,
+          "endByte": 125,
+          "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+        },
+        {
+          "id": "main.mjs#helper",
+          "path": "main.mjs",
+          "name": "helper",
+          "kind": "function",
+          "startLine": 4,
+          "endLine": 4,
+          "startByte": 126,
+          "endByte": 164,
+          "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 165,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "main.mjs#helper",
+          "relation": "call",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 82,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#first",
+          "to": "main.mjs#helper",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 2,
+            "startByte": 74,
+            "endByte": 80,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "provider.mjs#target",
+          "relation": "call",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 153,
+            "endByte": 161,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "provider.mjs#target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 153,
+            "endByte": 159,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        },
+        {
+          "from": "main.mjs#helper",
+          "to": "main.mjs#@binding:target",
+          "relation": "reference",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 4,
+            "startByte": 153,
+            "endByte": 159,
+            "fileHash": "4a09df71d03fd8565f3ee0a8e56b0d385f277e12ef6078d056887ad317b8441c"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [],
+      "calls": [
+        {
+          "blockId": "main.mjs#first",
+          "path": "main.mjs",
+          "line": 2,
+          "callee": "helper",
+          "target": "main.mjs#helper"
+        },
+        {
+          "blockId": "main.mjs#helper",
+          "path": "main.mjs",
+          "line": 4,
+          "callee": "target",
+          "target": "provider.mjs#target"
+        }
+      ],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  },
+  "unknown": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return callback(); }\nexport function second() { return 2; }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 4; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "2c60e61a4e0f6a244de2a4a6066351e2ebcaeffcedbafedde8e606725c8d15ee",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "2778863948efa87726a73aa15fcba446987fbe376aa5f19603ca5cf66ad9f959"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "2c60e61a4e0f6a244de2a4a6066351e2ebcaeffcedbafedde8e606725c8d15ee"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 87,
+          "fileHash": "2c60e61a4e0f6a244de2a4a6066351e2ebcaeffcedbafedde8e606725c8d15ee"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 95,
+          "endByte": 126,
+          "fileHash": "2c60e61a4e0f6a244de2a4a6066351e2ebcaeffcedbafedde8e606725c8d15ee"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 127,
+            "fileHash": "2c60e61a4e0f6a244de2a4a6066351e2ebcaeffcedbafedde8e606725c8d15ee"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [
+        {
+          "blockId": "main.mjs#first",
+          "line": 2,
+          "expression": "callback()",
+          "reason": "unresolved_call_or_shadow"
+        },
+        {
+          "blockId": "main.mjs#first",
+          "line": 2,
+          "expression": "callback",
+          "reason": "unresolved_reference"
+        }
+      ],
+      "calls": [
+        {
+          "blockId": "main.mjs#first",
+          "path": "main.mjs",
+          "line": 2,
+          "callee": "callback",
+          "target": null
+        }
+      ],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  },
+  "moved": {
+    "files": {
+      "main.mjs": "import { target } from './provider.mjs';\nexport function first() { return 1; }\nexport function second() { return 2; }\n",
+      "provider.mjs": "export function target() { return 3; }\n",
+      "free.mjs": "export function free() { return 5; }\n"
+    },
+    "ast": {
+      "schema": 1,
+      "producer": {
+        "name": "ingress-bounded-mjs-bindings",
+        "version": 1,
+        "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+        "treeSitter": "0.25.2",
+        "javascriptGrammar": "0.25.0"
+      },
+      "files": [
+        {
+          "path": "free.mjs",
+          "fileHash": "50077376edae41d247c76d7a66588b4f05d3b75345beebab0a0061bb7430bc1e",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "main.mjs",
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        },
+        {
+          "path": "provider.mjs",
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f",
+          "hasError": false,
+          "errors": [],
+          "runtimeSyntaxValid": true
+        }
+      ],
+      "blocks": [
+        {
+          "id": "free.mjs#free",
+          "path": "free.mjs",
+          "name": "free",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 36,
+          "fileHash": "50077376edae41d247c76d7a66588b4f05d3b75345beebab0a0061bb7430bc1e"
+        },
+        {
+          "id": "main.mjs#@binding:target",
+          "path": "main.mjs",
+          "name": "@binding:target",
+          "kind": "module_binding",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 0,
+          "endByte": 40,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "main.mjs#first",
+          "path": "main.mjs",
+          "name": "first",
+          "kind": "function",
+          "startLine": 2,
+          "endLine": 2,
+          "startByte": 48,
+          "endByte": 78,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "main.mjs#second",
+          "path": "main.mjs",
+          "name": "second",
+          "kind": "function",
+          "startLine": 3,
+          "endLine": 3,
+          "startByte": 86,
+          "endByte": 117,
+          "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+        },
+        {
+          "id": "provider.mjs#target",
+          "path": "provider.mjs",
+          "name": "target",
+          "kind": "function",
+          "startLine": 1,
+          "endLine": 1,
+          "startByte": 7,
+          "endByte": 38,
+          "fileHash": "f1d2711d00c46ffa7fe59da9b1f55f51f062a466a573d32bbd3dc07c6af6954f"
+        }
+      ],
+      "edges": [
+        {
+          "from": "main.mjs#@binding:target",
+          "to": "provider.mjs#target",
+          "relation": "binding",
+          "evidence": {
+            "path": "main.mjs",
+            "line": 1,
+            "startByte": 0,
+            "endByte": 118,
+            "fileHash": "5cfdf0904ec7d9f7b3038544ab0de22eb70b9d0db84e973685d75813742c7bc1"
+          },
+          "resolution": "lexical"
+        }
+      ],
+      "unknown": [],
+      "calls": [],
+      "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+      "runtimeParser": "node-module-syntax-check",
+      "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+    }
+  }
+}

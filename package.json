@@ -12,6 +12,10 @@
     "demo": "node scripts/probe.mjs",
     "probe:real": "node scripts/probe.mjs --real",
     "check": "node scripts/check.mjs",
+    "checkout:prototype": "node scripts/checkout-prototype.mjs",
+    "checkout:evaluate": "node scripts/checkout-prototype.mjs --evaluate",
+    "checkout:graphify": "node scripts/checkout/graphify-probe.mjs",
+    "checkout:lab": "node scripts/checkout/lab-repo.mjs",
     "e2e:commit": "node scripts/commit-e2e.mjs",
     "e2e:lease": "node scripts/lease-e2e.mjs",
     "e2e:seed": "node scripts/seed-e2e.mjs",
@@ -26,7 +30,10 @@
     "benchmark:real": "node scripts/benchmark.mjs --real",
     "missions:plan": "node scripts/mission-benchmark.mjs --plan",
     "missions:real": "node scripts/mission-benchmark.mjs --real",
-    "missions:review": "node scripts/blind-review.mjs"
+    "missions:review": "node scripts/blind-review.mjs",
+    "checkout:qualify": "node scripts/checkout/qualify-lab.mjs",
+    "checkout:compare": "node scripts/checkout/compare-replays.mjs",
+    "checkout:agents": "node scripts/checkout/native-flight.mjs"
   },
   "license": "Apache-2.0",
   "repository": {

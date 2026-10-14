@@ -40,6 +40,12 @@ code-hygiene tier.
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
 | 13 | Make the fence survive a swarm | P0 | M | **scoping, concurrency and content-per-revision done** (`e2e:swarm`, `e2e:concurrency`, `e2e:content`); **the trial says the swarm use case is not reachable as deployed** — no model inside the container; **output visibility shipped**; merge deferred to the trial's number |
+| 14 | Qualify graph-backed block checkouts and publication | P1 | L | user-directed 2026-10-12; Graphify qualification 37/38, false target under parameter shadowing; AST ranges measured; graph eligibility guards and durable integration open |
+
+Item 14 is a user-directed addition to this ordered queue. Its exclusive modification
+grants belong to the managed checkout profile. The observation harness retains its
+no-file-claims contract. This addition does not advance RT status or make the older
+recorded deployment observations current again.
 
 ## Already recorded as a limit
 
@@ -1328,6 +1334,68 @@ Everything else this document asks about — whether the fence beats serial, whe
 abstraction suffices, whether multi-file conflicts dominate — remains unmeasured, and that
 is the right thing to measure next.
 
+
+### 14. Qualify graph-backed block checkouts and publication
+
+**Now.** The [checkout experiment](checkout-arbiter-prototype.md) grants revision-relative
+line scopes, expands operator-declared dependencies in both directions, checks submitted
+diffs, expires grants and merges compatible edits. It has 18 independent boundary checks
+and a measured 11-case embedding comparison. Its state is in memory, its graph is a
+hand-authored fixture and its identity/clock/validator are trusted local parameters.
+It provides no authenticated durable checkout or private filesystem boundary.
+The existing product already has authenticated routing, participant/container identity,
+whole-file leases, revisioned content, a commit manifest and a text merge path. Those are
+the integration seams; another independent production arbiter is not the intended result.
+The subsequent [Graphify qualification](checkout-arbiter-prototype.md#measured-graphify-qualification)
+scanned 24 product files and passed 37/38 checks. A falsely resolved parameter-shadowed
+call, absent native end ranges and a successful populated graph for malformed input
+require binding, span and parse-error guards before the graph can authorize grants.
+The bounded lab adapter now implements those guards for its supported MJS subset and
+ran the real in-memory arbiter against all 13 independent checkout cases, 15 adversarial
+binding cases and concurrent publication/outside-scope checks. A later
+[108-assignment comparison](checkout-comparison-results.md) found worse overall mission
+completion in the current graph prototype: 22/36 versus current rules' 30/36. Missing
+scope expansion, unknown callback exclusion and post-publication dependency invalidation
+are measured usability/correctness gaps. This advances slice 2's
+local experiment only; authenticated durable grants and deployment remain open. Dynamic
+callbacks/methods still cause conservative refusal, including `refunds.reduce`.
+
+**Change.** Execute the six slices in the
+[implementation sequence](checkout-arbiter-prototype.md#implementation-sequence).
+Qualify a pinned, code-only Graphify extractor first; normalize its output into a
+revisioned, evidenced dependency index; extend the existing grant/content/commit
+boundaries; then exercise actual private working copies and recovery. V1 uses structural
+extraction and explicit evidenced contract records; embeddings are excluded from its
+runtime path and their prior experiment remains retained. Stow remains
+an optional public storage integration, never a private/sibling dependency.
+
+The user-selected v1 profile enforces grants at submission/publication.
+Preventing edits outside a grant inside a private working copy is a distinct stronger
+profile requiring an enforced editor/filesystem boundary. The user-facing guarantee
+must identify which profile ran. Source coverage, unresolved references and graph
+freshness accompany every graph-backed decision.
+
+**Verified by.** A real-repository extractor probe with independently checked JS/MJS
+call/import relationships and symbol spans; model-free fixtures for normalization,
+scope compatibility, restart/expiry/fencing and newly introduced dependencies; a
+two-working-copy integration path proving out-of-scope submissions do not land and
+compatible same-file changes survive. An async validation race must cause a retry,
+never a publication based on an obsolete head. Crash probes must never expose a code
+revision paired with the wrong graph. Reuse `npm test` and `npm run check` for each
+landed product slice; retained live harness trials remain opt-in.
+
+**Done when.** Authenticated participants can obtain a bounded immutable checkout,
+work independently, request scope expansion, and submit through the existing admitted
+write boundary. The arbiter derives provenance from its issued base and validated
+index, not a participant's claim that it has no dependencies. A publication atomically
+advances its workspace manifest and corresponding ready graph. Expired/revoked grants
+and retries cannot publish twice. The independent campaign records correctness,
+missed interference, needless exclusion, waiting and recovery for every assigned case.
+Native edit prevention and useful benefit remain unqualified unless separately proved.
+
+This addition brings managed checkout/base retention and graph publication into scope;
+the older exclusions below still apply to a general Git replacement and to claims of
+semantic merge correctness.
 
 ## Verification gates per tier
 

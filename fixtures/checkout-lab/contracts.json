@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "corpus": "checkout-lab-v1",
+  "contracts": [
+    {
+      "id": "stored-order-money-v1",
+      "description": "totalPaidCents is a non-negative integer count of CAD cents in order version 1.",
+      "producer": { "path": "src/orders.mjs", "symbol": "createOrder" },
+      "consumers": [
+        { "path": "src/storage.mjs", "symbol": "encodeOrder" },
+        { "path": "src/storage.mjs", "symbol": "decodeOrder" },
+        { "path": "src/payments.mjs", "symbol": "capturePayment" },
+        { "path": "src/refunds.mjs", "symbol": "issueRefund" },
+        { "path": "src/fulfillment.mjs", "symbol": "fulfillOrder" },
+        { "path": "src/reports.mjs", "symbol": "format" }
+      ],
+      "evidence": "The producer returns totalPaidCents; storage serializes it; payment/refund/fulfillment compare the same persisted field. test/behavior.test.mjs supplies independent numerical and mismatch checks."
+    },
+    {
+      "id": "captured-receipt-v1",
+      "description": "A captured receipt retains the order ID, CAD currency and exact totalPaidCents as amountCents.",
+      "producer": { "path": "src/payments.mjs", "symbol": "capturePayment" },
+      "consumers": [
+        { "path": "src/refunds.mjs", "symbol": "issueRefund" },
+        { "path": "src/fulfillment.mjs", "symbol": "fulfillOrder" },
+        { "path": "src/notifications.mjs", "symbol": "format" }
+      ],
+      "evidence": "capturePayment emits orderId, amountCents, currency and captured status; consumers use that record without importing its producer."
+    }
+  ]
+}

@@ -1,0 +1,3006 @@
+{
+  "schema": 1,
+  "producer": {
+    "name": "ingress-bounded-mjs-bindings",
+    "version": 1,
+    "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+    "treeSitter": "0.25.2",
+    "javascriptGrammar": "0.25.0"
+  },
+  "files": [
+    {
+      "path": "src/catalog.mjs",
+      "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/checkout.mjs",
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/config.mjs",
+      "fileHash": "34a7dae1be378a727c8a8ab99f5e5628f4ac285ecbbda24a156bc64bfd63a66c",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/fulfillment.mjs",
+      "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/inventory.mjs",
+      "fileHash": "d4f8c3da35c300f737e15425e26dc19ac45eb2e371d46aa6530c9f5bbc0d2aab",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/money.mjs",
+      "fileHash": "7ebc58a93843a541f021ca1ac17f179915ab2c8cb1804bd1624ff181f8d4c817",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/notifications.mjs",
+      "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/notifier.mjs",
+      "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/orders.mjs",
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/payments.mjs",
+      "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/pricing-index.mjs",
+      "fileHash": "cd5fa6c8ef1f932f0c6db0e9f9aad0839ff378b4e20d7b6c0abdb11529b56c16",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/pricing.mjs",
+      "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/promotions.mjs",
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/refunds.mjs",
+      "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/reports.mjs",
+      "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    },
+    {
+      "path": "src/storage.mjs",
+      "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228",
+      "hasError": false,
+      "errors": [],
+      "runtimeSyntaxValid": true
+    }
+  ],
+  "blocks": [
+    {
+      "id": "src/catalog.mjs#products",
+      "path": "src/catalog.mjs",
+      "name": "products",
+      "kind": "binding",
+      "startLine": 1,
+      "endLine": 5,
+      "startByte": 0,
+      "endByte": 229,
+      "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+    },
+    {
+      "id": "src/catalog.mjs#getProduct",
+      "path": "src/catalog.mjs",
+      "name": "getProduct",
+      "kind": "function",
+      "startLine": 7,
+      "endLine": 10,
+      "startByte": 238,
+      "endByte": 364,
+      "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+    },
+    {
+      "id": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "name": "priceCart",
+      "kind": "function",
+      "startLine": 12,
+      "endLine": 23,
+      "startByte": 373,
+      "endByte": 994,
+      "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:createOrder",
+      "path": "src/checkout.mjs",
+      "name": "@binding:createOrder",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 43,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:decodeOrder,encodeOrder",
+      "path": "src/checkout.mjs",
+      "name": "@binding:decodeOrder,encodeOrder",
+      "kind": "module_binding",
+      "startLine": 2,
+      "endLine": 2,
+      "startByte": 44,
+      "endByte": 101,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:capturePayment",
+      "path": "src/checkout.mjs",
+      "name": "@binding:capturePayment",
+      "kind": "module_binding",
+      "startLine": 3,
+      "endLine": 3,
+      "startByte": 102,
+      "endByte": 150,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:fulfillOrder",
+      "path": "src/checkout.mjs",
+      "name": "@binding:fulfillOrder",
+      "kind": "module_binding",
+      "startLine": 4,
+      "endLine": 4,
+      "startByte": 151,
+      "endByte": 200,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:sendDefaultReceipt",
+      "path": "src/checkout.mjs",
+      "name": "@binding:sendDefaultReceipt",
+      "kind": "module_binding",
+      "startLine": 5,
+      "endLine": 5,
+      "startByte": 201,
+      "endByte": 253,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#@binding:renderOrder",
+      "path": "src/checkout.mjs",
+      "name": "@binding:renderOrder",
+      "kind": "module_binding",
+      "startLine": 6,
+      "endLine": 6,
+      "startByte": 254,
+      "endByte": 308,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "name": "checkout",
+      "kind": "function",
+      "startLine": 8,
+      "endLine": 14,
+      "startByte": 317,
+      "endByte": 679,
+      "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+    },
+    {
+      "id": "src/config.mjs#orderPolicy",
+      "path": "src/config.mjs",
+      "name": "orderPolicy",
+      "kind": "binding",
+      "startLine": 1,
+      "endLine": 7,
+      "startByte": 7,
+      "endByte": 181,
+      "fileHash": "34a7dae1be378a727c8a8ab99f5e5628f4ac285ecbbda24a156bc64bfd63a66c"
+    },
+    {
+      "id": "src/fulfillment.mjs#@binding:reserve",
+      "path": "src/fulfillment.mjs",
+      "name": "@binding:reserve",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+    },
+    {
+      "id": "src/fulfillment.mjs#fulfillOrder",
+      "path": "src/fulfillment.mjs",
+      "name": "fulfillOrder",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 7,
+      "startByte": 51,
+      "endByte": 392,
+      "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+    },
+    {
+      "id": "src/inventory.mjs#available",
+      "path": "src/inventory.mjs",
+      "name": "available",
+      "kind": "function",
+      "startLine": 1,
+      "endLine": 3,
+      "startByte": 7,
+      "endByte": 67,
+      "fileHash": "d4f8c3da35c300f737e15425e26dc19ac45eb2e371d46aa6530c9f5bbc0d2aab"
+    },
+    {
+      "id": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "name": "reserve",
+      "kind": "function",
+      "startLine": 5,
+      "endLine": 15,
+      "startByte": 76,
+      "endByte": 596,
+      "fileHash": "d4f8c3da35c300f737e15425e26dc19ac45eb2e371d46aa6530c9f5bbc0d2aab"
+    },
+    {
+      "id": "src/money.mjs#assertCents",
+      "path": "src/money.mjs",
+      "name": "assertCents",
+      "kind": "function",
+      "startLine": 1,
+      "endLine": 4,
+      "startByte": 7,
+      "endByte": 142,
+      "fileHash": "7ebc58a93843a541f021ca1ac17f179915ab2c8cb1804bd1624ff181f8d4c817"
+    },
+    {
+      "id": "src/money.mjs#formatMoney",
+      "path": "src/money.mjs",
+      "name": "formatMoney",
+      "kind": "function",
+      "startLine": 6,
+      "endLine": 9,
+      "startByte": 151,
+      "endByte": 274,
+      "fileHash": "7ebc58a93843a541f021ca1ac17f179915ab2c8cb1804bd1624ff181f8d4c817"
+    },
+    {
+      "id": "src/notifications.mjs#@binding:formatMoney",
+      "path": "src/notifications.mjs",
+      "name": "@binding:formatMoney",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+    },
+    {
+      "id": "src/notifications.mjs#format",
+      "path": "src/notifications.mjs",
+      "name": "format",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 5,
+      "startByte": 51,
+      "endByte": 173,
+      "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+    },
+    {
+      "id": "src/notifications.mjs#notify",
+      "path": "src/notifications.mjs",
+      "name": "notify",
+      "kind": "function",
+      "startLine": 7,
+      "endLine": 9,
+      "startByte": 182,
+      "endByte": 266,
+      "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+    },
+    {
+      "id": "src/notifier.mjs#@binding:notify",
+      "path": "src/notifier.mjs",
+      "name": "@binding:notify",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 45,
+      "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+    },
+    {
+      "id": "src/notifier.mjs#sendDefaultReceipt",
+      "path": "src/notifier.mjs",
+      "name": "sendDefaultReceipt",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 5,
+      "startByte": 54,
+      "endByte": 120,
+      "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+    },
+    {
+      "id": "src/notifier.mjs#sendCustomReceipt",
+      "path": "src/notifier.mjs",
+      "name": "sendCustomReceipt",
+      "kind": "function",
+      "startLine": 7,
+      "endLine": 9,
+      "startByte": 129,
+      "endByte": 202,
+      "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+    },
+    {
+      "id": "src/orders.mjs#@binding:priceCart",
+      "path": "src/orders.mjs",
+      "name": "@binding:priceCart",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "path": "src/orders.mjs",
+      "name": "@binding:netSubtotal,shippingFee",
+      "kind": "module_binding",
+      "startLine": 2,
+      "endLine": 2,
+      "startByte": 43,
+      "endByte": 125,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/orders.mjs#@binding:selectPromotion",
+      "path": "src/orders.mjs",
+      "name": "@binding:selectPromotion",
+      "kind": "module_binding",
+      "startLine": 3,
+      "endLine": 3,
+      "startByte": 126,
+      "endByte": 177,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/orders.mjs#@binding:orderPolicy",
+      "path": "src/orders.mjs",
+      "name": "@binding:orderPolicy",
+      "kind": "module_binding",
+      "startLine": 4,
+      "endLine": 4,
+      "startByte": 178,
+      "endByte": 221,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "name": "createOrder",
+      "kind": "function",
+      "startLine": 6,
+      "endLine": 15,
+      "startByte": 230,
+      "endByte": 937,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/orders.mjs#createPromotionalOrder",
+      "path": "src/orders.mjs",
+      "name": "createPromotionalOrder",
+      "kind": "function",
+      "startLine": 17,
+      "endLine": 21,
+      "startByte": 946,
+      "endByte": 1275,
+      "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+    },
+    {
+      "id": "src/payments.mjs#@binding:assertCents",
+      "path": "src/payments.mjs",
+      "name": "@binding:assertCents",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+    },
+    {
+      "id": "src/payments.mjs#capturePayment",
+      "path": "src/payments.mjs",
+      "name": "capturePayment",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 7,
+      "startByte": 51,
+      "endByte": 313,
+      "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+    },
+    {
+      "id": "src/payments.mjs#refundableBalance",
+      "path": "src/payments.mjs",
+      "name": "refundableBalance",
+      "kind": "function",
+      "startLine": 9,
+      "endLine": 14,
+      "startByte": 322,
+      "endByte": 620,
+      "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+    },
+    {
+      "id": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "path": "src/pricing-index.mjs",
+      "name": "@binding:discountedTotal,shippingFee",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 81,
+      "fileHash": "cd5fa6c8ef1f932f0c6db0e9f9aad0839ff378b4e20d7b6c0abdb11529b56c16"
+    },
+    {
+      "id": "src/pricing.mjs#@binding:assertCents",
+      "path": "src/pricing.mjs",
+      "name": "@binding:assertCents",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+    },
+    {
+      "id": "src/pricing.mjs#@binding:orderPolicy",
+      "path": "src/pricing.mjs",
+      "name": "@binding:orderPolicy",
+      "kind": "module_binding",
+      "startLine": 2,
+      "endLine": 2,
+      "startByte": 43,
+      "endByte": 86,
+      "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+    },
+    {
+      "id": "src/pricing.mjs#discountSubtotal",
+      "path": "src/pricing.mjs",
+      "name": "discountSubtotal",
+      "kind": "function",
+      "startLine": 4,
+      "endLine": 8,
+      "startByte": 95,
+      "endByte": 381,
+      "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+    },
+    {
+      "id": "src/pricing.mjs#shippingFee",
+      "path": "src/pricing.mjs",
+      "name": "shippingFee",
+      "kind": "function",
+      "startLine": 10,
+      "endLine": 15,
+      "startByte": 390,
+      "endByte": 658,
+      "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+    },
+    {
+      "id": "src/promotions.mjs#@binding:assertCents",
+      "path": "src/promotions.mjs",
+      "name": "@binding:assertCents",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+    },
+    {
+      "id": "src/promotions.mjs#@binding:discountSubtotal",
+      "path": "src/promotions.mjs",
+      "name": "@binding:discountSubtotal",
+      "kind": "module_binding",
+      "startLine": 2,
+      "endLine": 2,
+      "startByte": 43,
+      "endByte": 92,
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+    },
+    {
+      "id": "src/promotions.mjs#fixedDiscount",
+      "path": "src/promotions.mjs",
+      "name": "fixedDiscount",
+      "kind": "function",
+      "startLine": 4,
+      "endLine": 8,
+      "startByte": 101,
+      "endByte": 264,
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+    },
+    {
+      "id": "src/promotions.mjs#policies",
+      "path": "src/promotions.mjs",
+      "name": "policies",
+      "kind": "binding",
+      "startLine": 10,
+      "endLine": 10,
+      "startByte": 266,
+      "endByte": 350,
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+    },
+    {
+      "id": "src/promotions.mjs#selectPromotion",
+      "path": "src/promotions.mjs",
+      "name": "selectPromotion",
+      "kind": "function",
+      "startLine": 12,
+      "endLine": 15,
+      "startByte": 359,
+      "endByte": 543,
+      "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+    },
+    {
+      "id": "src/refunds.mjs#@binding:assertCents",
+      "path": "src/refunds.mjs",
+      "name": "@binding:assertCents",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+    },
+    {
+      "id": "src/refunds.mjs#@binding:refundableBalance",
+      "path": "src/refunds.mjs",
+      "name": "@binding:refundableBalance",
+      "kind": "module_binding",
+      "startLine": 2,
+      "endLine": 2,
+      "startByte": 43,
+      "endByte": 94,
+      "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+    },
+    {
+      "id": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "name": "issueRefund",
+      "kind": "function",
+      "startLine": 4,
+      "endLine": 12,
+      "startByte": 103,
+      "endByte": 779,
+      "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+    },
+    {
+      "id": "src/reports.mjs#@binding:formatMoney",
+      "path": "src/reports.mjs",
+      "name": "@binding:formatMoney",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+    },
+    {
+      "id": "src/reports.mjs#format",
+      "path": "src/reports.mjs",
+      "name": "format",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 5,
+      "startByte": 51,
+      "endByte": 178,
+      "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+    },
+    {
+      "id": "src/storage.mjs#@binding:assertCents",
+      "path": "src/storage.mjs",
+      "name": "@binding:assertCents",
+      "kind": "module_binding",
+      "startLine": 1,
+      "endLine": 1,
+      "startByte": 0,
+      "endByte": 42,
+      "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+    },
+    {
+      "id": "src/storage.mjs#encodeOrder",
+      "path": "src/storage.mjs",
+      "name": "encodeOrder",
+      "kind": "function",
+      "startLine": 3,
+      "endLine": 7,
+      "startByte": 51,
+      "endByte": 283,
+      "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+    },
+    {
+      "id": "src/storage.mjs#decodeOrder",
+      "path": "src/storage.mjs",
+      "name": "decodeOrder",
+      "kind": "function",
+      "startLine": 9,
+      "endLine": 14,
+      "startByte": 292,
+      "endByte": 543,
+      "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+    }
+  ],
+  "edges": [
+    {
+      "from": "src/checkout.mjs#@binding:createOrder",
+      "to": "src/orders.mjs#createOrder",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:decodeOrder,encodeOrder",
+      "to": "src/storage.mjs#encodeOrder",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:decodeOrder,encodeOrder",
+      "to": "src/storage.mjs#decodeOrder",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:capturePayment",
+      "to": "src/payments.mjs#capturePayment",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:fulfillOrder",
+      "to": "src/fulfillment.mjs#fulfillOrder",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:sendDefaultReceipt",
+      "to": "src/notifier.mjs#sendDefaultReceipt",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#@binding:renderOrder",
+      "to": "src/reports.mjs#format",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 680,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/fulfillment.mjs#@binding:reserve",
+      "to": "src/inventory.mjs#reserve",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/fulfillment.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 393,
+        "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#@binding:formatMoney",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 267,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifier.mjs#@binding:notify",
+      "to": "src/notifications.mjs#notify",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/notifier.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 203,
+        "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:priceCart",
+      "to": "src/catalog.mjs#priceCart",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "to": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "to": "src/pricing.mjs#shippingFee",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:selectPromotion",
+      "to": "src/promotions.mjs#selectPromotion",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#@binding:orderPolicy",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 1276,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#@binding:assertCents",
+      "to": "src/money.mjs#assertCents",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 621,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/pricing-index.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 82,
+        "fileHash": "cd5fa6c8ef1f932f0c6db0e9f9aad0839ff378b4e20d7b6c0abdb11529b56c16"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "to": "src/pricing.mjs#shippingFee",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/pricing-index.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 82,
+        "fileHash": "cd5fa6c8ef1f932f0c6db0e9f9aad0839ff378b4e20d7b6c0abdb11529b56c16"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#@binding:assertCents",
+      "to": "src/money.mjs#assertCents",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 659,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#@binding:orderPolicy",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 659,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#@binding:assertCents",
+      "to": "src/money.mjs#assertCents",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 544,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#@binding:discountSubtotal",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 544,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#@binding:assertCents",
+      "to": "src/money.mjs#assertCents",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 780,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#@binding:refundableBalance",
+      "to": "src/payments.mjs#refundableBalance",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 780,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/reports.mjs#@binding:formatMoney",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/reports.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 179,
+        "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#@binding:assertCents",
+      "to": "src/money.mjs#assertCents",
+      "relation": "binding",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 1,
+        "startByte": 0,
+        "endByte": 544,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/catalog.mjs#getProduct",
+      "to": "src/catalog.mjs#products",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/catalog.mjs",
+        "line": 8,
+        "startByte": 286,
+        "endByte": 294,
+        "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/catalog.mjs#getProduct",
+      "to": "src/catalog.mjs#products",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/catalog.mjs",
+        "line": 9,
+        "startByte": 348,
+        "endByte": 356,
+        "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/catalog.mjs#priceCart",
+      "to": "src/catalog.mjs#getProduct",
+      "relation": "call",
+      "evidence": {
+        "path": "src/catalog.mjs",
+        "line": 17,
+        "startByte": 692,
+        "endByte": 712,
+        "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/catalog.mjs#priceCart",
+      "to": "src/catalog.mjs#getProduct",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/catalog.mjs",
+        "line": 17,
+        "startByte": 692,
+        "endByte": 702,
+        "fileHash": "c2483d9d04276326c25171f553f2537ecd14e3096702262f1cfacf4456603a7c"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/storage.mjs#encodeOrder",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 380,
+        "endByte": 424,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/storage.mjs#encodeOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 380,
+        "endByte": 391,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:decodeOrder,encodeOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 380,
+        "endByte": 391,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/orders.mjs#createOrder",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 392,
+        "endByte": 423,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/orders.mjs#createOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 392,
+        "endByte": 403,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:createOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 9,
+        "startByte": 392,
+        "endByte": 403,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/storage.mjs#decodeOrder",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 10,
+        "startByte": 442,
+        "endByte": 460,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/storage.mjs#decodeOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 10,
+        "startByte": 442,
+        "endByte": 453,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:decodeOrder,encodeOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 10,
+        "startByte": 442,
+        "endByte": 453,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/payments.mjs#capturePayment",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 11,
+        "startByte": 480,
+        "endByte": 501,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/payments.mjs#capturePayment",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 11,
+        "startByte": 480,
+        "endByte": 494,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:capturePayment",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 11,
+        "startByte": 480,
+        "endByte": 494,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/fulfillment.mjs#fulfillOrder",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 12,
+        "startByte": 523,
+        "endByte": 558,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/fulfillment.mjs#fulfillOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 12,
+        "startByte": 523,
+        "endByte": 535,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:fulfillOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 12,
+        "startByte": 523,
+        "endByte": 535,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/notifier.mjs#sendDefaultReceipt",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 608,
+        "endByte": 635,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/notifier.mjs#sendDefaultReceipt",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 608,
+        "endByte": 626,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:sendDefaultReceipt",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 608,
+        "endByte": 626,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/reports.mjs#format",
+      "relation": "call",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 646,
+        "endByte": 674,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/reports.mjs#format",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 646,
+        "endByte": 657,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/checkout.mjs#checkout",
+      "to": "src/checkout.mjs#@binding:renderOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/checkout.mjs",
+        "line": 13,
+        "startByte": 646,
+        "endByte": 657,
+        "fileHash": "0c8e7c07812609a95d8f3ee0a8486447bc75af43ba80620533d999c9eb658605"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/fulfillment.mjs#fulfillOrder",
+      "to": "src/inventory.mjs#reserve",
+      "relation": "call",
+      "evidence": {
+        "path": "src/fulfillment.mjs",
+        "line": 6,
+        "startByte": 360,
+        "endByte": 387,
+        "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/fulfillment.mjs#fulfillOrder",
+      "to": "src/inventory.mjs#reserve",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/fulfillment.mjs",
+        "line": 6,
+        "startByte": 360,
+        "endByte": 367,
+        "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/fulfillment.mjs#fulfillOrder",
+      "to": "src/fulfillment.mjs#@binding:reserve",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/fulfillment.mjs",
+        "line": 6,
+        "startByte": 360,
+        "endByte": 367,
+        "fileHash": "acf829b31924eea3e72741194c2b1b29013682b4562a13fbf3c75e95044f3c73"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/inventory.mjs#reserve",
+      "to": "src/inventory.mjs#available",
+      "relation": "call",
+      "evidence": {
+        "path": "src/inventory.mjs",
+        "line": 11,
+        "startByte": 418,
+        "endByte": 439,
+        "fileHash": "d4f8c3da35c300f737e15425e26dc19ac45eb2e371d46aa6530c9f5bbc0d2aab"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/inventory.mjs#reserve",
+      "to": "src/inventory.mjs#available",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/inventory.mjs",
+        "line": 11,
+        "startByte": 418,
+        "endByte": 427,
+        "fileHash": "d4f8c3da35c300f737e15425e26dc19ac45eb2e371d46aa6530c9f5bbc0d2aab"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/money.mjs#formatMoney",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/money.mjs",
+        "line": 7,
+        "startByte": 201,
+        "endByte": 219,
+        "fileHash": "7ebc58a93843a541f021ca1ac17f179915ab2c8cb1804bd1624ff181f8d4c817"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/money.mjs#formatMoney",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/money.mjs",
+        "line": 7,
+        "startByte": 201,
+        "endByte": 212,
+        "fileHash": "7ebc58a93843a541f021ca1ac17f179915ab2c8cb1804bd1624ff181f8d4c817"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#format",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "call",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 4,
+        "startByte": 118,
+        "endByte": 168,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#format",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 4,
+        "startByte": 118,
+        "endByte": 129,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#format",
+      "to": "src/notifications.mjs#@binding:formatMoney",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 4,
+        "startByte": 118,
+        "endByte": 129,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#notify",
+      "to": "src/notifications.mjs#format",
+      "relation": "call",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 8,
+        "startByte": 246,
+        "endByte": 261,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifications.mjs#notify",
+      "to": "src/notifications.mjs#format",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/notifications.mjs",
+        "line": 8,
+        "startByte": 246,
+        "endByte": 252,
+        "fileHash": "c1858299dde2103cd45d3a882fc1e8741d01028325dd0fcc28e6b5e9c9622244"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifier.mjs#sendDefaultReceipt",
+      "to": "src/notifications.mjs#notify",
+      "relation": "call",
+      "evidence": {
+        "path": "src/notifier.mjs",
+        "line": 4,
+        "startByte": 102,
+        "endByte": 117,
+        "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifier.mjs#sendDefaultReceipt",
+      "to": "src/notifications.mjs#notify",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/notifier.mjs",
+        "line": 4,
+        "startByte": 102,
+        "endByte": 108,
+        "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/notifier.mjs#sendDefaultReceipt",
+      "to": "src/notifier.mjs#@binding:notify",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/notifier.mjs",
+        "line": 4,
+        "startByte": 102,
+        "endByte": 108,
+        "fileHash": "3a4c2d5df632a232bf13e3b29e973f944b140aeb2d0076c09474c21d33425da1"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 6,
+        "startByte": 282,
+        "endByte": 293,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/orders.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 6,
+        "startByte": 282,
+        "endByte": 293,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/catalog.mjs#priceCart",
+      "relation": "call",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 8,
+        "startByte": 453,
+        "endByte": 469,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/catalog.mjs#priceCart",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 8,
+        "startByte": 453,
+        "endByte": 462,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/orders.mjs#@binding:priceCart",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 8,
+        "startByte": 453,
+        "endByte": 462,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "call",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 9,
+        "startByte": 505,
+        "endByte": 548,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 9,
+        "startByte": 505,
+        "endByte": 516,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 9,
+        "startByte": 505,
+        "endByte": 516,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 9,
+        "startByte": 505,
+        "endByte": 516,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing.mjs#shippingFee",
+      "relation": "call",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 10,
+        "startByte": 574,
+        "endByte": 598,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing.mjs#shippingFee",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 10,
+        "startByte": 574,
+        "endByte": 585,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/orders.mjs#@binding:netSubtotal,shippingFee",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 10,
+        "startByte": 574,
+        "endByte": 585,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/pricing-index.mjs#@binding:discountedTotal,shippingFee",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 10,
+        "startByte": 574,
+        "endByte": 585,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 13,
+        "startByte": 788,
+        "endByte": 799,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createOrder",
+      "to": "src/orders.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 13,
+        "startByte": 788,
+        "endByte": 799,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createPromotionalOrder",
+      "to": "src/orders.mjs#createOrder",
+      "relation": "call",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 18,
+        "startByte": 1025,
+        "endByte": 1071,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createPromotionalOrder",
+      "to": "src/orders.mjs#createOrder",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 18,
+        "startByte": 1025,
+        "endByte": 1036,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createPromotionalOrder",
+      "to": "src/promotions.mjs#selectPromotion",
+      "relation": "call",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 19,
+        "startByte": 1107,
+        "endByte": 1161,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createPromotionalOrder",
+      "to": "src/promotions.mjs#selectPromotion",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 19,
+        "startByte": 1107,
+        "endByte": 1122,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/orders.mjs#createPromotionalOrder",
+      "to": "src/orders.mjs#@binding:selectPromotion",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/orders.mjs",
+        "line": 19,
+        "startByte": 1107,
+        "endByte": 1122,
+        "fileHash": "6ce3f241167861a63a3e9983cc9d29d63f9d1d84b8fbb1dda80630cd99baae56"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#capturePayment",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 4,
+        "startByte": 86,
+        "endByte": 119,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#capturePayment",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 4,
+        "startByte": 86,
+        "endByte": 97,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#capturePayment",
+      "to": "src/payments.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 4,
+        "startByte": 86,
+        "endByte": 97,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 10,
+        "startByte": 376,
+        "endByte": 408,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 10,
+        "startByte": 376,
+        "endByte": 387,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/payments.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 10,
+        "startByte": 376,
+        "endByte": 387,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 11,
+        "startByte": 463,
+        "endByte": 494,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 11,
+        "startByte": 463,
+        "endByte": 474,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/payments.mjs#refundableBalance",
+      "to": "src/payments.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/payments.mjs",
+        "line": 11,
+        "startByte": 463,
+        "endByte": 474,
+        "fileHash": "52cc3ba87b209232d21f2cf29ad34a8458c066c4a5aa49ac4c9927636e4ebd92"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#discountSubtotal",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 4,
+        "startByte": 146,
+        "endByte": 157,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#discountSubtotal",
+      "to": "src/pricing.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 4,
+        "startByte": 146,
+        "endByte": 157,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#discountSubtotal",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 5,
+        "startByte": 186,
+        "endByte": 212,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#discountSubtotal",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 5,
+        "startByte": 186,
+        "endByte": 197,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#discountSubtotal",
+      "to": "src/pricing.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 5,
+        "startByte": 186,
+        "endByte": 197,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 12,
+        "startByte": 550,
+        "endByte": 561,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/pricing.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 12,
+        "startByte": 550,
+        "endByte": 561,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 13,
+        "startByte": 585,
+        "endByte": 596,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/pricing.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 13,
+        "startByte": 585,
+        "endByte": 596,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/config.mjs#orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 14,
+        "startByte": 622,
+        "endByte": 633,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/pricing.mjs#shippingFee",
+      "to": "src/pricing.mjs#@binding:orderPolicy",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/pricing.mjs",
+        "line": 14,
+        "startByte": 622,
+        "endByte": 633,
+        "fileHash": "2e633ff669869e68a09e613322f01f97c0250258767f86dba7c5d096372cd4b5"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 5,
+        "startByte": 156,
+        "endByte": 182,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 5,
+        "startByte": 156,
+        "endByte": 167,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/promotions.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 5,
+        "startByte": 156,
+        "endByte": 167,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 6,
+        "startByte": 186,
+        "endByte": 210,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 6,
+        "startByte": 186,
+        "endByte": 197,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#fixedDiscount",
+      "to": "src/promotions.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 6,
+        "startByte": 186,
+        "endByte": 197,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#policies",
+      "to": "src/pricing.mjs#discountSubtotal",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 10,
+        "startByte": 308,
+        "endByte": 324,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#policies",
+      "to": "src/promotions.mjs#@binding:discountSubtotal",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 10,
+        "startByte": 308,
+        "endByte": 324,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#policies",
+      "to": "src/promotions.mjs#fixedDiscount",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 10,
+        "startByte": 333,
+        "endByte": 346,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#selectPromotion",
+      "to": "src/promotions.mjs#policies",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 13,
+        "startByte": 435,
+        "endByte": 443,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/promotions.mjs#selectPromotion",
+      "to": "src/promotions.mjs#policies",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/promotions.mjs",
+        "line": 14,
+        "startByte": 504,
+        "endByte": 512,
+        "fileHash": "b889c92adb6b831bc5143a8e58fd77bf958ffa2b1e4eeda06699d5e70842b2f8"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 5,
+        "startByte": 175,
+        "endByte": 208,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 5,
+        "startByte": 175,
+        "endByte": 186,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/refunds.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 5,
+        "startByte": 175,
+        "endByte": 186,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/payments.mjs#refundableBalance",
+      "relation": "call",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 10,
+        "startByte": 594,
+        "endByte": 637,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/payments.mjs#refundableBalance",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 10,
+        "startByte": 594,
+        "endByte": 611,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/refunds.mjs#issueRefund",
+      "to": "src/refunds.mjs#@binding:refundableBalance",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/refunds.mjs",
+        "line": 10,
+        "startByte": 594,
+        "endByte": 611,
+        "fileHash": "60dc74966cb45524874811eb1dc9c4d93496e4e85f4da551805962ebd0c238f3"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/reports.mjs#format",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "call",
+      "evidence": {
+        "path": "src/reports.mjs",
+        "line": 4,
+        "startByte": 124,
+        "endByte": 173,
+        "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/reports.mjs#format",
+      "to": "src/money.mjs#formatMoney",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/reports.mjs",
+        "line": 4,
+        "startByte": 124,
+        "endByte": 135,
+        "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/reports.mjs#format",
+      "to": "src/reports.mjs#@binding:formatMoney",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/reports.mjs",
+        "line": 4,
+        "startByte": 124,
+        "endByte": 135,
+        "fileHash": "81a6070ffc5de97701153a846e8b417bc36077826c6bbbd32a04303b3fa44065"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#encodeOrder",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 4,
+        "startByte": 83,
+        "endByte": 116,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#encodeOrder",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 4,
+        "startByte": 83,
+        "endByte": 94,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#encodeOrder",
+      "to": "src/storage.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 4,
+        "startByte": 83,
+        "endByte": 94,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#decodeOrder",
+      "to": "src/money.mjs#assertCents",
+      "relation": "call",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 11,
+        "startByte": 359,
+        "endByte": 392,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#decodeOrder",
+      "to": "src/money.mjs#assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 11,
+        "startByte": 359,
+        "endByte": 370,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    },
+    {
+      "from": "src/storage.mjs#decodeOrder",
+      "to": "src/storage.mjs#@binding:assertCents",
+      "relation": "reference",
+      "evidence": {
+        "path": "src/storage.mjs",
+        "line": 11,
+        "startByte": 359,
+        "endByte": 370,
+        "fileHash": "3aa7b4b5e13f02317f919b2e977b67f15e524a9e2f189737f5a847c087de3228"
+      },
+      "resolution": "lexical"
+    }
+  ],
+  "unknown": [
+    {
+      "blockId": "src/notifier.mjs#sendCustomReceipt",
+      "line": 8,
+      "expression": "notify(receipt)",
+      "reason": "unresolved_call_or_shadow"
+    },
+    {
+      "blockId": "src/payments.mjs#refundableBalance",
+      "line": 11,
+      "expression": "refunds.reduce((sum, refund) => sum + assertCents(refund.amountCents), 0)",
+      "reason": "unresolved_call_or_shadow"
+    },
+    {
+      "blockId": "src/promotions.mjs#selectPromotion",
+      "line": 14,
+      "expression": "policies[name](subtotalCents, value)",
+      "reason": "unresolved_call_or_shadow"
+    }
+  ],
+  "calls": [
+    {
+      "blockId": "src/catalog.mjs#products",
+      "path": "src/catalog.mjs",
+      "line": 1,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#products",
+      "path": "src/catalog.mjs",
+      "line": 2,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#products",
+      "path": "src/catalog.mjs",
+      "line": 3,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#products",
+      "path": "src/catalog.mjs",
+      "line": 4,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#getProduct",
+      "path": "src/catalog.mjs",
+      "line": 8,
+      "callee": "Object.hasOwn",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#getProduct",
+      "path": "src/catalog.mjs",
+      "line": 8,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 13,
+      "callee": "Array.isArray",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 13,
+      "callee": "TypeError",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 16,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 16,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 17,
+      "callee": "getProduct",
+      "target": "src/catalog.mjs#getProduct"
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 21,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 21,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/catalog.mjs#priceCart",
+      "path": "src/catalog.mjs",
+      "line": 21,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 9,
+      "callee": "encodeOrder",
+      "target": "src/storage.mjs#encodeOrder"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 9,
+      "callee": "createOrder",
+      "target": "src/orders.mjs#createOrder"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 10,
+      "callee": "decodeOrder",
+      "target": "src/storage.mjs#decodeOrder"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 11,
+      "callee": "capturePayment",
+      "target": "src/payments.mjs#capturePayment"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 12,
+      "callee": "fulfillOrder",
+      "target": "src/fulfillment.mjs#fulfillOrder"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 13,
+      "callee": "sendDefaultReceipt",
+      "target": "src/notifier.mjs#sendDefaultReceipt"
+    },
+    {
+      "blockId": "src/checkout.mjs#checkout",
+      "path": "src/checkout.mjs",
+      "line": 13,
+      "callee": "renderOrder",
+      "target": "src/reports.mjs#format"
+    },
+    {
+      "blockId": "src/config.mjs#orderPolicy",
+      "path": "src/config.mjs",
+      "line": 1,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/fulfillment.mjs#fulfillOrder",
+      "path": "src/fulfillment.mjs",
+      "line": 5,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/fulfillment.mjs#fulfillOrder",
+      "path": "src/fulfillment.mjs",
+      "line": 6,
+      "callee": "reserve",
+      "target": "src/inventory.mjs#reserve"
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 6,
+      "callee": "Map",
+      "target": null
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 8,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 8,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 9,
+      "callee": "requested.set",
+      "target": null
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 9,
+      "callee": "requested.get",
+      "target": null
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 11,
+      "callee": "available",
+      "target": "src/inventory.mjs#available"
+    },
+    {
+      "blockId": "src/inventory.mjs#reserve",
+      "path": "src/inventory.mjs",
+      "line": 11,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/money.mjs#assertCents",
+      "path": "src/money.mjs",
+      "line": 2,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/money.mjs#assertCents",
+      "path": "src/money.mjs",
+      "line": 2,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/money.mjs#formatMoney",
+      "path": "src/money.mjs",
+      "line": 7,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/money.mjs#formatMoney",
+      "path": "src/money.mjs",
+      "line": 8,
+      "callee": "(cents / 100).toFixed",
+      "target": null
+    },
+    {
+      "blockId": "src/notifications.mjs#format",
+      "path": "src/notifications.mjs",
+      "line": 4,
+      "callee": "formatMoney",
+      "target": "src/money.mjs#formatMoney"
+    },
+    {
+      "blockId": "src/notifications.mjs#notify",
+      "path": "src/notifications.mjs",
+      "line": 8,
+      "callee": "format",
+      "target": "src/notifications.mjs#format"
+    },
+    {
+      "blockId": "src/notifier.mjs#sendDefaultReceipt",
+      "path": "src/notifier.mjs",
+      "line": 4,
+      "callee": "notify",
+      "target": "src/notifications.mjs#notify"
+    },
+    {
+      "blockId": "src/notifier.mjs#sendCustomReceipt",
+      "path": "src/notifier.mjs",
+      "line": 8,
+      "callee": "notify",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 7,
+      "callee": "id.trim",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 7,
+      "callee": "TypeError",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 8,
+      "callee": "priceCart",
+      "target": "src/catalog.mjs#priceCart"
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 9,
+      "callee": "netSubtotal",
+      "target": "src/pricing.mjs#discountSubtotal"
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 10,
+      "callee": "shippingFee",
+      "target": "src/pricing.mjs#shippingFee"
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 12,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 12,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createOrder",
+      "path": "src/orders.mjs",
+      "line": 13,
+      "callee": "structuredClone",
+      "target": null
+    },
+    {
+      "blockId": "src/orders.mjs#createPromotionalOrder",
+      "path": "src/orders.mjs",
+      "line": 18,
+      "callee": "createOrder",
+      "target": "src/orders.mjs#createOrder"
+    },
+    {
+      "blockId": "src/orders.mjs#createPromotionalOrder",
+      "path": "src/orders.mjs",
+      "line": 19,
+      "callee": "selectPromotion",
+      "target": "src/promotions.mjs#selectPromotion"
+    },
+    {
+      "blockId": "src/payments.mjs#capturePayment",
+      "path": "src/payments.mjs",
+      "line": 4,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/payments.mjs#capturePayment",
+      "path": "src/payments.mjs",
+      "line": 5,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/payments.mjs#refundableBalance",
+      "path": "src/payments.mjs",
+      "line": 10,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/payments.mjs#refundableBalance",
+      "path": "src/payments.mjs",
+      "line": 11,
+      "callee": "refunds.reduce",
+      "target": null
+    },
+    {
+      "blockId": "src/payments.mjs#refundableBalance",
+      "path": "src/payments.mjs",
+      "line": 11,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/payments.mjs#refundableBalance",
+      "path": "src/payments.mjs",
+      "line": 12,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/pricing.mjs#discountSubtotal",
+      "path": "src/pricing.mjs",
+      "line": 5,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/pricing.mjs#discountSubtotal",
+      "path": "src/pricing.mjs",
+      "line": 6,
+      "callee": "Number.isFinite",
+      "target": null
+    },
+    {
+      "blockId": "src/pricing.mjs#discountSubtotal",
+      "path": "src/pricing.mjs",
+      "line": 6,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/pricing.mjs#discountSubtotal",
+      "path": "src/pricing.mjs",
+      "line": 7,
+      "callee": "Math.round",
+      "target": null
+    },
+    {
+      "blockId": "src/pricing.mjs#shippingFee",
+      "path": "src/pricing.mjs",
+      "line": 11,
+      "callee": "Number.isSafeInteger",
+      "target": null
+    },
+    {
+      "blockId": "src/pricing.mjs#shippingFee",
+      "path": "src/pricing.mjs",
+      "line": 11,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/promotions.mjs#fixedDiscount",
+      "path": "src/promotions.mjs",
+      "line": 5,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/promotions.mjs#fixedDiscount",
+      "path": "src/promotions.mjs",
+      "line": 6,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/promotions.mjs#fixedDiscount",
+      "path": "src/promotions.mjs",
+      "line": 7,
+      "callee": "Math.max",
+      "target": null
+    },
+    {
+      "blockId": "src/promotions.mjs#policies",
+      "path": "src/promotions.mjs",
+      "line": 10,
+      "callee": "Object.freeze",
+      "target": null
+    },
+    {
+      "blockId": "src/promotions.mjs#selectPromotion",
+      "path": "src/promotions.mjs",
+      "line": 13,
+      "callee": "Object.hasOwn",
+      "target": null
+    },
+    {
+      "blockId": "src/promotions.mjs#selectPromotion",
+      "path": "src/promotions.mjs",
+      "line": 13,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/promotions.mjs#selectPromotion",
+      "path": "src/promotions.mjs",
+      "line": 14,
+      "callee": "policies[name]",
+      "target": null
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 5,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 7,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 8,
+      "callee": "Number.isFinite",
+      "target": null
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 8,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 9,
+      "callee": "Math.round",
+      "target": null
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 10,
+      "callee": "refundableBalance",
+      "target": "src/payments.mjs#refundableBalance"
+    },
+    {
+      "blockId": "src/refunds.mjs#issueRefund",
+      "path": "src/refunds.mjs",
+      "line": 10,
+      "callee": "RangeError",
+      "target": null
+    },
+    {
+      "blockId": "src/reports.mjs#format",
+      "path": "src/reports.mjs",
+      "line": 4,
+      "callee": "formatMoney",
+      "target": "src/money.mjs#formatMoney"
+    },
+    {
+      "blockId": "src/storage.mjs#encodeOrder",
+      "path": "src/storage.mjs",
+      "line": 4,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/storage.mjs#encodeOrder",
+      "path": "src/storage.mjs",
+      "line": 5,
+      "callee": "TypeError",
+      "target": null
+    },
+    {
+      "blockId": "src/storage.mjs#encodeOrder",
+      "path": "src/storage.mjs",
+      "line": 6,
+      "callee": "JSON.stringify",
+      "target": null
+    },
+    {
+      "blockId": "src/storage.mjs#decodeOrder",
+      "path": "src/storage.mjs",
+      "line": 10,
+      "callee": "JSON.parse",
+      "target": null
+    },
+    {
+      "blockId": "src/storage.mjs#decodeOrder",
+      "path": "src/storage.mjs",
+      "line": 11,
+      "callee": "assertCents",
+      "target": "src/money.mjs#assertCents"
+    },
+    {
+      "blockId": "src/storage.mjs#decodeOrder",
+      "path": "src/storage.mjs",
+      "line": 12,
+      "callee": "TypeError",
+      "target": null
+    }
+  ],
+  "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+  "runtimeParser": "node-module-syntax-check",
+  "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+}

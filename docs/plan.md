@@ -25,7 +25,85 @@ the product name.
 
 ## Current work
 
+- User-directed checkout experiment (2026-10-12): a separate memory-only block arbiter
+  and optional EmbeddingGemma 2 discovery/comparison. Exclusive modification grants
+  explore a new design beyond the observer's no-claims contract; no deployed routes,
+  filesystem-isolation claim or RT qualification changes. See the
+  [prototype contract and evidence](checkout-arbiter-prototype.md). The user's Graphify
+  proposal now has a six-slice implementation sequence and product queue item 14;
+  real code extraction and a bounded lab admission adapter have now been exercised;
+  authenticated durable integration remains open.
+  Embeddings are excluded from the planned v1 runtime; the optional prior experiment
+  and every assigned result remain retained.
+  Graphify 0.9.62 has now been probed on 24 pinned product modules: 37/38 qualifier
+  checks passed, with a false imported-call target under parameter shadowing. An AST
+  sidecar mapped all 170 callable ranges; binding/parse/coverage guards remain required
+  before this graph can authorize a product checkout. The suite passed 784/784 at that checkpoint.
+  A standalone `checkout-arbiter-lab` repository now provides a 16-module order workflow,
+  19 baseline checks, two explicit data contracts and 13 oracle-only checkout scenarios.
+  Three candidate mutation replays passed their expected behavior/syntax checks. The
+  lab's code-only Graphify pass reproduces the shadowed-import false edge; this is a
+  regression target, not a qualified graph authority or real-model trial.
+  That checkpoint passed 803/803 with the lab's 19 checks included.
+  The bounded graph adapter now drives the actual arbiter: all 13 checkout scenarios,
+  15 fresh adversarial binding cases and the concurrent same-file publication/outside
+  scope checks passed on Node 26. Raw Graphify shadowing is rejected; unresolved calls
+  remain conservative refusals. The 35 new deterministic regressions require only Node.
+  The full Node 26 suite passed 838/838 and repository checks passed.
+  Records are retained in `artifacts/checkout-qualification-v3`; no deployed routes,
+  authenticated durable grants or real-model assignments were added.
+- Checkout mechanism comparison (2026-10-12): all 108 frozen assignments completed
+  with zero apparatus failures in the admitted run. Correct missions: current 30/36,
+  block scopes 24/36, graph scopes 22/36. The graph recovered four dependency-sensitive
+  outcomes but lost twelve to absent scope expansion and unknown callback exclusion.
+  Two reverse-order dependent outputs still became stale after publication. This is
+  not an overall improvement on the selected deterministic campaign; no live models
+  ran and no RT status changes. Both preflight failures remain retained separately.
+  See [results and limits](checkout-comparison-results.md) and
+  [frozen protocol](checkout-comparison-protocol.md). The subsequent native pilot
+  implements the working-copy/grant bridge for the bounded lab experiment.
+  The full Node 26 suite passed 842/842; boundary/link and whitespace checks passed.
+- Native checkout pilot (2026-10-12): user-selected OpenCode DeepSeek V4 Flash.
+  Actual private-copy/submission bridge and a 14-group independent mission grader
+  are implemented locally; seed/reference and isolation checks pass. Three retained
+  two-actor preflight attempts yielded one successful private-file edit and five
+  provider.invalid-request HTTP 404 failures before tokens. All servers stopped;
+  none of the nine planned comparative cohorts were admitted. Source payload is the
+  verified synthetic lab only. The full suite passed 845/845. The user then selected
+  V4.1 Flash explicitly. Its fresh campaign completed all nine cohorts/36 actors:
+  current rules 2/3 correct missions, blocks 2/3, graph 1/3. Median settlement was
+  133.5/85.3/266.0 seconds respectively; graph used 30 native turns versus 12 per other
+  arm. Nine changed-base, nine unresolved-call and two scope-expansion refusals were
+  retained. All cohorts stopped within budget, all 12 recorded implementation hashes
+  verified. One small mission does not establish useful benefit; no RT change.
+  See [native evidence and limitations](checkout-native-results.md).
 - Repository separation: implemented locally; local independent repo, transferred plans, explicit source provenance.
+- Varied native checkout comparison (2026-10-13): all 27 assignments/108 actors
+  completed on OpenCode DeepSeek V4.1 Flash. Current rules produced 3/9 correct
+  missions, blocks 1/9, graph 2/9; graph used 73 native turns versus current 36,
+  with higher settlement median and reported cost. All final trees preserved public
+  legacy behavior; all cohorts stopped. A pre-admission setup interruption remains
+  separate, with the original 15 completed outcomes fixed and only the remaining
+  12 continued. All 44 original snapshots and 45 continuation/runtime hashes verified;
+  879/879 deterministic tests passed before continuation. No overall benefit or RT
+  qualification follows. See [varied results and limits](checkout-varied-results.md)
+  and [protocol](checkout-varied-protocol.md). Native policy trials reproduce completed
+  consumers becoming stale after later provider changes. The next proposed mechanism
+  is versioned validation and dependent-output invalidation/revalidation, informed by
+  the [source-control design input](checkout-arbiter-prototype.md#source-control-design-input-2026-10-13),
+  with dependency exclusion retained as an experimental policy.
+- Checkout expansion increment: candidate-bound, atomic whole-block expansion is
+  implemented in the local core, graph wrapper and both scoped runner arms. Additional
+  helpers/imports are explicit requests; new provider dependencies gain protection,
+  not implicit modification rights. Conflicts retain the original grant; stale bases
+  require another edit. Sixteen new model-free regressions and nine new binding cases
+  cover this increment. Both retained native helper candidates publish in reconstructed
+  API qualification; original native scores remain fixed. The final fresh deterministic
+  campaign completed 108/108 with zero apparatus errors: current 30/36, blocks 30/36,
+  graph 28/36. All 14 recorded runtime hashes verified. Unknown callbacks and two
+  completed-consumer stale-output cases remain; no overall graph advantage or RT change.
+  The invalid overlapping-test run and the earlier completed follow-up remain retained.
+  See [expansion results and next evaluation work](checkout-expansion-results.md).
 - RT-0: in progress; deterministic foundation passes, live stream and initial context projection observed; comparative qualification remains open; native OpenCode observations, current state, truthful join/intention metadata, bounded shadow decisions, two-agent diagnostic probe.
 - RT-1: not qualified; real comparative benefit/active steering and user reuse remain separate gates.
 - RT-2–RT-6: deferred conditional expansion; no guarded-edit safety or remote multiplayer claim.

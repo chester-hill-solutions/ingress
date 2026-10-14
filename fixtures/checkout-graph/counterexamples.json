@@ -1,0 +1,1878 @@
+{
+  "math-min-intrinsic": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "01423546281a52f18984d82b5c0117e41c2fd653cb1562a1799f013d5d6fb790",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 54,
+        "fileHash": "01423546281a52f18984d82b5c0117e41c2fd653cb1562a1799f013d5d6fb790"
+      }
+    ],
+    "edges": [],
+    "unknown": [],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Math.min",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "math-min-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "94b617393a579437d93ac4faf2a7b85e2717bc95485f9a0cf696b4833c3035c3",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 57,
+        "fileHash": "94b617393a579437d93ac4faf2a7b85e2717bc95485f9a0cf696b4833c3035c3"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "Math.min(1, 3)",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Math.min",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "integer-intrinsic": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "f7f23efc9b89c9c5f5972e1f6ba0d40f2070a9f50900fe1f631f6eeb7d3f66ff",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 59,
+        "fileHash": "f7f23efc9b89c9c5f5972e1f6ba0d40f2070a9f50900fe1f631f6eeb7d3f66ff"
+      }
+    ],
+    "edges": [],
+    "unknown": [],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Number.isInteger",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "integer-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "e9848ccecc07ba0e082b0525e0f498e5fd4feae0d03929cbdc4d773a72dc39a9",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 64,
+        "fileHash": "e9848ccecc07ba0e082b0525e0f498e5fd4feae0d03929cbdc4d773a72dc39a9"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "Number.isInteger(1)",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Number.isInteger",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "inline-named-helper": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 135,
+        "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 136,
+          "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "call",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 106,
+          "endByte": 113,
+          "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 106,
+          "endByte": 111,
+          "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "consumer.mjs#@binding:alias",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 106,
+          "endByte": 111,
+          "fileHash": "86d4820dda054dc37ea1ac41b9cd53b11c39ef40f6fa4e9037e1a549cb10c115"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": "provider.mjs#target"
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "helper",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "inline-helper-reassignment": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "c23709b757465ba60a2b6fa412c83935d120ec377f36381bb5b55a1afebbba7b",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 106,
+        "fileHash": "c23709b757465ba60a2b6fa412c83935d120ec377f36381bb5b55a1afebbba7b"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "helper()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "helper",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "inline-helper-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "5c2c5d1084cef3425f7600855a7f4d916991e2bae57dabcaa038b6d21b53f38c",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 116,
+        "fileHash": "5c2c5d1084cef3425f7600855a7f4d916991e2bae57dabcaa038b6d21b53f38c"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "helper()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "helper",
+        "target": null
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "helper",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "single-arrow-parameter": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 123,
+        "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 124,
+          "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "call",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 98,
+          "endByte": 109,
+          "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 98,
+          "endByte": 103,
+          "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "consumer.mjs#@binding:alias",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 98,
+          "endByte": 103,
+          "fileHash": "f0427b17eabe0d2ccf7094bb307d82d818aa07333a83edb538728faaae5d2927"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": "provider.mjs#target"
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "single-arrow-import-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "41c3f89c1e3faa0a5eb68e4f17dc29f5b0f6c82f4aef15af360b645d13a7ddc9",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "41c3f89c1e3faa0a5eb68e4f17dc29f5b0f6c82f4aef15af360b645d13a7ddc9"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 120,
+        "fileHash": "41c3f89c1e3faa0a5eb68e4f17dc29f5b0f6c82f4aef15af360b645d13a7ddc9"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 121,
+          "fileHash": "41c3f89c1e3faa0a5eb68e4f17dc29f5b0f6c82f4aef15af360b645d13a7ddc9"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "alias()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "renamed-reexport": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "barrel.mjs",
+        "fileHash": "bb15c3ff23f1fbd6cfca0729b86cfa6df101e0e8458c9f969875ac0925647a86",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "consumer.mjs",
+        "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "barrel.mjs#@binding:renamed",
+        "path": "barrel.mjs",
+        "name": "@binding:renamed",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 51,
+        "fileHash": "bb15c3ff23f1fbd6cfca0729b86cfa6df101e0e8458c9f969875ac0925647a86"
+      },
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 48,
+        "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 56,
+        "endByte": 95,
+        "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "barrel.mjs#@binding:renamed",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "barrel.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 52,
+          "fileHash": "bb15c3ff23f1fbd6cfca0729b86cfa6df101e0e8458c9f969875ac0925647a86"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 96,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "barrel.mjs#@binding:renamed",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 96,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "call",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 85,
+          "endByte": 92,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#target",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 85,
+          "endByte": 90,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "consumer.mjs#@binding:alias",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 85,
+          "endByte": 90,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "barrel.mjs#@binding:renamed",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 85,
+          "endByte": 90,
+          "fileHash": "843e7abed409279f91c1dadfdf621a02013596f68883c54e805004e87681ec7a"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": "provider.mjs#target"
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "parameter-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "4d7f6dee97ce9d71ece0f19862981960162003b4d00b6432ab53914ccd9acf8d",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "4d7f6dee97ce9d71ece0f19862981960162003b4d00b6432ab53914ccd9acf8d"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 101,
+        "fileHash": "4d7f6dee97ce9d71ece0f19862981960162003b4d00b6432ab53914ccd9acf8d"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 102,
+          "fileHash": "4d7f6dee97ce9d71ece0f19862981960162003b4d00b6432ab53914ccd9acf8d"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "alias()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "block-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "374b36356221ce5b9a1c3a8d8816d5bd54da8d4aca7e60649d7465d5ee716ad7",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "374b36356221ce5b9a1c3a8d8816d5bd54da8d4aca7e60649d7465d5ee716ad7"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 132,
+        "fileHash": "374b36356221ce5b9a1c3a8d8816d5bd54da8d4aca7e60649d7465d5ee716ad7"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 133,
+          "fileHash": "374b36356221ce5b9a1c3a8d8816d5bd54da8d4aca7e60649d7465d5ee716ad7"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "alias()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "catch-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "9027c50fb5d74048ed2cbae47ccdf15cc9ba291ce604831f23cfdf4e9bf31db7",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "9027c50fb5d74048ed2cbae47ccdf15cc9ba291ce604831f23cfdf4e9bf31db7"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 131,
+        "fileHash": "9027c50fb5d74048ed2cbae47ccdf15cc9ba291ce604831f23cfdf4e9bf31db7"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 132,
+          "fileHash": "9027c50fb5d74048ed2cbae47ccdf15cc9ba291ce604831f23cfdf4e9bf31db7"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "alias()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "arrow-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "dba15a2ffdb8ebffbb31a3195d71a9b0b677eb032acd612bb3398a15e792f246",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:alias",
+        "path": "consumer.mjs",
+        "name": "@binding:alias",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 49,
+        "fileHash": "dba15a2ffdb8ebffbb31a3195d71a9b0b677eb032acd612bb3398a15e792f246"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 57,
+        "endByte": 128,
+        "fileHash": "dba15a2ffdb8ebffbb31a3195d71a9b0b677eb032acd612bb3398a15e792f246"
+      },
+      {
+        "id": "provider.mjs#target",
+        "path": "provider.mjs",
+        "name": "target",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 38,
+        "fileHash": "0b8e9e9414c5d0062fabc5bd5a49aff3b0a856651b4a711f3b1564ac07002c53"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:alias",
+        "to": "provider.mjs#target",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 129,
+          "fileHash": "dba15a2ffdb8ebffbb31a3195d71a9b0b677eb032acd612bb3398a15e792f246"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "alias()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "alias",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "builtin-shadow": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "304b2892f3cd57cb5fc340e7283f2498f9add251feec4c7d9646e6682649c19e",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 56,
+        "fileHash": "304b2892f3cd57cb5fc340e7283f2498f9add251feec4c7d9646e6682649c19e"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "Math.round(1)",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Math.round",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "shared-property-mutation": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "provider.mjs",
+        "fileHash": "dcca5b6a0da2a502c46706ce11644bc354d3ba848c1ac2ff2c8ebac9b2dd2a59",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:settings",
+        "path": "consumer.mjs",
+        "name": "@binding:settings",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 42,
+        "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 50,
+        "endByte": 99,
+        "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c"
+      },
+      {
+        "id": "provider.mjs#settings",
+        "path": "provider.mjs",
+        "name": "settings",
+        "kind": "binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 42,
+        "fileHash": "dcca5b6a0da2a502c46706ce11644bc354d3ba848c1ac2ff2c8ebac9b2dd2a59"
+      }
+    ],
+    "edges": [
+      {
+        "from": "consumer.mjs#@binding:settings",
+        "to": "provider.mjs#settings",
+        "relation": "binding",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 1,
+          "startByte": 0,
+          "endByte": 100,
+          "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "provider.mjs#settings",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 72,
+          "endByte": 80,
+          "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c"
+        },
+        "resolution": "lexical"
+      },
+      {
+        "from": "consumer.mjs#consumer",
+        "to": "consumer.mjs#@binding:settings",
+        "relation": "reference",
+        "evidence": {
+          "path": "consumer.mjs",
+          "line": 2,
+          "startByte": 72,
+          "endByte": 80,
+          "fileHash": "55464772f6e374aee5612ec72e91985292f44b4336a8c285119fd7cd3b63cd0c"
+        },
+        "resolution": "lexical"
+      }
+    ],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "settings.enabled = false",
+        "reason": "mutation_of_shared_binding"
+      }
+    ],
+    "calls": [],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "map-method-replacement": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "c7d72fb3878c3f27e39cc8b8815003c49fe5df7bbb426252762090ba75e66782",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 100,
+        "fileHash": "c7d72fb3878c3f27e39cc8b8815003c49fe5df7bbb426252762090ba75e66782"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "map.get = callback",
+        "reason": "mutation_of_shared_binding"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "Map",
+        "target": null
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "map.get",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "unbound-reference": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "2c26b6360bcb1841a025fffab6d957f50e578eeb1f0ed2abe2a37fd9a1968be5",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 59,
+        "fileHash": "2c26b6360bcb1841a025fffab6d957f50e578eeb1f0ed2abe2a37fd9a1968be5"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "hiddenRegistry",
+        "reason": "unresolved_reference"
+      }
+    ],
+    "calls": [],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "irrelevant-typeof": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "7e395616cc77612446bdad8b41d31e313d8c26ed3e476b995c6ef547e3b1b9f0",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 96,
+        "fileHash": "7e395616cc77612446bdad8b41d31e313d8c26ed3e476b995c6ef547e3b1b9f0"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "value.trim()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "value.trim",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "computed-dispatch": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "34694bcd0779aee6120a12e1271ae57532caa626af11fcff6f887ed6a30b1d30",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 63,
+        "fileHash": "34694bcd0779aee6120a12e1271ae57532caa626af11fcff6f887ed6a30b1d30"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "target[key]()",
+        "reason": "unresolved_call_or_shadow"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "target[key]",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "eval-string": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "eb1db4d066c01234a6a182f0b4774a66b1890678fc92f03dc930af4b7cb0e5bb",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 55,
+        "fileHash": "eb1db4d066c01234a6a182f0b4774a66b1890678fc92f03dc930af4b7cb0e5bb"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "eval('hidden()')",
+        "reason": "unresolved_call_or_shadow"
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 1,
+        "expression": "eval",
+        "reason": "unresolved_reference"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 1,
+        "callee": "eval",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "malformed-body": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "1d1364ede835d305232813deab300dec081960b8547a8c2e711f5d99a3ae74d7",
+        "hasError": true,
+        "errors": [],
+        "runtimeSyntaxValid": false
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 41,
+        "fileHash": "1d1364ede835d305232813deab300dec081960b8547a8c2e711f5d99a3ae74d7"
+      }
+    ],
+    "edges": [],
+    "unknown": [],
+    "calls": [],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "runtime-invalid-duplicate": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "e06592e1eb5908cf68dff34c2a0b5ebf0b711f926cbcdf7630b830a5e7aebf44",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": false
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 7,
+        "endByte": 54,
+        "fileHash": "e06592e1eb5908cf68dff34c2a0b5ebf0b711f926cbcdf7630b830a5e7aebf44"
+      }
+    ],
+    "edges": [],
+    "unknown": [],
+    "calls": [],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  },
+  "reexport-cycle": {
+    "schema": 1,
+    "producer": {
+      "name": "ingress-bounded-mjs-bindings",
+      "version": 1,
+      "sourceHash": "af1f42a74eadd3cc451eb2bbf7729870eefde1ba168895dd5be27d1c8806ab59",
+      "treeSitter": "0.25.2",
+      "javascriptGrammar": "0.25.0"
+    },
+    "files": [
+      {
+        "path": "consumer.mjs",
+        "fileHash": "7afa7dedd3c90c172f7077f74a34b6484e314afc80bc92316a36cf89188c028a",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "one.mjs",
+        "fileHash": "ca10350c6cd488d6417b2ed03dff02e4dd53e7483d1686e9d8dc13049903e87a",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      },
+      {
+        "path": "two.mjs",
+        "fileHash": "df8633431a2dc8fb00bcbc57ea1fa4ae0d2d8f07d7e9a87e6e5301411e2d230d",
+        "hasError": false,
+        "errors": [],
+        "runtimeSyntaxValid": true
+      }
+    ],
+    "blocks": [
+      {
+        "id": "consumer.mjs#@binding:target",
+        "path": "consumer.mjs",
+        "name": "@binding:target",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 35,
+        "fileHash": "7afa7dedd3c90c172f7077f74a34b6484e314afc80bc92316a36cf89188c028a"
+      },
+      {
+        "id": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "name": "consumer",
+        "kind": "function",
+        "startLine": 2,
+        "endLine": 2,
+        "startByte": 43,
+        "endByte": 83,
+        "fileHash": "7afa7dedd3c90c172f7077f74a34b6484e314afc80bc92316a36cf89188c028a"
+      },
+      {
+        "id": "one.mjs#@binding:target",
+        "path": "one.mjs",
+        "name": "@binding:target",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 35,
+        "fileHash": "ca10350c6cd488d6417b2ed03dff02e4dd53e7483d1686e9d8dc13049903e87a"
+      },
+      {
+        "id": "two.mjs#@binding:target",
+        "path": "two.mjs",
+        "name": "@binding:target",
+        "kind": "module_binding",
+        "startLine": 1,
+        "endLine": 1,
+        "startByte": 0,
+        "endByte": 35,
+        "fileHash": "df8633431a2dc8fb00bcbc57ea1fa4ae0d2d8f07d7e9a87e6e5301411e2d230d"
+      }
+    ],
+    "edges": [],
+    "unknown": [
+      {
+        "blockId": "consumer.mjs#@binding:target",
+        "line": 1,
+        "expression": "import { target } from './one.mjs';\nexport function consumer() { return target(); }\n",
+        "reason": "unresolved_module_symbol"
+      },
+      {
+        "blockId": "one.mjs#@binding:target",
+        "line": 1,
+        "expression": "export { target } from './two.mjs';\n",
+        "reason": "unresolved_module_symbol"
+      },
+      {
+        "blockId": "two.mjs#@binding:target",
+        "line": 1,
+        "expression": "export { target } from './one.mjs';\n",
+        "reason": "unresolved_module_symbol"
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "target()",
+        "reason": "unresolved_call_or_shadow"
+      },
+      {
+        "blockId": "consumer.mjs#consumer",
+        "line": 2,
+        "expression": "target",
+        "reason": "unresolved_reference"
+      }
+    ],
+    "calls": [
+      {
+        "blockId": "consumer.mjs#consumer",
+        "path": "consumer.mjs",
+        "line": 2,
+        "callee": "target",
+        "target": null
+      }
+    ],
+    "coverage": "top-level named functions/constants and named relative imports/re-exports; nested callbacks walked; unresolved calls refused; native runtime intrinsics assumed unmodified; string trim requires an AST short-circuit or throwing guard; outer MJS syntax only",
+    "runtimeParser": "node-module-syntax-check",
+    "runtimeAdapterHash": "0691cc04a0158e2d9ac344d29d3d2e7d5fc67bb81a9264730e45db61b424f4b2"
+  }
+}
