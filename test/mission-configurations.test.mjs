@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { missionFixtures, validateMission, verifyMissionFixture } from '../fixtures/missions.mjs';
 import { missionConfigurations, configureMission, assignMissions } from '../fixtures/mission-configurations.mjs';
 
-test('eight broad missions cover research, math, SaaS, map and analytics with eight real streams each',()=>{
+test('nine broad missions cover research, math, SaaS, map and analytics with eight real streams each',()=>{
   // The registry grew by one when Signal, the site analytics mission, was added: the counts here
   // are the fixture inventory, and a study that pre-registers its matrix names its missions with
   // --missions=, so it is unaffected by an addition it did not select.
-  assert.equal(missionFixtures.length,8);
+  assert.equal(missionFixtures.length,9);
   for(const domain of ['research','math','saas'])assert.equal(missionFixtures.filter(value=>value.domain===domain).length,2);
   assert.equal(missionFixtures.filter(value=>value.domain==='map').length,1);
-  assert.equal(missionFixtures.filter(value=>value.domain==='analytics').length,1);
+  assert.equal(missionFixtures.filter(value=>value.domain==='analytics').length,2);
   for(const fixture of missionFixtures){assert.equal(validateMission(fixture),fixture);assert.equal(fixture.workstreams.length,8);assert.ok(fixture.criteria.length>=8);}
 });
 test('same complete directive and seed at every roster size and treatment',()=>{
@@ -22,11 +22,11 @@ test('stock and treated same-size rosters have identical assignments and only aw
   for(const base of missionFixtures)for(const size of ['two','four','eight']){const stock=configureMission(base,'stock-'+size),treated=configureMission(base,'ingress-'+size);assert.deepEqual(stock.tasks,treated.tasks);assert.deepEqual(stock.files,treated.files);assert.equal(stock.nativePlugin,false);assert.equal(treated.nativePlugin,true);}
 });
 test('full preregistered repeat matrix contains matched stock baselines at 2,4,8 and stock solo',()=>{
-  // 8 missions x 3 repeats x 2 models x 7 configurations = 336 rows; 29 actors per
+  // 9 missions x 3 repeats x 2 models x 7 configurations = 378 rows; 29 actors per
   // (mission, repeat, model) across the roster sizes (1+2+2+4+4+8+8) = 1392 actors.
-  const rows=assignMissions(missionFixtures);assert.equal(rows.length,336);assert.equal(rows.reduce((n,value)=>n+value.actors.length,0),1392);
+  const rows=assignMissions(missionFixtures);assert.equal(rows.length,378);assert.equal(rows.reduce((n,value)=>n+value.actors.length,0),1566);
   assert.deepEqual(rows,assignMissions(missionFixtures));assert.notDeepEqual(rows,assignMissions(missionFixtures,{seed:20}));
-  assert.equal(new Set(rows.map(value=>value.id)).size,336);assert.ok(rows.every(value=>value.outcome==='not-run'&&value.assigned));
+  assert.equal(new Set(rows.map(value=>value.id)).size,378);assert.ok(rows.every(value=>value.outcome==='not-run'&&value.assigned));
 });
 test('unsafe or partial mission definitions are rejected',()=>{
   const base=structuredClone(missionFixtures[0]);base.workstreams.pop();assert.throws(()=>validateMission(base));assert.throws(()=>configureMission(base,'unknown'));

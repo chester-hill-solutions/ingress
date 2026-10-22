@@ -1,0 +1,5 @@
+:root { color-scheme: light; font-family: ui-sans-serif, system-ui, sans-serif; }
+main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #e3e7ee; }
+code { background: #f6f7f9; padding: .15rem .35rem; border-radius: .25rem; }

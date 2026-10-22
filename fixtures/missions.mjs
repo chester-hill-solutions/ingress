@@ -3,9 +3,10 @@ import { mathMissions, verifyMathMission } from './missions/math.mjs';
 import { saasMissions, verifySaasMission } from './missions/saas.mjs';
 import { mapMissions, verifyMapMission } from './missions/map.mjs';
 import { analyticsMissions, verifyAnalyticsMission } from './missions/analytics.mjs';
+import { signalOpenMissions, verifySignalOpenMission } from './missions/signal-open.mjs';
 import { missionPath, missionBounds } from '../src/mission-verifier.mjs';
 
-export const missionFixtures = [...researchMissions, ...mathMissions, ...saasMissions, ...mapMissions, ...analyticsMissions];
+export const missionFixtures = [...researchMissions, ...mathMissions, ...saasMissions, ...mapMissions, ...analyticsMissions, ...signalOpenMissions];
 export function validateMission(fixture) {
   if (!/^[a-z][a-z0-9-]{2,80}$/.test(fixture.id) || !['research', 'math', 'saas', 'map', 'analytics'].includes(fixture.domain) || typeof fixture.title !== 'string' || typeof fixture.goal !== 'string' || Buffer.byteLength(fixture.goal) > 7000 || !Array.isArray(fixture.workstreams) || fixture.workstreams.length !== 8) throw Error('invalid_mission');
   const paths = Object.keys(fixture.files), protectedPaths = new Set(fixture.protectedPaths), editablePaths = new Set(fixture.editablePaths);
@@ -31,5 +32,5 @@ if (new Set(missionFixtures.map(value => value.id)).size !== missionFixtures.len
 export function verifyMissionFixture(id, root) {
   const fixture = missionFixtures.find(value => value.id === id);
   if (!fixture) throw Error('unknown_mission');
-  return ({ research: verifyResearchMission, math: verifyMathMission, saas: verifySaasMission, map: verifyMapMission, analytics: verifyAnalyticsMission })[fixture.domain](id, root);
+  return ({ research: verifyResearchMission, math: verifyMathMission, saas: verifySaasMission, map: verifyMapMission, analytics: id === 'signal-open' ? verifySignalOpenMission : verifyAnalyticsMission })[fixture.domain](id, root);
 }
