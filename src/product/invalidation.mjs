@@ -142,6 +142,34 @@ export function evidenceForCommit(ledger, participantId, file) {
   });
 }
 
+/**
+ * The evidence a *re-affirmation* may record, or `null` for "nothing to record".
+ *
+ * Deliberately narrower than `evidenceForCommit`, and the difference is the whole point. A
+ * publication is a file the participant produced, so the fence's coarse fallback — the
+ * participant-wide dependency list — is a claim about that file. A re-affirmation is a file
+ * the participant *already had*, and a participant's container is seeded with everything it
+ * declared it depends on: a summary participant holds the report it reads, and re-sends it on
+ * every whole-tree commit because the launcher walks the tree.
+ *
+ * Applying the coarse fallback there would let that participant stamp its own dependency list
+ * onto a file somebody else published. That is not a theoretical hazard: the first deployed
+ * run of the recovery mission did exactly this, and it silently *replaced* the report's real
+ * evidence — built from the policy — with the summary's, which cites the report. Nothing then
+ * cited the policy, nothing was invalidated when the policy moved, and the mechanism appeared
+ * to work while doing nothing at all.
+ *
+ * So a re-affirmation requires an explicit per-file declaration, and a file the manifest says
+ * nothing about is left exactly as it was.
+ */
+export function refreshEvidenceFor(file) {
+  if (!Array.isArray(file.builtFrom)) return null;
+  return normaliseEvidence({
+    source: EVIDENCE_SOURCES.manifest,
+    inputs: file.builtFrom.filter(entry => entry.path !== file.path),
+  });
+}
+
 /** What the workspace currently holds for a path, as the report cites it. */
 function currentOf(ledger, path) {
   const file = ledger.files.get(path) ?? null;
@@ -152,6 +180,32 @@ function currentOf(ledger, path) {
     contentHash: file?.contentHash ?? null,
     present: file != null,
   };
+}
+
+/**
+ * Which of an output's declared inputs no longer hold at the revision it cites.
+ *
+ * Exported because the same question is asked in two places that must agree: the report a
+ * reader sees, and the check that decides whether a re-affirmation is honour-able. Two
+ * implementations of "is this stale" would eventually disagree, and the disagreement would
+ * look like an output that is approved in one view and contradicted in another.
+ */
+export function staleInputsOf(ledger, evidence) {
+  const stale = [];
+  for (const input of evidence?.inputs ?? []) {
+    const current = currentOf(ledger, input.path);
+    if (current.present && current.revision === input.revision) continue;
+    stale.push({
+      path: input.path,
+      publishedRevision: input.revision,
+      currentRevision: current.revision,
+      author: current.author,
+      // Named separately because it is a different fact and a different fix:
+      // "the file moved" is a republish, "the file is gone" is a conversation.
+      missing: !current.present,
+    });
+  }
+  return stale;
 }
 
 /**
@@ -188,20 +242,7 @@ export function invalidationReport(ledger) {
   for (const file of files) {
     const evidence = file.evidence ?? null;
     if (evidence == null) continue;
-    const staleInputs = [];
-    for (const input of evidence.inputs) {
-      const current = currentOf(ledger, input.path);
-      if (current.present && current.revision === input.revision) continue;
-      staleInputs.push({
-        path: input.path,
-        publishedRevision: input.revision,
-        currentRevision: current.revision,
-        author: current.author,
-        // Named separately because it is a different fact and a different fix:
-        // "the file moved" is a republish, "the file is gone" is a conversation.
-        missing: !current.present,
-      });
-    }
+    const staleInputs = staleInputsOf(ledger, evidence);
     if (staleInputs.length === 0) continue;
     entries.set(file.path, {
       path: file.path,

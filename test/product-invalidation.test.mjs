@@ -344,6 +344,168 @@ test('an explicit "built from nothing" clears the status, and is believed', asyn
     'the record says how it was cleared, so nobody has to guess');
 });
 
+test('an unchanged republish re-affirms the output instead of leaving it stale forever', async () => {
+  // Found by running the mechanism rather than reading it. `src/notes.mjs` depends on the
+  // policy and does not use its value, so redoing the work produces the same bytes -- and
+  // identical bytes are `no_change`, which `applyCommit` skips. Without a refresh the output
+  // keeps contradicted evidence no matter how often its owner regenerates, and the only way
+  // out would be to perturb the output so the bytes differ. That is not a mechanism anybody
+  // would keep.
+  const ledger = account(['a', 'b']);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v1', { builtFrom: [] })]);
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    }),
+  ]);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v2', { baseRevision: 1, builtFrom: [] })]);
+  assert.equal(invalidationReport(ledger).counts.invalidated, 1);
+
+  const revisionBefore = ledger.files.get('notes.mjs').revision;
+  const republished = await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      baseRevision: revisionBefore,
+      builtFrom: [{ path: 'policy.mjs', revision: 2 }],
+    }),
+  ]);
+
+  assert.deepEqual(republished.refreshed.map(receipt => receipt.path), ['notes.mjs']);
+  assert.deepEqual(republished.files, [], 'no bytes landed, because none changed');
+  assert.equal(ledger.files.get('notes.mjs').revision, revisionBefore, 'and no revision churned');
+  assert.deepEqual(invalidationReport(ledger).invalidated, [],
+    'the output is approved again, on the strength of the re-derivation it declared');
+
+  const stored = ledger.files.get('notes.mjs');
+  assert.deepEqual(stored.evidence, { inputs: [{ path: 'policy.mjs', revision: 2 }], source: 'manifest' });
+  assert.ok(stored.evidenceRefreshedAtSequence > stored.writtenAtSequence,
+    'the claim is newer than the bytes, and the record says so');
+  assert.equal(stored.evidenceRefreshedBy, 'b');
+});
+
+test('a re-affirmation that cannot be honoured is refused and named', async () => {
+  // `no_change` short-circuits before the dependency check, so an unchanged file never reaches
+  // the fence's own staleness check. The declaration is checked before it is recorded instead.
+  // A participant that re-sends an unchanged output still declaring the revision that moved
+  // gets the output left contradicted -- which is the correct answer, and it is told so.
+  const ledger = account(['a', 'b']);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v1', { builtFrom: [] })]);
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    }),
+  ]);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v2', { baseRevision: 1, builtFrom: [] })]);
+
+  const republished = await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      baseRevision: 1,
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    }),
+  ]);
+
+  assert.deepEqual(republished.refreshed, []);
+  assert.equal(republished.unrefreshed.length, 1);
+  assert.equal(republished.unrefreshed[0].path, 'notes.mjs');
+  assert.equal(republished.unrefreshed[0].staleInputs[0].currentRevision, 2);
+  assert.equal(invalidationReport(ledger).counts.invalidated, 1, 'and it stays contradicted');
+});
+
+test('a participant holding somebody else\'s file cannot re-affirm it', async () => {
+  // The first deployed run of the recovery mission did exactly this and it was worse than a
+  // no-op: the summary participant's container is seeded with the report it reads, so its
+  // whole-tree commit re-sent the report. The coarse fallback recorded the *summary's*
+  // dependency list as the report's evidence, replacing the report's real evidence -- built
+  // from the policy -- and nothing then cited the policy at all. The mechanism appeared to
+  // work while doing nothing, which is the failure mode that hides best.
+  const ledger = new WorkspaceLedger({ epoch: 'e1' });
+  ledger.register({ participantId: 'report', dependencies: [] });
+  ledger.register({ participantId: 'summary', dependencies: ['src/report.mjs'] });
+  ledger.recordWrite({ path: 'src/report.mjs', revision: 1, contentHash: 'hr', actorId: 'report' });
+  ledger.recordRead({ participantId: 'summary', path: 'src/report.mjs' });
+
+  // The report publishes with a real declaration.
+  await commit(ledger, 'report', [
+    await file('src/report.mjs', 'export const offer = 10;', { builtFrom: [] }),
+  ]);
+  assert.deepEqual(ledger.files.get('src/report.mjs').evidence, { inputs: [], source: 'manifest' });
+
+  // The summary commits its whole tree: its own output, and the report it was seeded with,
+  // unchanged and without a per-file declaration for it.
+  const run = await commit(ledger, 'summary', [
+    await file('src/summary.mjs', 'export const total = 10;', { builtFrom: [{ path: 'src/report.mjs', revision: 2 }] }),
+    await file('src/report.mjs', 'export const offer = 10;', { baseRevision: 2 }),
+  ]);
+
+  assert.deepEqual(run.refreshed, [], 'a file the manifest says nothing about is not re-affirmed');
+  assert.deepEqual(ledger.files.get('src/report.mjs').evidence, { inputs: [], source: 'manifest' },
+    "the report's own evidence is untouched by the participant that merely held it");
+  assert.equal(ledger.files.get('src/report.mjs').evidenceRefreshedAtSequence, undefined);
+});
+
+test('a re-affirmation with nothing declared is not a re-affirmation', async () => {
+  // A participant that says nothing about an unchanged file has said nothing. Recording an
+  // empty claim on its behalf would clear an invalidation the participant never addressed.
+  const ledger = account(['a', 'b']);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v1', { builtFrom: [] })]);
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    }),
+  ]);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v2', { baseRevision: 1, builtFrom: [] })]);
+
+  const republished = await commit(ledger, 'b', [
+    await file('notes.mjs', 'export const note = "reviewed";', { baseRevision: 1 }),
+  ]);
+
+  assert.deepEqual(republished.refreshed, []);
+  assert.deepEqual(republished.unrefreshed, []);
+  assert.equal(invalidationReport(ledger).counts.invalidated, 1);
+});
+
+test('a re-affirmation identical to the record is not re-receipted', async () => {
+  // A whole-tree commit re-sends every file it holds. A receipt per output per commit would be
+  // noise the audit trail pays for, and there is nothing new to record.
+  const ledger = account(['a']);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v1', { builtFrom: [] })]);
+  await commit(ledger, 'a', [
+    await file('notes.mjs', 'export const note = "reviewed";', { builtFrom: [{ path: 'policy.mjs', revision: 1 }] }),
+  ]);
+  const receiptsBefore = ledger.receipts.length;
+
+  const again = await commit(ledger, 'a', [
+    await file('notes.mjs', 'export const note = "reviewed";', {
+      baseRevision: 1,
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    }),
+  ]);
+
+  assert.deepEqual(again.refreshed, []);
+  assert.equal(ledger.receipts.filter(receipt => receipt.reason === 'evidence_refreshed').length, 0);
+  assert.equal(ledger.receipts.length, receiptsBefore + 1, 'the commit receipt, and nothing else');
+});
+
+test('a write drops the refresh marker, because a write is a new publication', async () => {
+  const ledger = account(['a', 'b']);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v1', { builtFrom: [] })]);
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'same', { builtFrom: [{ path: 'policy.mjs', revision: 1 }] }),
+  ]);
+  await commit(ledger, 'a', [await file('policy.mjs', 'v2', { baseRevision: 1, builtFrom: [] })]);
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'same', { baseRevision: 1, builtFrom: [{ path: 'policy.mjs', revision: 2 }] }),
+  ]);
+  assert.ok(ledger.files.get('notes.mjs').evidenceRefreshedAtSequence !== undefined);
+
+  await commit(ledger, 'b', [
+    await file('notes.mjs', 'different', { baseRevision: 1, builtFrom: [{ path: 'policy.mjs', revision: 2 }] }),
+  ]);
+
+  assert.equal(ledger.files.get('notes.mjs').evidenceRefreshedAtSequence, undefined,
+    'the bytes moved, so the claim is not newer than them any more');
+  assert.equal(ledger.files.get('notes.mjs').revision, 2);
+});
+
 // --- the event ----------------------------------------------------------------
 
 test('the commit that contradicts an output retains an invalidation event, once', async () => {

@@ -33,7 +33,8 @@
     "missions:review": "node scripts/blind-review.mjs",
     "checkout:qualify": "node scripts/checkout/qualify-lab.mjs",
     "checkout:compare": "node scripts/checkout/compare-replays.mjs",
-    "checkout:agents": "node scripts/checkout/native-flight.mjs"
+    "checkout:agents": "node scripts/checkout/native-flight.mjs",
+    "missions:recovery": "node scripts/mission-recovery.mjs"
   },
   "license": "Apache-2.0",
   "repository": {

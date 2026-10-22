@@ -1447,11 +1447,39 @@ declaration and the workspace takes an explicit "I built from nothing" at its wo
 the same way the fence already does at admission. That is the honest limit of a
 declaration-based relation, which is why the record keeps the source and the author.
 
-What has *not* changed: no route blocks a reader, nothing re-runs a participant, and
-the deployment still runs the previous version. `evaluateCommit` already refuses a
-*pending* write that declares a moved revision, so the two agree by construction and a
-stale declaration cannot be laundered into health — but a participant that declares
-nothing is still covered by nothing.
+**Deployed, and exercised on the deployed surface (same day).** The slice above was
+deployed to `ingress-workspace` (version `8208299a`) and driven by a real mission:
+`fixtures/mission-recovery.mjs` defines three container participants that generate a
+report, a summary of the report and a notes file, each declaring at publication the
+revision it was handed — through `.ingress/built-from.json`, which the launcher already
+attaches and the reporter never commits. A fourth participant moved the shared source,
+twice. The workspace reported the three outputs as invalidated, including the one two
+hops out at depth 1 with its carrier named, and republishing each owner's output cleared
+it. `scripts/mission-recovery.mjs` is the driver and `src/mission-recovery.mjs` is the
+recovery policy: who is asked, at most twice, and what the asking cost.
+
+**Two defects were found by deploying it, and neither was reachable from the unit tests.**
+An output whose value does not depend on the change could never be cleared, because
+identical bytes are `no_change` and the evidence was never re-recorded — fixed by letting a
+re-affirmation move the *claim* without moving the revision. And the first fix then let a
+participant that merely *held* a seeded file re-affirm it with its own participant-wide
+dependency list, replacing the publisher's evidence and making the mechanism appear to work
+while doing nothing — fixed by requiring an explicit per-file declaration. Both are recorded
+in [the results](mission-recovery-results.md), held by tests, and one is held by a mutation.
+
+What that run measures is **container time and bytes**, because every participant is a
+deterministic command. It does not measure dollars: no model ran, and the module keeps
+model cost and container time in separate totals rather than adding them. It also does
+not measure whether a *model* would redo its work when told its output is stale — the
+recovery policy is a stated model of a worker, and that remains the open question.
+[The results](mission-recovery-results.md) record both, including the over-invalidation
+the campaign predicted: one of the three regenerations produced the bytes already there,
+on both rounds.
+
+What has *not* changed: no route blocks a reader, nothing re-runs a participant by
+itself, and `evaluateCommit` already refuses a *pending* write that declares a moved
+revision — so the two agree by construction and a stale declaration cannot be laundered
+into health. A participant that declares nothing is still covered by nothing.
 
 **What it does not do.** It does not make a stale output *wrong* — it makes the
 workspace *say* the output is no longer approved. Restoring correctness is the

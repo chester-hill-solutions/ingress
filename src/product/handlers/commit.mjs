@@ -229,7 +229,7 @@ export async function commit(ctx, request) {
     return json(409, { ...refusal, participantId });
   }
 
-  const { summary, files, invalidations } = applyCommit(ledger, decision);
+  const { summary, files, invalidations, refreshed, unrefreshed } = applyCommit(ledger, decision);
 
   // `verified.files` is already sorted; index it once rather than scanning it per
   // file. The original `.find` inside the loop was quadratic.
@@ -278,6 +278,15 @@ export async function commit(ctx, request) {
     // approval matters. The full evidence is on `/invalidated` and in the invalidation
     // receipts; this is a pointer, not the record.
     ...(invalidations.length > 0 ? { invalidated: invalidations.map(event => event.path) } : {}),
+    // Outputs re-affirmed rather than rewritten: identical bytes, re-derived against the
+    // current inputs. Named separately from `landed` because no revision moved, and named at
+    // all because a participant that redoes its work and produces the same answer has to be
+    // able to say so -- otherwise the workspace reports it stale forever.
+    ...(refreshed.length > 0 ? { refreshed: refreshed.map(receipt => receipt.path) } : {}),
+    // Re-affirmations the workspace refused to record, with the evidence for the refusal. A
+    // claim that cannot be honoured leaves the output contradicted, and saying so is the
+    // difference between a participant knowing why and guessing.
+    ...(unrefreshed.length > 0 ? { unrefreshed } : {}),
   };
   await ctx.state.storage.put(commitKey(participantId), outcome);
   // Byte count from the *admitted* files, which is what was stored. The manifest's own

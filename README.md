@@ -75,8 +75,17 @@ outputs that depended on it. It was measured as a paired campaign — the same 1
 assignments with the mechanism off and on, one run, one implementation — and the
 dependency relation it needs turned out not to be in the code graph at all: it is a
 data dependency with no import edge, so the evidence has to come from the
-participant's own declared inputs. No deployed route, admission rule or durable
-record changed, and no RT status changes.
+participant's own declared inputs. No RT status changes.
+
+The [recovery increment](docs/mission-recovery-results.md) is that mechanism's
+product-side form and its first exercise on the deployed surface: the ledger holds the
+publication record, `GET /w/:name/invalidated` reports what a write contradicted
+including through the transitive closure, and a commit that contradicts an output
+retains the event. A mission of three container participants and a moving source was
+run twice against the deployment, with the recovery tax measured — container time,
+bytes, and how many regenerations produced the bytes already there. The dollars a
+model-driven participant would spend are not measured, and the recovery policy is a
+stated model of a worker that redoes its own work.
 
 The standalone [checkout lab corpus](fixtures/checkout-lab/README.md) has a working
 order/fulfillment application, independent behavior checks, explicit data contracts,

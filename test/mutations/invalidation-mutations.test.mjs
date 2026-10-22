@@ -106,6 +106,15 @@ function assertions(mod) {
   });
   assert.deepEqual(self, { inputs: [], source: 'manifest' });
 
+  // A re-affirmation requires an explicit per-file declaration. Silence is not a claim, and a
+  // participant's container holds everything it declared it depends on -- so a fallback here
+  // would let it stamp its own dependency list onto a file somebody else published.
+  assert.equal(mod.refreshEvidenceFor({ path: 'src/report.mjs' }), null, 'silence is not a claim');
+  assert.deepEqual(
+    mod.refreshEvidenceFor({ path: 'shared.mjs', builtFrom: [{ path: 'shared.mjs', revision: 1 }, { path: 'other.mjs', revision: 2 }] }),
+    { inputs: [{ path: 'other.mjs', revision: 2 }], source: 'manifest' }
+  );
+
   // An event is the *difference* a write makes, not the standing set.
   assert.deepEqual(mod.invalidatedByWrite(report, report, 'a'), [],
     'a write that contradicts nothing new emits nothing');
@@ -224,6 +233,24 @@ test('emitting the standing set instead of the difference is caught', async () =
   );
   try {
     assert.throws(() => assertions(module), /emits nothing|deepEqual/);
+  } finally {
+    await cleanup();
+  }
+});
+
+test('falling back to the participant-wide list on a re-affirmation is caught', async () => {
+  // The mutation that shipped and was found by the first deployed run: a participant that
+  // merely held a file could re-affirm it, overwriting the publisher's evidence with its own
+  // dependency list. The mechanism then reported nothing and looked like it was working.
+  const { module, cleanup } = await loadMutated(
+    source => source.replace(
+      '  if (!Array.isArray(file.builtFrom)) return null;',
+      "  if (!Array.isArray(file.builtFrom)) return { inputs: [], source: 'manifest' };"
+    ),
+    'refresh-fallback'
+  );
+  try {
+    assert.throws(() => assertions(module), /silence is not a claim|deepEqual|expected null/);
   } finally {
     await cleanup();
   }

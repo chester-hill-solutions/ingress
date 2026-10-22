@@ -181,6 +181,45 @@ export class WorkspaceLedger {
     return record;
   }
 
+  /**
+   * Re-affirm a published output against current inputs, without moving it.
+   *
+   * The case this exists for was found by running the mechanism rather than reading it. A
+   * participant whose output happens to be unchanged after it redoes the work re-sends the
+   * same bytes, `evaluateCommit` calls that `no_change`, `applyCommit` skips it — and the
+   * output keeps the evidence it was published with, which is now contradicted, forever. Its
+   * owner can regenerate as often as it likes and the workspace will still report it stale.
+   * The only way out would be to perturb the output, which is absurd.
+   *
+   * The distinction the fix rests on is that **a revision and a claim are different things**.
+   * Identical bytes must not consume a revision — that is why `no_change` exists, and churning
+   * revisions would make every other participant's dependencies look moved. But identical
+   * bytes *can* be re-derived against current inputs, and that re-derivation is exactly the
+   * evidence the record needs. So this moves the claim and not the bytes.
+   *
+   * What it does and does not establish. The declaration is checked before it gets here:
+   * `evaluateCommit` refuses a per-file declaration whose inputs have moved, so a refreshed
+   * record always names current revisions. What the workspace cannot verify is that the
+   * participant actually redid the work — a participant that declares "I built this from the
+   * current input" without redoing anything is lying, exactly as it could lie in a fresh
+   * write. That is the same trust the whole declaration-based relation rests on, and it is
+   * why the receipt names the participant and the revision.
+   *
+   * `evidenceRefreshedAtSequence` is kept separate from `writtenAtSequence` so a reader can
+   * see that the claim is newer than the bytes. A later write drops both, because a write is a
+   * new publication rather than a re-affirmation of the old one.
+   */
+  refreshEvidence({ path, evidence, participantId, sequence = this.receipts.length }) {
+    path = declaredPath(path);
+    if (evidence == null) throw new FenceRefusal('invalid_publication_evidence', { path });
+    const record = this.files.get(path);
+    if (!record) throw new FenceRefusal('no_such_path', { path });
+    record.evidence = evidence;
+    record.evidenceRefreshedAtSequence = sequence;
+    record.evidenceRefreshedBy = participantId;
+    return record;
+  }
+
   /** Record that a participant read a path at its current revision. */
   recordRead({ participantId, path }) {
     const participant = this.require(participantId);

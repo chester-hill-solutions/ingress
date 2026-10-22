@@ -73,7 +73,7 @@ function staleAmong(builtFrom, ledger) {
  */
 
 import { FenceRefusal, validatePath } from './fence.mjs';
-import { evidenceForCommit, invalidationReport, invalidatedByWrite } from './invalidation.mjs';
+import { evidenceForCommit, refreshEvidenceFor, invalidationReport, invalidatedByWrite, staleInputsOf } from './invalidation.mjs';
 
 /** Bound a single commit so a participant cannot turn one request into a DoS. */
 export const MAX_COMMIT_FILES = 128;
@@ -395,6 +395,66 @@ export function applyCommit(ledger, decision) {
     });
   }
 
+  // The re-affirmations, before the summary is built and before the invalidation diff.
+  //
+  // An unchanged file that declares its inputs has been re-derived against the current
+  // revisions, and that is a claim the record has to be able to hold. Without this the
+  // mechanism has a state with no exit: an output whose value does not depend on the change
+  // that moved its input stays contradicted no matter how often its owner redoes the work,
+  // because the bytes never differ and identical bytes are not a write. See
+  // `WorkspaceLedger.refreshEvidence`.
+  //
+  // A declaration identical to the one already recorded is skipped rather than re-receipted:
+  // there is nothing new to record, and a receipt per output on every whole-tree commit would
+  // be noise the audit trail has to pay for.
+  const refreshed = [];
+  const unrefreshed = [];
+  for (const file of decision.files) {
+    if (!decision.unchanged.includes(file.path)) continue;
+    // Only an explicit per-file declaration. See `refreshEvidenceFor`: a participant's container
+    // holds everything it declared it depends on, so the coarse fallback here would let one
+    // participant stamp its own dependency list onto a file another participant published.
+    const evidence = refreshEvidenceFor(file);
+    if (evidence == null) continue;
+    // An unchanged file never reaches the dependency check in `evaluateCommit` -- `no_change`
+    // short-circuits before it -- so the declaration is checked here instead. Checked first,
+    // and before the "nothing new to record" comparison below, because a participant that
+    // re-sends an unchanged output still declaring the revision that moved is the one case
+    // where it most needs to be told why its output is still contradicted. A claim that cannot
+    // be honoured is not honoured: the output keeps the evidence it had and stays stale, which
+    // is the correct answer for a participant that has not shown it re-derived anything.
+    const staleInputs = staleInputsOf(ledger, evidence);
+    if (staleInputs.length > 0) {
+      unrefreshed.push({ path: file.path, staleInputs });
+      continue;
+    }
+    const current = ledger.files.get(file.path)?.evidence ?? null;
+    if (current !== null && current.source === evidence.source
+      && current.inputs.length === evidence.inputs.length
+      && current.inputs.every((input, index) => input.path === evidence.inputs[index].path && input.revision === evidence.inputs[index].revision)) {
+      continue;
+    }
+    const record = ledger.refreshEvidence({
+      path: file.path,
+      evidence,
+      participantId: decision.participantId,
+      sequence: ledger.receipts.length,
+    });
+    refreshed.push({
+      sequence: ledger.receipts.length,
+      admitted: true,
+      reason: 'evidence_refreshed',
+      participantId: decision.participantId,
+      kind: ledger.require(decision.participantId).kind,
+      path: file.path,
+      // The revision does not move: the bytes are the ones that were already there.
+      revision: record.revision,
+      builtFrom: evidence.inputs,
+      evidenceSource: evidence.source,
+      fingerprint: decision.fingerprint,
+    });
+  }
+
   // One ledger receipt per commit, not per file, so the retained history reads
   // as "this participant committed these paths" rather than as noise.
   const summary = {
@@ -405,10 +465,12 @@ export function applyCommit(ledger, decision) {
     kind: ledger.require(decision.participantId).kind,
     paths: receipts.map(r => r.path),
     unchanged: decision.unchanged,
+    refreshed: refreshed.map(receipt => receipt.path),
     fingerprint: decision.fingerprint,
     files: receipts,
   };
   ledger.receipts.push(summary);
+  for (const receipt of refreshed) ledger.receipts.push(receipt);
 
   // Which published outputs this commit contradicted. A consequence of the admission,
   // so it is retained after it, and it never blocks anything: the bytes already landed.
@@ -419,5 +481,5 @@ export function applyCommit(ledger, decision) {
   const invalidations = invalidatedByWrite(before, after, decision.participantId)
     .map(event => ledger.retain({ ...event, sequence: ledger.receipts.length }));
 
-  return { summary, files: receipts, invalidations };
+  return { summary, files: receipts, invalidations, refreshed, unrefreshed };
 }
