@@ -1472,6 +1472,21 @@ deterministic command. It does not measure dollars: no model ran, and the module
 model cost and container time in separate totals rather than adding them. It also does
 not measure whether a *model* would redo its work when told its output is stale — the
 recovery policy is a stated model of a worker, and that remains the open question.
+
+**The model mode is built and blocked, and the blocker is operational.** The driver
+(`npm run missions:recovery:model`) replaces each generator with a real model turn whose
+bytes a container publishes, with the model harness-side so no provider credential ever
+enters a container command or its log. Its first run failed in two ways that have nothing
+to do with the mechanism: the OpenCode provider key is **expired** (`provider.auth`, 401),
+and the native harness pins `opencode v2.0.16` while the installed binary is `v2.0.32`, so
+`startOpenCode` refuses before anything runs. That pin is recorded across the compatibility
+file, the protocol documents and the tests; a proper bump means re-running the
+compatibility probe, which needs a working key. What was verified against v2.0.32: the
+readiness lines, session creation, prompt admission, the step-event vocabulary, terminal
+settlement and the context shape. It also produced a lesson worth keeping — nine failed
+turns published *empty files* and the workspace recorded them as publications, so
+`publicationOf` now refuses to publish a turn that did not succeed, produce bytes and
+report no error of its own.
 [The results](mission-recovery-results.md) record both, including the over-invalidation
 the campaign predicted: one of the three regenerations produced the bytes already there,
 on both rounds.

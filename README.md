@@ -84,8 +84,10 @@ including through the transitive closure, and a commit that contradicts an outpu
 retains the event. A mission of three container participants and a moving source was
 run twice against the deployment, with the recovery tax measured — container time,
 bytes, and how many regenerations produced the bytes already there. The dollars a
-model-driven participant would spend are not measured, and the recovery policy is a
-stated model of a worker that redoes its own work.
+model-driven participant would spend are not measured: that mode exists
+(`npm run missions:recovery:model`) and its first run failed on an expired provider
+key, and on the native harness pinning an OpenCode binary that is no longer installed.
+The recovery policy remains a stated model of a worker that redoes its own work.
 
 The standalone [checkout lab corpus](fixtures/checkout-lab/README.md) has a working
 order/fulfillment application, independent behavior checks, explicit data contracts,
