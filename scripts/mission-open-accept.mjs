@@ -65,6 +65,11 @@ if (!workspaceArg || !outArg) {
     await browser.screenshot(join(out, 'site.png'));
     report.site = { requests: browser.requests.length, exceptions: browser.exceptions.map(exception => exception.text.slice(0, 200)) };
 
+    // Leave the page the way a visitor does, and give the unload beacon time to land: a dashboard
+    // read in the same tick as the navigation shows the pageview and nothing else.
+    await browser.navigate('about:blank').catch(() => {});
+    await new Promise(done => setTimeout(done, 1200));
+
     await browser.navigate(`${base}/dashboard`);
     await new Promise(done => setTimeout(done, 400));
     await browser.screenshot(join(out, 'dashboard.png'));

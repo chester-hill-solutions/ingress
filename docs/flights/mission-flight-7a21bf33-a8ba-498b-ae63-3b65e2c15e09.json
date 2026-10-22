@@ -1,0 +1,82 @@
+{
+  "flight": "mission-flight-7a21bf33-a8ba-498b-ae63-3b65e2c15e09",
+  "created": "2026-10-22T19:16:17.847Z",
+  "ended": "2026-10-22T19:28:36.710Z",
+  "status": "complete",
+  "mode": null,
+  "models": [
+    "deepseek-v4-flash"
+  ],
+  "catalogPrices": {
+    "deepseek-v4-flash": {
+      "input": 0.14,
+      "output": 0.28,
+      "cache_read": 0.028
+    }
+  },
+  "cohorts": [
+    {
+      "id": "signal-open-1-deepseek-v4-flash-stock-eight",
+      "fixture": "signal-open",
+      "config": "stock-eight",
+      "model": "deepseek-v4-flash",
+      "outcome": "completed",
+      "correct": true,
+      "elapsedMs": 738781.409417,
+      "seedSHA256": "54f0fd04405b3b9b1dc9e3a80162ed8f01c3b04543dd9fabee13721bcb21c1e5",
+      "tokens": {
+        "input": 1576335,
+        "output": 267226,
+        "total": 1843561
+      },
+      "cost": 1.603872,
+      "checks": {
+        "passed": 12,
+        "total": 12,
+        "failed": []
+      },
+      "protected": {
+        "passed": 20,
+        "total": 20,
+        "failed": []
+      },
+      "bands": [
+        {
+          "atMs": 60000,
+          "passed": 0,
+          "total": 12
+        },
+        {
+          "atMs": 180000,
+          "passed": 12,
+          "total": 12
+        },
+        {
+          "atMs": 600000,
+          "passed": 12,
+          "total": 12
+        }
+      ],
+      "actors": {
+        "total": 8,
+        "succeeded": 8,
+        "failed": 0
+      },
+      "errors": []
+    }
+  ],
+  "totals": {
+    "cohorts": 1,
+    "correct": 1,
+    "tokens": 1843561,
+    "cost": 1.603872,
+    "actors": 8,
+    "actorFailures": 0
+  },
+  "sourceDigest": {
+    "files": 19,
+    "digest": "630e56f9"
+  },
+  "errors": [],
+  "note": "The durable form of a flight. Artifacts, traces and the re-grade live in the flight directory and may not survive; these figures are committed and are what a later reader should cite."
+}

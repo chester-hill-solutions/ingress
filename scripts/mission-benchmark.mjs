@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { cpus, platform } from 'node:os';
 import { missionFixtures, verifyMissionFixture } from '../fixtures/missions.mjs';
@@ -10,6 +10,7 @@ import { missionObserver } from '../src/mission-snapshots.mjs';
 import { readMissionFile } from '../src/mission-verifier.mjs';
 import { createBlindStudy, freezeBlindSample, saveBlindJSON } from '../src/blind-review.mjs';
 import { retain } from '../src/mission-retention.mjs';
+import { flightSummary } from '../src/mission-summary.mjs';
 
 const args = process.argv.slice(2), keys = ['--repeats=', '--parallel=', '--deadline-ms=', '--seed=', '--configs=', '--missions=', '--models='];
 if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,ingress-four --models=deepseek-v4-flash]');
@@ -112,6 +113,10 @@ finally {
   // says which it is. A failure to retain is recorded and never fails a flight that ran.
   try { const kept=await retain({ evidence, directory, capture:'settled' }); evidence.trace={ capture:'settled', directory:kept.directory, cohorts:kept.plan.cohorts.length, files:kept.plan.files, bytes:kept.plan.totalBytes, complete:kept.plan.complete }; await saveBlindJSON(evidencePath,evidence); console.log(JSON.stringify({trace:kept.directory,files:kept.plan.files,bytes:kept.plan.totalBytes})); }
   catch (error) { evidence.errors.push({code:'trace_retention_failed'}); try { await saveBlindJSON(evidencePath,evidence); } catch { /* the flight record is already written */ } }
+  // The durable form: a few kilobytes of numbers written where a commit can keep them, because a
+  // flight directory can vanish and did once. A failure here never fails a flight that ran.
+  try { const summary=flightSummary({...evidence,flight:basename(directory)},{source:evidence.sourceFingerprints}); const flights=join(resolve(import.meta.dirname,'..'),'docs','flights'); await mkdir(flights,{recursive:true}); const target=join(flights,basename(directory)+'.json'); await writeFile(target,JSON.stringify(summary,null,2)+String.fromCharCode(10)); console.log(JSON.stringify({summary:target})); }
+  catch (error) { evidence.errors.push({code:'flight_summary_failed', message:String(error?.message ?? error).slice(0,300)}); }
   console.log(JSON.stringify({status:evidence.status,ready:study.samples.filter(value=>value.status==='ready').length,assigned:results.length}));
 }
 if(evidence.status!=='complete')process.exitCode=1;
