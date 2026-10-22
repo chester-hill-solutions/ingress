@@ -7,12 +7,13 @@ import { startOpenCode, scopedEnvironment } from '../src/process.mjs';
 
 async function fixture(t, behavior='normal') {
   const root=await mkdtemp(join(tmpdir(),'collaboration-process-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const pin = (await readFile(new URL('../src/process.mjs', import.meta.url), 'utf8')).match(/PIN = '([^']+)'/)[1];
   const directory=join(root,'workspace'),binary=join(root,'fake-opencode'),calls=join(root,'calls.jsonl');await mkdir(directory);
   await writeFile(binary,`#!${process.execPath}
-const fs=require('node:fs');
+const PIN_TEXT=${JSON.stringify(pin)};const fs=require('node:fs');
 fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify({args:process.argv.slice(2),pid:process.pid,cwd:process.cwd(),home:process.env.HOME,config:process.env.XDG_CONFIG_HOME,cache:process.env.XDG_CACHE_HOME,key:process.env.OPENCODE_API_KEY==='explicit-fixture-key',ambient:process.env.OPENCODE_CONFIG,otel:process.env.OTEL_EXPORTER_OTLP_ENDPOINT})+'\\n');
 if(process.argv.includes('--pure')){console.error('Unsupported server flag');process.exit(2);}
-if(process.argv.includes('--version')){${behavior==='slow'?'setTimeout(()=>console.log("opencode v2.0.16"),100);':behavior==='bad'?'console.log("PRIVATE bad version");':'console.log("opencode v2.0.16");'} }
+if(process.argv.includes('--version')){${behavior==='slow'?'setTimeout(()=>console.log(PIN_TEXT),100);':behavior==='bad'?'console.log("PRIVATE bad version");':'console.log(PIN_TEXT);'} }
 else{${behavior==='malformed'?'console.log("PRIVATE malformed readiness");process.exit(1);':`console.log('server listening on http://127.0.0.1:12345');console.log('server password fixture-password');setInterval(()=>{},1000);`} }
 `,{mode:0o700});
   return {root,binary,directory,calls,stateDir:join(root,'state')};

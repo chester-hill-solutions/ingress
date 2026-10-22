@@ -35,7 +35,10 @@
     "checkout:compare": "node scripts/checkout/compare-replays.mjs",
     "checkout:agents": "node scripts/checkout/native-flight.mjs",
     "missions:recovery": "node scripts/mission-recovery.mjs",
-    "missions:recovery:model": "node scripts/mission-recovery.mjs --participants=model"
+    "missions:recovery:model": "node scripts/mission-recovery.mjs --participants=model",
+    "missions:view": "node scripts/mission-view.mjs",
+    "missions:trace": "node scripts/mission-trace.mjs",
+    "missions:retain": "node scripts/mission-retain.mjs"
   },
   "license": "Apache-2.0",
   "repository": {

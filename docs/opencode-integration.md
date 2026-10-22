@@ -7,10 +7,17 @@ This is a design and compatibility result, not a completed squad-runtime migrati
 
 ## What was verified
 
-The installed launcher identifies itself as OpenCode 2.0.16. Research used pinned
-source commit 3a103fe0aff726a4edc7492f03f7b88195d9e4c9; a version string alone does
+The installed launcher identifies itself as OpenCode 2.0.32. Research used pinned
+source commit 843a6c514e606b436a7fe713422ace0a93ad3d61; a version string alone does
 not prove that the installed binary is identical to that source. Current V2
 plugin/SDK documentation supports the broad interfaces; V1 examples differ.
+The previous pin was 2.0.16 at source commit 3a103fe0aff726a4edc7492f03f7b88195d9e4c9:
+the binary was upgraded on 2026-10-19 and the pin was not, so every native harness run
+began refusing with "Requires OpenCode v2.0.16" while the unit suite stayed green. The
+probe below was re-run unchanged against 2.0.32 and passed the same eight assertions;
+both pins are retained in the [compatibility record](opencode-plugin-compatibility.json),
+and `test/opencode-pin.test.mjs` now asserts that the pin, the record and the installed
+binary agree.
 
 The opt-in installed-binary diagnostic runs two native sessions on one host with a
 scripted loopback chat-completions provider. It holds both initial requests until

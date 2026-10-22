@@ -2,7 +2,15 @@ import { spawn } from 'node:child_process';
 import { mkdir, open, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-const PIN = 'opencode v2.0.16';
+/**
+ * The exact binary this harness is verified against.
+ *
+ * Exported so the test that fakes a binary and the compatibility record that justifies the pin
+ * both read it from here. They did not, and the pin silently stopped matching the installed
+ * binary when OpenCode was upgraded on 2026-10-19 -- which broke every native harness run
+ * while the suite stayed green.
+ */
+export const PIN = 'opencode v2.0.32';
 const OUTPUT_LIMIT = 65536;
 const CATALOG_LIMIT = 8 * 1024 * 1024;
 const AMBIENT_KEYS = new Set(['PATH', 'LANG', 'TZ', 'TMPDIR', 'TMP', 'TEMP', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS', 'NODE_USE_SYSTEM_CA', 'NODE_USE_ENV_PROXY', 'CURL_CA_BUNDLE', 'REQUESTS_CA_BUNDLE']);
@@ -45,7 +53,7 @@ async function probeVersion(binary, directory, env, signal) {
       child.stdout.on('data', chunk => { bytes += chunk.length; if (bytes > OUTPUT_LIMIT) finish(new Error('OpenCode version output exceeds limit')); else output += chunk.toString(); });
       child.stderr.on('data', chunk => { bytes += chunk.length; if (bytes > OUTPUT_LIMIT) finish(new Error('OpenCode version output exceeds limit')); });
       child.once('error', () => finish(new Error('OpenCode executable could not start')));
-      child.once('exit', code => finish(code === 0 && output.trim() === PIN ? undefined : new Error('Requires OpenCode v2.0.16')));
+      child.once('exit', code => finish(code === 0 && output.trim() === PIN ? undefined : new Error('Requires ' + PIN)));
       signal?.addEventListener('abort', aborted, { once: true });
       if (signal?.aborted) aborted();
     });
@@ -84,7 +92,7 @@ export async function startOpenCode({ binary, stateDir, directory, apiKey, baseU
   }
   await probeVersion(binary, directory, env, signal);
   signal?.throwIfAborted();
-  // Use the installed v2.0.16 binary's verified help surface; it has no --pure flag.
+  // Use the installed binary's verified help surface; it has no --pure flag.
   const child = spawn(binary, ['serve', '--hostname', '127.0.0.1', '--port', '0'], { cwd: directory, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let closePromise;
   const close = () => closePromise ??= stopProcess(child);

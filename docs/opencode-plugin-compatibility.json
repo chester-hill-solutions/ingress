@@ -1,8 +1,15 @@
 {
   "version": 1,
-  "installedVersion": "2.0.16",
-  "pinnedSourceCommit": "3a103fe0aff726a4edc7492f03f7b88195d9e4c9",
+  "installedVersion": "2.0.32",
+  "pinnedSourceCommit": "843a6c514e606b436a7fe713422ace0a93ad3d61",
   "scope": "installed native plumbing, not external-model adaptation",
+  "pinnedOn": "2026-10-22T16:19:49.755Z",
+  "previousPins": [
+    {
+      "installedVersion": "2.0.16",
+      "pinnedSourceCommit": "3a103fe0aff726a4edc7492f03f7b88195d9e4c9"
+    }
+  ],
   "attempts": [
     {
       "mode": "installed-native-scripted-provider",
@@ -865,6 +872,156 @@
       "passed": true,
       "attempt": 7,
       "qualification": "passed eight assertions after independent request identity and cleanup/bounds review"
+    },
+    {
+      "version": 1,
+      "mode": "installed-native-scripted-provider",
+      "date": "2026-10-22T16:19:01.001Z",
+      "providerRequests": [
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "markerSessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "markerSessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "markerCount": 1,
+          "revision": 1,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "markerSessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        },
+        {
+          "path": "/v1/chat/completions",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "markerSessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "markerCount": 1,
+          "revision": 2,
+          "toolCount": 1
+        }
+      ],
+      "routing": {
+        "observedModelRequests": "loopback",
+        "otherTraffic": "not measured"
+      },
+      "sourceSHA256": "2e96f4c35271af2053a54c8e7124c7f9a7fef56a594cb7aeb386a37eeb1d78b2",
+      "sessions": [
+        "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+        "ses_e9b975c0cffeLayiUPnHp08tHN"
+      ],
+      "initialRequestsHeldTogether": true,
+      "outcomes": [
+        {
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "outcome": "succeeded",
+          "idle": 1792685942697
+        },
+        {
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "outcome": "succeeded",
+          "idle": 1792685942692
+        }
+      ],
+      "processStopped": true,
+      "receipts": [
+        {
+          "type": "setup",
+          "version": "2.0.32"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "revision": 1
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "tool": "read"
+        },
+        {
+          "type": "before",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "tool": "read"
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_e9b975c0cffeLayiUPnHp08tHN",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "after",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "tool": "read",
+          "status": "completed"
+        },
+        {
+          "type": "context",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "revision": 2
+        },
+        {
+          "type": "request",
+          "sessionID": "ses_e9b975c0effeNAsJ5ZT8QyIBj2",
+          "kind": "primary",
+          "loopback": true
+        },
+        {
+          "type": "cleanup"
+        }
+      ],
+      "checks": {
+        "twoSessions": true,
+        "simultaneousRequests": true,
+        "freshContinuation": true,
+        "nativeReadHooks": true,
+        "loopbackRequests": true,
+        "successfulSessions": true,
+        "pluginCleanup": true,
+        "stopped": true
+      },
+      "passed": true,
+      "attempt": 8,
+      "qualification": "passed the same eight assertions on 2.0.32, unchanged; the probe is the only thing that ran, so this qualifies the installed plumbing and not a harness run"
     }
   ]
 }
