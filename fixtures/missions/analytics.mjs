@@ -393,14 +393,22 @@ async function gradeSignal(root, { invoke, check }) {
     assert.equal(parsed.maskText, false);
     assert.equal(parsed.idleMs, 5000);
     assert.equal(parsed.rollMs, 1800000);
-    assert.equal(parsed.maxEvents, 50);
+    // The seeded tag overrides the event cap, so this is the override being asserted and the
+    // defaults for everything else. The first version asserted 50 here and contradicted the
+    // contract in the same file -- a submission that followed the spec failed the judge.
+    assert.equal(parsed.maxEvents, 3, 'the data-max-events override was not honoured');
+    assert.equal(parsed.maxBytes, 65536);
+    assert.equal(parsed.intervalMs, 10000);
     assert.equal(parsed.maxBytes, 65536);
     assert.equal(parsed.intervalMs, 10000);
   });
 
   await check('tag-config-refusal', () => {
+    assert.ok(config.ok, 'a refusal means nothing from a module that cannot parse a valid tag');
     assert.equal(missingSite.ok, false, 'a tag with no site key was accepted');
-    assert.match(String(missingSite.error?.message ?? ''), /site|endpoint/i);
+    // The refusal is the contract; the wording is not. Isolation flattens the error object, so
+    // an assertion on its message fails for a submission that refused correctly.
+    assert.notEqual(missingSite.error, undefined, 'a refusal must carry something');
   });
 
   await check('tag-block-rules', () => {
@@ -549,9 +557,13 @@ async function gradeSignal(root, { invoke, check }) {
   await check('ingest-accept', () => {
     const response = need(accepted);
     assert.equal(response.status, 202, `a valid batch answered ${response.status}`);
-    assert.equal(response.body.accepted, true);
-    assert.equal(response.body.siteKey, site.siteKey);
-    assert.equal(response.body.events, 1);
+    const body = responseBody(response);
+    assert.ok(body, 'the response body is neither an object nor JSON');
+    assert.equal(body.accepted, true);
+    assert.equal(body.siteKey, site.siteKey);
+    // The contract did not choose between a count and the events themselves, so either is right.
+    const carried = Array.isArray(body.events) ? body.events.length : body.events;
+    assert.equal(carried, 1, `the acceptance carried ${JSON.stringify(body.events)}`);
   });
 
   await check('ingest-typed-refusals', () => {
@@ -559,8 +571,10 @@ async function gradeSignal(root, { invoke, check }) {
     // refused must not appear in the state.
     const response = need(unknownSite);
     assert.equal(response.status, 403, `an unknown site answered ${response.status}`);
-    assert.equal(response.body.accepted, false);
-    assert.equal(response.body.code, 'unknown_site');
+    const body = responseBody(response);
+    assert.ok(body, 'the refusal body is neither an object nor JSON');
+    assert.equal(body.accepted, false);
+    assert.equal(body.code, 'unknown_site');
   });
 
   await check('ingest-no-state-on-refusal', () => {
@@ -684,6 +698,20 @@ async function gradeSignal(root, { invoke, check }) {
     assert.deepEqual(dangling, [], `the tag imports modules that do not exist: ${dangling.join(', ')}`);
   });
 }
+
+/**
+ * The ingest response body, as an object.
+ *
+ * The contract says a handler returns a body; it did not say whether that body is a string or a
+ * parsed object, and the submission returned the string a real HTTP handler returns. Both
+ * readings are correct against a spec that did not choose, so the judge reads either, and the
+ * ambiguity is recorded in the mission document rather than resolved by fiat after the fact.
+ */
+const responseBody = response => {
+  const body = response?.body;
+  if (typeof body === 'string') { try { return JSON.parse(body); } catch { return null; } }
+  return body !== null && typeof body === 'object' ? body : null;
+};
 
 /** Every event the run recorded, from the batches it sent: the tag's own output. */
 function eventsOf(result) {

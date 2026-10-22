@@ -9,6 +9,7 @@ import { runBenchmarkCohort } from '../src/benchmark.mjs';
 import { missionObserver } from '../src/mission-snapshots.mjs';
 import { readMissionFile } from '../src/mission-verifier.mjs';
 import { createBlindStudy, freezeBlindSample, saveBlindJSON } from '../src/blind-review.mjs';
+import { retain } from '../src/mission-retention.mjs';
 
 const args = process.argv.slice(2), keys = ['--repeats=', '--parallel=', '--deadline-ms=', '--seed=', '--configs=', '--missions='];
 if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,ingress-four]');
@@ -101,6 +102,12 @@ finally {
   study.status=evidence.status;
   try { await saveBlindJSON(join(directory,'review-private.json'),study); }
   finally { evidence.ended=new Date().toISOString(); if(persistTimer)clearTimeout(persistTimer);await persistence;await saveBlindJSON(evidencePath,evidence); }
+  // Keep the trace, not just the aggregate: the workspaces and the fence receipts live in temp
+  // directories and the evidence holds hashes of them rather than the files. Retained here, at
+  // settle, this is a record; run afterwards by `npm run missions:retain` it is a rescue, and it
+  // says which it is. A failure to retain is recorded and never fails a flight that ran.
+  try { const kept=await retain({ evidence, directory, capture:'settled' }); evidence.trace={ capture:'settled', directory:kept.directory, cohorts:kept.plan.cohorts.length, files:kept.plan.files, bytes:kept.plan.totalBytes, complete:kept.plan.complete }; await saveBlindJSON(evidencePath,evidence); console.log(JSON.stringify({trace:kept.directory,files:kept.plan.files,bytes:kept.plan.totalBytes})); }
+  catch (error) { evidence.errors.push({code:'trace_retention_failed'}); try { await saveBlindJSON(evidencePath,evidence); } catch { /* the flight record is already written */ } }
   console.log(JSON.stringify({status:evidence.status,ready:study.samples.filter(value=>value.status==='ready').length,assigned:results.length}));
 }
 if(evidence.status!=='complete')process.exitCode=1;

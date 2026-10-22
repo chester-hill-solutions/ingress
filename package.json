@@ -8,7 +8,7 @@
     "node": ">=26"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test --test-timeout=120000",
     "demo": "node scripts/probe.mjs",
     "probe:real": "node scripts/probe.mjs --real",
     "check": "node scripts/check.mjs",
@@ -38,7 +38,8 @@
     "missions:recovery:model": "node scripts/mission-recovery.mjs --participants=model",
     "missions:view": "node scripts/mission-view.mjs",
     "missions:trace": "node scripts/mission-trace.mjs",
-    "missions:retain": "node scripts/mission-retain.mjs"
+    "missions:retain": "node scripts/mission-retain.mjs",
+    "missions:regrade": "node scripts/mission-regrade.mjs"
   },
   "license": "Apache-2.0",
   "repository": {
