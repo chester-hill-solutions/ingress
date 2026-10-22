@@ -17,7 +17,7 @@
  *
  * Two surfaces, and the split between them is the design:
  *
- *   Public  /join /intent /read /receipts /content /state /bootstrap /start
+ *   Public  /join /intent /read /receipts /content /state /invalidated /bootstrap /start
  *           /lease/* /leases
  *           What a participant may ask. Apart from `/bootstrap` — restricted to an
  *           empty ledger — none of these move file state.
@@ -35,6 +35,7 @@
  */
 
 import { WorkspaceLedger } from './fence.mjs';
+import { invalidationReport } from './invalidation.mjs';
 import { LeaseTable } from './lease.mjs';
 import { json, readJSON, MAX_BODY_BYTES } from './http.mjs';
 import { contentKey, ledgerKey, leasesKey, gateLogKey, usageKey, GATE_LOG_HISTORY } from './keys.mjs';
@@ -392,6 +393,22 @@ export class WorkspaceAgent {
 
     if (url.pathname === '/state' && method === 'GET') {
       return json(200, (await this.getLedger()).snapshot());
+    }
+
+    /**
+     * Which published outputs the workspace no longer considers approved.
+     *
+     * A read, like `/state`, and authenticated like every other public route. It exists
+     * because the alternative was for each consumer to re-derive the answer from `/state`
+     * and its own memory of what it declared — which is precisely how a workspace ends up
+     * with a published-and-wrong output that nobody notices.
+     *
+     * It derives on every call rather than caching a status, so a republish clears the
+     * entry because the evidence changed, not because something remembered to clear it.
+     * See `product/invalidation.mjs` for what the status does and does not promise.
+     */
+    if (url.pathname === '/invalidated' && method === 'GET') {
+      return json(200, invalidationReport(await this.getLedger()));
     }
 
     return json(404, { error: 'route_not_found' });

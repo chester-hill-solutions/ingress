@@ -171,6 +171,9 @@ test('no workspace route is reachable without the credential', async () => {
     '/receipts?participant=a',
     '/content?path=a',
     '/state',
+    // The publication record: which outputs the workspace no longer approves. A read, and
+    // behind the same credential as every other read — it names paths and authors.
+    '/invalidated',
     '/leases',
     '/lease/checkout',
     '/lease/heartbeat',

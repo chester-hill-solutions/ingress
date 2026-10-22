@@ -144,9 +144,14 @@ workloads*, which is not a claim about repositories.
 
 ## What it does not establish
 
-- **No durable form.** The record is in-memory. The product's ledger does not carry
-  publication evidence, no route reports an invalidated output, and no admission
-  rule consults one. This is the experiment scope, not the deployed surface.
+- **The campaign's record is in-memory; the product's now is not.** The campaign ran
+  against `src/prototypes/checkout/invalidation.mjs`, which holds no durable state and is
+  driven by a replay harness rather than by the deployed product. Since then the
+  product-side form of slice 4 has landed offline: `src/product/invalidation.mjs`, the
+  `evidence` field on the ledger's file records, `GET /w/:name/invalidated` and an
+  `output_invalidated` receipt. It is tested but **not deployed**, and the campaign was
+  not re-run against it — the numbers in this document are the prototype's. No admission
+  rule consults the status, and nothing re-runs a participant.
 - **No trust model change.** The workspace records the participant's declaration and
   cannot verify that the published bytes were derived from the inputs it declares.
   A participant that re-sends stale work with a fresh declaration clears the

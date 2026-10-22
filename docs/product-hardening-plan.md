@@ -1416,8 +1416,42 @@ failure.**
 revision, the revision of each input it was built from, and the source of that
 declaration. That is a publication record, not a fence decision, and it belongs with
 the commit receipt rather than inside the admission path. The experiment implementation
-is `src/prototypes/checkout/invalidation.mjs` and it is in-memory; the durable form,
-the authenticated read route and the product's ledger do not exist yet.
+is `src/prototypes/checkout/invalidation.mjs` and it is in-memory.
+
+**What now exists in the product (2026-10-22, same day).** Slice 4's durable form is
+implemented, offline-tested and **not deployed**:
+
+- `src/product/invalidation.mjs` is the pure derivation. It holds no state: the
+  invalidated set is recomputed from the ledger's own file revisions on every read, so a
+  republish clears an entry because the evidence changed, not because something
+  remembered to clear it.
+- The ledger's file record now carries `evidence` — `{inputs: [{path, revision}], source}`
+  — written by `applyCommit` at the moment of publication. `source` distinguishes a
+  per-file `builtFrom` declaration from the participant-wide fallback, and `null` means
+  nobody declared anything: that file is reported `uncovered`, never approved.
+- `GET /w/:name/invalidated` (authenticated like every other read) returns the derived
+  report: each invalidated output, its depth, the inputs that contradicted it and who
+  moved them, plus the uncovered list.
+- A commit that contradicts an output retains an `output_invalidated` receipt
+  (`causedBy`, `depth`, `staleInputs`) and names the paths in its own outcome. The event is
+  the *difference* the write made, so an already-invalid output is not re-announced.
+- Transitive closure is included: an output built from an invalidated output is
+  invalidated one hop further out, with the carrier named.
+
+Two properties are asserted in tests rather than assumed, and both cut against the
+convenient reading. A file is **not its own dependency** — the self-edge is dropped when
+evidence is recorded, because a participant that read the file it is editing declares
+exactly that, and keeping the edge would make every same-file edit invalidate itself on
+landing. And an explicit `builtFrom: []` **clears** the status, because the relation is a
+declaration and the workspace takes an explicit "I built from nothing" at its word —
+the same way the fence already does at admission. That is the honest limit of a
+declaration-based relation, which is why the record keeps the source and the author.
+
+What has *not* changed: no route blocks a reader, nothing re-runs a participant, and
+the deployment still runs the previous version. `evaluateCommit` already refuses a
+*pending* write that declares a moved revision, so the two agree by construction and a
+stale declaration cannot be laundered into health — but a participant that declares
+nothing is still covered by nothing.
 
 **What it does not do.** It does not make a stale output *wrong* — it makes the
 workspace *say* the output is no longer approved. Restoring correctness is the
@@ -1425,8 +1459,9 @@ participant's work: revalidate or regenerate. The measured campaign shows the
 mechanism converting six published-but-wrong missions per arm into correct ones under
 a stated model of a worker that redoes its own work, at the cost of extra work ticks
 and of invalidating dependents the change could not have affected. See
-[the invalidation results](checkout-invalidation-results.md). No product route,
-admission rule or durable record changed, and no RT status advances.
+[the invalidation results](checkout-invalidation-results.md). No admission rule, durable
+record, deployment or RT status changed by the experiment; the product slice above adds
+a durable record and a read route, and still advances no RT status.
 
 ## Verification gates per tier
 

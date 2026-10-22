@@ -73,6 +73,7 @@ function staleAmong(builtFrom, ledger) {
  */
 
 import { FenceRefusal, validatePath } from './fence.mjs';
+import { evidenceForCommit, invalidationReport, invalidatedByWrite } from './invalidation.mjs';
 
 /** Bound a single commit so a participant cannot turn one request into a DoS. */
 export const MAX_COMMIT_FILES = 128;
@@ -351,16 +352,28 @@ export function applyCommit(ledger, decision) {
     throw new Error('applyCommit called on a refused decision; this is a bug in the caller');
   }
 
+  // What was already invalid before this commit touched anything. The invalidation
+  // events at the end are the *difference*, so a workspace with a known-stale output
+  // reports it once rather than on every unrelated commit.
+  const before = invalidationReport(ledger);
+
   const receipts = [];
   for (const file of decision.files) {
     if (decision.unchanged.includes(file.path)) continue;
     const target = ledger.files.get(file.path) ?? null;
     const nextRevision = (target?.revision ?? 0) + 1;
+    // Recorded here, at the moment of publication, not later and not by the caller.
+    // The bytes that just landed and the inputs they were declared to rest on are the
+    // same fact about the same event; splitting them would let a crash between the two
+    // leave an output with no evidence at all, which is indistinguishable from one
+    // whose author declared nothing.
+    const evidence = evidenceForCommit(ledger, decision.participantId, file);
     ledger.recordWrite({
       path: file.path,
       revision: nextRevision,
       actorId: decision.participantId,
       contentHash: file.contentHash,
+      evidence,
     });
     receipts.push({
       sequence: ledger.receipts.length,
@@ -374,6 +387,11 @@ export function applyCommit(ledger, decision) {
       contentHash: file.contentHash,
       byteLength: file.byteLength,
       fingerprint: decision.fingerprint,
+      // The publication record, in the receipt as well as in the ledger. A receipt is
+      // what a caller reads back; a fact that exists only in the ledger is a fact the
+      // caller has to go and derive, which is the shape of the bug this increment fixes.
+      builtFrom: evidence?.inputs ?? null,
+      evidenceSource: evidence?.source ?? 'none',
     });
   }
 
@@ -391,5 +409,15 @@ export function applyCommit(ledger, decision) {
     files: receipts,
   };
   ledger.receipts.push(summary);
-  return { summary, files: receipts };
+
+  // Which published outputs this commit contradicted. A consequence of the admission,
+  // so it is retained after it, and it never blocks anything: the bytes already landed.
+  // The alternative -- refusing the write because it invalidates a dependent -- would
+  // make the newest correct information the thing that cannot be written, which is the
+  // deadlock the per-file scoping in `evaluateCommit` exists to avoid.
+  const after = invalidationReport(ledger);
+  const invalidations = invalidatedByWrite(before, after, decision.participantId)
+    .map(event => ledger.retain({ ...event, sequence: ledger.receipts.length }));
+
+  return { summary, files: receipts, invalidations };
 }

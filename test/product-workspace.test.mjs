@@ -1912,3 +1912,87 @@ test('the gate enforces its body bound by streaming, not by trusting a header', 
   assert.equal(/headers\.get\(['"]content-length['"]\)/.test(source), false,
     'the header is absent on chunked requests, so it cannot be the bound');
 });
+
+// --- the publication record ---------------------------------------------------
+//
+// The fence decides whether a write may land. These cover what the workspace says
+// *after* it landed: an output that was correct when it was published and is no longer
+// approved, because the file it was built from moved. That sequence is the measured
+// failure the checkout campaign reproduced (`docs/checkout-invalidation-results.md`),
+// and the reason the record is taken at publication rather than reconstructed later.
+
+test('the workspace reports an output the workspace itself invalidated', async () => {
+  const { call, data } = mountDO();
+  await bootstrap(call, [await entry('policy.mjs', 'export const offer = 10;')]);
+  await join(call, 'provider');
+  await join(call, 'consumer');
+
+  // The consumer publishes an output built from the policy at the revision it read. The
+  // declaration travels in the manifest, which is where the in-container reporter puts it.
+  const published = await commitWithLease(call, data, 'consumer', [
+    {
+      ...(await entry('report.mjs', 'export const total = 10;')),
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    },
+  ]);
+  assert.equal(published.status, 200, await published.clone().text());
+
+  const clean = await asResult(await call('https://x/invalidated'));
+  assert.equal(clean.status, 200);
+  assert.deepEqual(clean.invalidated, [], 'nothing has moved yet');
+  assert.deepEqual(clean.uncovered, ['policy.mjs'],
+    'the bootstrap path declares no provenance, and that is reported rather than assumed');
+
+  // The provider moves the input. Nothing about `report.mjs` changed; it is now wrong.
+  const moved = await commitWithLease(call, data, 'provider', [
+    { ...(await entry('policy.mjs', 'export const offer = 20;')), baseRevision: 1, builtFrom: [] },
+  ]);
+  assert.equal(moved.status, 200, await moved.clone().text());
+  assert.deepEqual((await asJSON(moved)).invalidated, ['report.mjs'],
+    'the commit that contradicted it is told so, in its own outcome');
+
+  const report = await asResult(await call('https://x/invalidated'));
+  assert.equal(report.counts.invalidated, 1);
+  assert.equal(report.counts.direct, 1);
+  assert.equal(report.invalidated[0].path, 'report.mjs');
+  assert.equal(report.invalidated[0].author, 'consumer');
+  assert.deepEqual(report.invalidated[0].staleInputs, [
+    { path: 'policy.mjs', publishedRevision: 1, currentRevision: 2, author: 'provider', missing: false },
+  ]);
+
+  // The event is in the retained receipts as well as in the derived answer, so a reader
+  // that was not watching when it happened can still find out that it did.
+  const receipts = await asJSON(await call('https://x/receipts'));
+  const events = receipts.receipts.filter(receipt => receipt.reason === 'output_invalidated');
+  assert.equal(events.length, 1);
+  assert.equal(events[0].path, 'report.mjs');
+  assert.equal(events[0].causedBy, 'provider');
+});
+
+test('the publication record survives a Durable Object eviction', async () => {
+  // Evidence is stored on the file record, and a cold instance reads the file record back
+  // through `fromJSON`. If it did not round-trip, invalidation would silently stop working
+  // after the first eviction — a failure that looks exactly like a workspace with nothing
+  // to report.
+  const { call, data } = mountDO();
+  await bootstrap(call, [await entry('policy.mjs', 'export const offer = 10;')]);
+  await join(call, 'provider');
+  await join(call, 'consumer');
+  await commitWithLease(call, data, 'consumer', [
+    {
+      ...(await entry('report.mjs', 'export const total = 10;')),
+      builtFrom: [{ path: 'policy.mjs', revision: 1 }],
+    },
+  ]);
+
+  const cold = coldInstance(undefined, data);
+  await commitWithLease(cold, data, 'provider', [
+    { ...(await entry('policy.mjs', 'export const offer = 20;')), baseRevision: 1, builtFrom: [] },
+  ]);
+
+  const report = await asResult(await cold('https://x/invalidated'));
+  assert.equal(report.invalidated.length, 1);
+  assert.deepEqual(report.invalidated[0].staleInputs, [
+    { path: 'policy.mjs', publishedRevision: 1, currentRevision: 2, author: 'provider', missing: false },
+  ]);
+});

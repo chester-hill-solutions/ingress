@@ -229,7 +229,7 @@ export async function commit(ctx, request) {
     return json(409, { ...refusal, participantId });
   }
 
-  const { summary, files } = applyCommit(ledger, decision);
+  const { summary, files, invalidations } = applyCommit(ledger, decision);
 
   // `verified.files` is already sorted; index it once rather than scanning it per
   // file. The original `.find` inside the loop was quadratic.
@@ -273,6 +273,11 @@ export async function commit(ctx, request) {
     // What was reconciled rather than refused. A landing that merged two participants' edits
     // is not the same event as one that simply stored bytes, and the outcome should say so.
     ...(merge.merged.length > 0 ? { merged: merge.merged } : {}),
+    // Outputs this commit made stale. Reported to the participant that caused it, because
+    // it is the only party that knows what it changed and can tell whether the loss of
+    // approval matters. The full evidence is on `/invalidated` and in the invalidation
+    // receipts; this is a pointer, not the record.
+    ...(invalidations.length > 0 ? { invalidated: invalidations.map(event => event.path) } : {}),
   };
   await ctx.state.storage.put(commitKey(participantId), outcome);
   // Byte count from the *admitted* files, which is what was stored. The manifest's own

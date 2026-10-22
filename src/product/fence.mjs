@@ -147,8 +147,20 @@ export class WorkspaceLedger {
    * system it is fed by the container's snapshot diff; in tests it is called
    * directly. The distinction is recorded, because an unattributed write is a
    * real limitation and must not be presented as if it were not.
+   *
+   * `evidence` is the publication record: the revision of each input this output was
+   * built from, and where the declaration came from (`product/invalidation.mjs`). It is
+   * carried on the file record rather than in a side table because the file record *is*
+   * the published output — a second structure would have to be kept in step with
+   * revisions that this one already owns, and the campaign's whole failure was a record
+   * that drifted out of step.
+   *
+   * Absent (`null`) is not the same as empty (`{inputs: []}`): absent means nobody
+   * declared provenance, so nothing can be invalidated and the file is reported
+   * uncovered. Empty means the output was declared to have no inputs, so nothing can
+   * ever contradict it.
    */
-  recordWrite({ path, revision, actorId = null, contentHash = null, synthetic = false }) {
+  recordWrite({ path, revision, actorId = null, contentHash = null, synthetic = false, evidence = null }) {
     path = declaredPath(path);
     if (!Number.isSafeInteger(revision) || revision < 1) throw new FenceRefusal('invalid_revision', { path });
     if (this.files.size >= MAX_FILES && !this.files.has(path)) {
@@ -163,6 +175,7 @@ export class WorkspaceLedger {
       attribution: actorId ? 'observed' : 'unknown',
       synthetic,
       writtenAtSequence: this.receipts.length,
+      evidence: evidence == null ? null : evidence,
     };
     this.files.set(path, record);
     return record;
