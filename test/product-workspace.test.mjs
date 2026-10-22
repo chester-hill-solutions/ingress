@@ -448,7 +448,12 @@ test('the container release frees the paths, and the commit is already in', asyn
   // Ordering is the point. The launcher commits and *then* releases; if these were
   // reversed the commit would be refused with `lease_required` every time.
   const { call, data } = mountDO();
-  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  // Asserted, not assumed. The helper passes `files` through verbatim, so a call site that
+  // sends the wrong shape gets a 4xx the test never looks at -- which is how three of these
+  // tests ran for months against a workspace that was never seeded. This one checks the seed
+  // landed, so the rest of the test is about the thing it names.
+  const seeded = await bootstrap(call, [await entry('engine.mjs', 'export const v = 1;')]);
+  assert.equal(seeded.bootstrapped, 1, JSON.stringify(seeded));
   await join(call, 'worker');
   const token = issueToken(data, 'worker');
 
@@ -588,7 +593,12 @@ test('a start lease is a handover, so it records the read it implies', async () 
   // Same reasoning as `checkout`: the workspace decided to give these paths to this
   // participant, so the read follows from the fact rather than from a claim.
   const { instance, call } = mountDO();
-  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  // Asserted, not assumed. The helper passes `files` through verbatim, so a call site that
+  // sends the wrong shape gets a 4xx the test never looks at -- which is how three of these
+  // tests ran for months against a workspace that was never seeded. This one checks the seed
+  // landed, so the rest of the test is about the thing it names.
+  const seeded = await bootstrap(call, [await entry('engine.mjs', 'export const v = 1;')]);
+  assert.equal(seeded.bootstrapped, 1, JSON.stringify(seeded));
   await join(call, 'worker');
 
   // Reads live in `toJSON` but not in `snapshot`, and `/state` serves the snapshot. An
@@ -1010,7 +1020,12 @@ test('a ceiling set to nonsense falls back to the default rather than refusing e
 
 test('commits are counted by verdict, including refusals', async () => {
   const { call, data } = mountDO();
-  await bootstrap(call, [{ path: 'engine.mjs', content: 'export const v = 1;' }]);
+  // Asserted, not assumed. The helper passes `files` through verbatim, so a call site that
+  // sends the wrong shape gets a 4xx the test never looks at -- which is how three of these
+  // tests ran for months against a workspace that was never seeded. This one checks the seed
+  // landed, so the rest of the test is about the thing it names.
+  const seeded = await bootstrap(call, [await entry('engine.mjs', 'export const v = 1;')]);
+  assert.equal(seeded.bootstrapped, 1, JSON.stringify(seeded));
   await join(call, 'writer');
 
   await commitWithLease(call, data, 'writer', [{

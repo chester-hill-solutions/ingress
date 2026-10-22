@@ -27,6 +27,13 @@ const TERMINAL = new Set(['stopped', 'interrupted', 'completed', 'failed']);
  * `toJSON` copies the whole ledger on every request, so every retained receipt is
  * paid for on every subsequent write.
  *
+ * The whole ledger is stored under one key, which raises the obvious question of whether
+ * these caps fit inside a single storage value. They do, and it was measured rather than
+ * assumed: a probe Durable Object on the deployment account stored and read back a single
+ * value of 8 MiB, so the 128 KiB per-value limit that applies to the older storage backend
+ * does not bind here (2026-10-22). At the caps below the ledger is roughly 4 MB. The binding
+ * cost is the per-request copy, not the value limit, and that is what these numbers bound.
+ *
  * The retention cap is the interesting one. Receipts are an audit trail, and
  * trimming them destroys evidence — but an audit trail that silently stops
  * recording is worse than one that admits it stopped. So the trim is counted and
