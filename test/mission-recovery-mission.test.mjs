@@ -183,3 +183,54 @@ test('the mission declares the same outputs it produces', async () => {
     assert.equal(recoveryMission.tasks[output.task].output, output.path);
   }
 });
+
+// --- what a model is asked for, and what counts as correct ---------------------
+
+test('a model output is judged on the value it exports, not on its formatting', () => {
+  // The deterministic generators are held to exact bytes because they are ours. A model's
+  // layout is the model's to choose, so the check is on meaning -- but the value is not
+  // relaxed, or a plausible-looking file with the wrong number would pass.
+  const { report, notes, summary } = recoveryMission.verify;
+
+  for (const source of [
+    'export const offer = 20;\nexport const currency = "CAD";\n',
+    'const currency = "CAD";\nexport const offer = 20;\n',
+    'export const offer = 20; // the policy value\nexport const currency = "CAD";\n',
+  ]) {
+    assert.equal(report(source, 20), true, source);
+  }
+  assert.equal(report('export const offer = 10;\nexport const currency = "CAD";\n', 20), false, 'the wrong value');
+  assert.equal(report('export const offer = 20;\n', 20), false, 'no currency');
+  assert.equal(report('The offer is 20 and the currency is CAD.\n', 20), false,
+    'a value mentioned in prose is not an exported value');
+
+  assert.equal(summary('export const total = 20;\n', 20), true);
+  assert.equal(summary('const total = 20;\n', 20), true, 'the export form is the model\'s choice');
+  assert.equal(summary('export const total = "20";\n', 20), false,
+    'a string is a different value from the number the mission asked for');
+  assert.equal(summary('export const total = 10;\n', 20), false);
+
+  assert.equal(notes('export const note = "policy reviewed";\n'), true);
+  assert.equal(notes('export const note = "reviewed the policy";\n'), false);
+});
+
+test('every task asks for a file it owns from a file it can read', () => {
+  // A prompt that names the wrong output would have the model write into another task's file,
+  // and a prompt that reads something the workspace does not have would have the harness
+  // create it out of nothing -- both would look like a model failure.
+  const produced = new Set(Object.values(recoveryMission.tasks).map(task => task.output));
+  const seeded = new Set(Object.keys(recoveryMission.files));
+  for (const [task, spec] of Object.entries(recoveryMission.tasks)) {
+    if (task === 'policy') continue;
+    const promptSpec = recoveryMission.prompts[task];
+    assert.ok(promptSpec, `${task} has no prompt`);
+    assert.ok(promptSpec.prompt.includes(recoveryMission.tasks[task].output),
+      `${task}'s prompt does not name the file it must write`);
+    for (const read of promptSpec.reads) {
+      assert.ok(seeded.has(read) || produced.has(read),
+        `${task}'s prompt reads ${read}, which the mission neither seeds nor produces`);
+    }
+    assert.deepEqual([...promptSpec.reads].sort(), [...recoveryMission.tasks[task].reads].sort(),
+      `${task}'s prompt reads a different set than its declaration is built from`);
+  }
+});

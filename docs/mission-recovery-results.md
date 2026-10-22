@@ -16,6 +16,8 @@ that declares its own provenance and the fence arbitrates what lands.
 | `fixtures/mission-recovery.mjs` | The mission: three generating participants and a source that moves |
 | `src/mission-recovery.mjs` | The recovery policy and the tax arithmetic |
 | `scripts/mission-recovery.mjs` | The driver: real containers, two rounds, `npm run missions:recovery` |
+| `src/model-worker.mjs` | One model turn that produces one file, with what it cost, and the rule for whether its bytes may be published |
+| `scripts/mission-recovery.mjs --participants=model` | The same mission with the generators replaced by real model turns — `npm run missions:recovery:model` |
 
 Deployed to `ingress-workspace` as version `8208299a`. Nothing else about the product
 changed: no admission rule consults the status, no reader is blocked, and nothing re-runs a
@@ -151,17 +153,53 @@ the whole declaration-based relation rests on, which is why the receipt names th
 and the revision rather than asserting anything about the work.
 
 
-## The tax
+## The model mode: built, and blocked
 
-<!--TAX-->
+`npm run missions:recovery:model` replaces each deterministic generator with a real model turn
+whose bytes a container then publishes. The model runs **harness-side**, in a temporary
+directory, and its output travels to the container inside the participant command: putting a
+model in the container would mean passing a provider credential into a command string the
+workspace stores, and the container's log is durable evidence. The boundary that costs is
+stated where it belongs — the model's editing is **not** confined to the sandbox, and only its
+publication goes through the fence.
 
-## What it does not establish
+It has been run once, and it did not measure dollars: all nine turns failed. Two causes, both
+outside the mission.
 
-- **No dollars.** Every participant is a deterministic command, so the tax is container time,
-  bytes and starts. `src/mission-recovery.mjs` keeps model cost and container time in separate
-  totals and adds nothing across them, because a harness that converts a token into a dollar
-  can make any mechanism look affordable. The model-cost half needs model-driven participants
-  and is not measured here.
+**The provider key is expired.** The session's own report is
+`provider.auth` / `401` — "This API key has expired" — which is a credential only its owner can
+renew. The failure is now diagnosable in the harness rather than silent: `sessionError` records
+the type, status and finish reason and deliberately drops the provider's message, and the run
+refuses to publish.
+
+**The native harness pins a binary that is no longer installed.** The pin is
+`opencode v2.0.16` and the installed binary is `v2.0.32`, so `startOpenCode` refuses before
+anything runs. That pin is not a formality: it is recorded across the compatibility file, the
+protocol documents and the tests, and a proper bump means re-running the compatibility probe
+and re-recording it — which needs a working key. What was verified in the meantime, against
+`v2.0.32`: the readiness lines, session creation, the prompt-admission fields the client
+asserts on, the step-event vocabulary, terminal settlement, and the context shape. The probe
+reached a genuine provider call and a real step event, so the surface holds; the full
+compatibility pass does not.
+
+**What the failed run found, and the fix.** The first model-mode run published *empty files* —
+nine turns that failed, and a harness that took `content ?? ''` and sent containers to write
+nothing. The workspace recorded legitimate-looking publications with declarations attached, the
+mission reported a coherent workspace full of empty files, and every check measured a mechanism
+that had never been exercised. `publicationOf` now decides, and the rule is blunt: the turn must
+have succeeded, produced bytes, and reported no error of its own. The mission stops rather than
+publishes. That guard is tested, and the run's own verdict uses the same function the driver
+does, so the two cannot disagree.
+
+
+
+- **No dollars — blocked, not skipped.** Every participant in the measured run is a
+  deterministic command, so the tax is container time, bytes and starts.
+  `src/mission-recovery.mjs` keeps model cost and container time in separate totals and adds
+  nothing across them, because a harness that converts a token into a dollar can make any
+  mechanism look affordable. The model mode that would produce the dollar figure exists and has
+  been run; it is blocked on an expired provider key and on the native harness's binary pin —
+  see [the model mode](#the-model-mode-built-and-blocked).
 - **Not an agent measurement.** The recovery policy is a *stated* model of a worker that redoes
   its own work when told its output is stale. Whether a model would, and what it would cost, is
   the open question this run does not answer.
@@ -201,6 +239,7 @@ verdict.
 | `mission-recovery-9d3b9125` | `8208299a` | 63 | yes | yes | The product is correct; the *harness* counted every file in the whole-tree commit as a regeneration |
 | `mission-recovery-56897c44` | `8208299a` | 11 | yes | yes | The accounting fixed; one assertion was still written for a single round |
 | `mission-recovery-05b484af` | `8208299a` | 11 | yes | yes | The run reported above, 42/42 |
+| `mission-recovery-f745b4c7` | `8208299a` | 11 | no | no | The model mode's first run: nine turns, all failed on the expired key, and the harness published empty files — the failure `publicationOf` now prevents |
 
 The last two differ only in the harness, which is why the harness's own arithmetic is
 asserted against the run it measured: `tax.totals.starts` must equal the number of `/start`

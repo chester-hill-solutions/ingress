@@ -34,7 +34,8 @@
     "checkout:qualify": "node scripts/checkout/qualify-lab.mjs",
     "checkout:compare": "node scripts/checkout/compare-replays.mjs",
     "checkout:agents": "node scripts/checkout/native-flight.mjs",
-    "missions:recovery": "node scripts/mission-recovery.mjs"
+    "missions:recovery": "node scripts/mission-recovery.mjs",
+    "missions:recovery:model": "node scripts/mission-recovery.mjs --participants=model"
   },
   "license": "Apache-2.0",
   "repository": {

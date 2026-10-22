@@ -175,6 +175,77 @@ export const recoveryMissionExpected = offer => ({
   'src/summary.mjs': `export const total = ${offer};\n`,
 });
 
+/**
+ * What a *model* is asked to produce, per task.
+ *
+ * The prompt names the file the model must write and what it must export, and says nothing
+ * about how. The reads are the files the harness places in the model's working directory
+ * before the turn: a model that cannot see the input cannot derive an output from it, and the
+ * whole mission is about an output derived from an input.
+ *
+ * `notes` is asked for a constant on purpose, and says so. The interesting case is an output
+ * whose *dependency is real and whose value does not depend on the change*, and a prompt that
+ * left that to the model's judgement would measure the model's mood rather than the mechanism.
+ */
+export const recoveryMissionPrompts = Object.freeze({
+  report: {
+    reads: ['config/policy.json'],
+    prompt: [
+      'In this directory there is `config/policy.json`.',
+      'Write `src/report.mjs`: an ES module that exports `offer` (the number in the policy)',
+      'and `currency` (the string in the policy).',
+      'Do not write anything else. Stop once the file is written.',
+    ].join(' '),
+  },
+  notes: {
+    reads: ['config/policy.json'],
+    prompt: [
+      'In this directory there is `config/policy.json`.',
+      'Write `src/notes.mjs`: an ES module that exports `note` equal to the string "policy reviewed".',
+      'Its value must not depend on the contents of the directory.',
+      'Do not write anything else. Stop once the file is written.',
+    ].join(' '),
+  },
+  summary: {
+    reads: ['src/report.mjs'],
+    prompt: [
+      'In this directory there is `src/report.mjs`.',
+      'Write `src/summary.mjs`: an ES module that exports `total` equal to the `offer` value in `src/report.mjs`.',
+      'Do not write anything else. Stop once the file is written.',
+    ].join(' '),
+  },
+});
+
+/**
+ * Whether a *model's* output satisfies the mission, checked on meaning rather than bytes.
+ *
+ * The deterministic generators are held to the exact bytes of `recoveryMissionExpected`,
+ * because they are ours and a difference is a defect. A model's output is held to the value it
+ * exports, because formatting is the model's to choose and holding it to a byte layout would
+ * measure obedience rather than the mission. What is *not* relaxed is the value: `offer` must
+ * be the policy's number, `total` must be the report's, and the notes must say what they say.
+ *
+ * The checks are deliberately strict about *what is exported* and loose about everything else,
+ * so an output that happens to mention the right number in a comment does not pass.
+ */
+const exported = (source, name) => {
+  const assignment = new RegExp(`export\\s+(?:const|let|var)\\s+${name}\\s*=\\s*([^;\\n]+)`, 'm').exec(source)
+    ?? new RegExp(`\\b${name}\\s*=\\s*([^;\\n]+)`, 'm').exec(source);
+  return assignment ? assignment[1].trim() : null;
+};
+
+export const recoveryMissionVerify = Object.freeze({
+  report: (source, offer) => {
+    const value = exported(source, 'offer');
+    return value !== null && Number(value) === offer && /CAD/.test(exported(source, 'currency') ?? '');
+  },
+  notes: source => (exported(source, 'note') ?? '').includes('policy reviewed'),
+  summary: (source, offer) => {
+    const value = exported(source, 'total');
+    return value !== null && Number(value) === offer;
+  },
+});
+
 export const recoveryMission = Object.freeze({
   id: 'recovery-policy',
   title: 'Release policy service: a source, two dependents and a transitive one',
@@ -183,4 +254,6 @@ export const recoveryMission = Object.freeze({
   tasks: recoveryMissionTasks,
   outputs: recoveryMissionOutputs,
   expected: recoveryMissionExpected,
+  prompts: recoveryMissionPrompts,
+  verify: recoveryMissionVerify,
 });

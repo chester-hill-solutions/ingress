@@ -47,12 +47,27 @@ import { randomUUID } from 'node:crypto';
 import { client, freshWorkspace, check as ok, step, finish } from './e2e-client.mjs';
 import { recoveryPlan, taxOf, recoveryVerdict } from '../src/mission-recovery.mjs';
 import { recoveryMission } from '../fixtures/mission-recovery.mjs';
+import { selectedProfile } from '../src/profile.mjs';
+import { runModelTask, modelTax, publicationOf } from '../src/model-worker.mjs';
 import { sha256Hex } from '../src/product/commit.mjs';
 
 const WORKSPACE = process.env.INGRESS_WORKSPACE ?? freshWorkspace('recovery');
 const { post, get } = client(WORKSPACE);
 const RUN_MS = 240_000;
 const RECOVERY_CEILING = 2;
+
+/**
+ * Who produces the outputs: a container command, or a model whose bytes a container publishes.
+ *
+ * Both are declared before the run and neither is inferred from what happens, because the
+ * difference is the measurement. In `command` mode the tax is container time and bytes. In
+ * `model` mode every publish and every regeneration costs a model turn as well, and that is
+ * the number the deterministic run could not produce.
+ */
+const PARTICIPANTS = (process.argv.find(arg => arg.startsWith('--participants='))?.split('=')[1]) ?? 'command';
+if (!['command', 'model'].includes(PARTICIPANTS)) throw new Error('participants must be command or model');
+if (process.argv.slice(2).some(arg => !arg.startsWith('--participants=') && !arg.startsWith('--workspace='))) throw new Error('unknown_argument');
+const profile = PARTICIPANTS === 'model' ? await selectedProfile() : null;
 
 const b64 = text => Buffer.from(text, 'utf8').toString('base64');
 const entry = async (path, content) => ({
@@ -77,7 +92,7 @@ const expectResult = (label, value, note = '') => {
 };
 
 /** One participant, from the join to the verdict, with its wall time measured by the harness. */
-async function runParticipant({ id, task, command, writePaths }) {
+async function runParticipant({ id, task, command, writePaths, model = null }) {
   const spec = tasks[task];
   containerStarts += 1;
   const started = Date.now();
@@ -131,9 +146,126 @@ async function runParticipant({ id, task, command, writePaths }) {
     // contradicted however often its owner redoes the work.
     refreshed: commit?.refreshed ?? [],
     unrefreshed: commit?.unrefreshed ?? [],
+    // The model turn that produced these bytes, when there was one. Carried on the run rather
+    // than in a side table so the tax cannot lose the pairing of work and what it cost.
+    model,
     log: started_.body?.log ?? '',
   };
 }
+
+/** The shell's single-quoted form, so a path or a payload cannot escape the command. */
+const shellQuote = value => `'${String(value).replaceAll("'", "'\\''")}'`;
+
+/**
+ * The command that publishes bytes a model produced.
+ *
+ * The bytes travel base64-encoded inside the command, which is why the model's output is
+ * bounded: a participant command is capped at 4 KiB, and a model that answered with an essay
+ * would otherwise fail as a mysterious refusal from `/start` rather than as "the model wrote
+ * too much".
+ *
+ * The declaration is built inside the container from the revisions file the launcher wrote, so
+ * it cites the revision this container was *handed* rather than one the harness guessed. A
+ * read with no revision there is dropped rather than declared: a claim carrying a guessed
+ * revision is worse than no claim, because it would look like evidence.
+ */
+function publishCommand({ output, reads, content }) {
+  const payload = Buffer.from(content, 'utf8').toString('base64');
+  const script = [
+    "const fs=require('fs');",
+    "const revs=JSON.parse(fs.readFileSync(process.env.INGRESS_REVISIONS_PATH||'/tmp/ingress-revisions.json','utf8'));",
+    `const inputs=${JSON.stringify(reads)}.filter(p=>Number.isSafeInteger(revs[p])).map(p=>({path:p,revision:revs[p]}));`,
+    `if(inputs.length>0){fs.mkdirSync('.ingress',{recursive:true});const d={};d[${JSON.stringify(output)}]=inputs;fs.writeFileSync('.ingress/built-from.json',JSON.stringify(d));}`,
+    `fs.mkdirSync(require('path').dirname(${JSON.stringify(output)}),{recursive:true});`,
+    `fs.writeFileSync(${JSON.stringify(output)},Buffer.from(${shellQuote(payload)},'base64'));`,
+    `console.log('MODEL_BYTES_PUBLISHED '+${JSON.stringify(output)});`,
+  ].join('');
+  return `cd /workspace && node -e ${shellQuote(script)}`;
+}
+
+const modelResults = [];
+
+/**
+ * Run the model for one task, against the revision the workspace currently holds.
+ *
+ * The inputs are fetched from the workspace rather than read from a previous round's
+ * directory, so a regeneration sees what actually moved -- which is the point of the recovery
+ * wave and would be lost if the model were handed a stale copy.
+ */
+async function prepareModel(task) {
+  const spec = mission.prompts[task];
+  const inputs = {};
+  for (const path of spec.reads) {
+    const response = await get(`/content?path=${encodeURIComponent(path)}`);
+    if (response.status !== 200) throw new Error(`the model cannot read ${path}: ${response.status}`);
+    inputs[path] = Buffer.from(response.body.contentBase64, 'base64').toString('utf8');
+  }
+  const result = await runModelTask({
+    profile,
+    inputs,
+    output: tasks[task].output,
+    prompt: spec.prompt,
+    label: task,
+  });
+  modelResults.push(result);
+
+  // Refuse rather than publish nothing. The first model-mode run sent containers to write empty
+  // files after every turn failed, and the workspace recorded them as legitimate publications --
+  // so the mission reported a coherent workspace full of empty files and every check measured a
+  // mechanism that had never been exercised. A turn that did not produce a file stops the run.
+  const publication = publicationOf(result);
+  if (!publication.ok) {
+    console.error(`\nthe model turn for ${task} produced nothing publishable: ${publication.reason}`);
+    console.error(`outcome ${result.outcome} | steps ${result.steps} | session error ${JSON.stringify(result.sessionError ?? null)} | runtime ${JSON.stringify(result.runtimeError ?? null)}`);
+    await writeRunEvidence({
+      error: { reason: 'model_turn_not_publishable', detail: publication.reason, task, model: { outcome: result.outcome, sessionError: result.sessionError ?? null, runtimeError: result.runtimeError ?? null } },
+    });
+    process.exit(1);
+  }
+  return {
+    command: publishCommand({ output: tasks[task].output, reads: spec.reads, content: publication.content }),
+    model: result,
+  };
+}
+
+/** Retain what happened, including when the run has to stop: a failed run is evidence too. */
+async function writeRunEvidence(extra = {}) {
+  Object.assign(evidence, extra);
+  evidence.participants = PARTICIPANTS;
+  evidence.profile = profile ? { model: profile.model } : null;
+  evidence.modelResults = modelResults.map(result => ({
+    label: result.label,
+    ok: result.ok,
+    outcome: result.outcome,
+    error: result.error ?? null,
+    sessionError: result.sessionError ?? null,
+    runtimeError: result.runtimeError ?? null,
+    steps: result.steps,
+    cost: result.cost,
+    tokens: result.tokens,
+  }));
+  evidence.modelTotals = modelResults.length > 0 ? modelTax(modelResults) : null;
+  const output = resolve(import.meta.dirname, '../artifacts', `mission-recovery-${randomUUID()}`);
+  await mkdir(output, { recursive: true, mode: 0o700 });
+  await writeFile(join(output, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
+  return output;
+}
+
+/** The command for one task, and the model turn it cost -- null in command mode. */
+async function commandFor(task) {
+  if (PARTICIPANTS === 'command') return { command: tasks[task].command, model: null };
+  return prepareModel(task);
+}
+
+/** The model fields a tax entry carries, so `taxOf` can price a regeneration in dollars. */
+const modelFields = run => (run.model
+  ? {
+    modelCost: run.model.cost,
+    modelTokens: (run.model.tokens.input ?? 0) + (run.model.tokens.output ?? 0),
+    modelSteps: run.model.steps,
+    modelOutcome: run.model.outcome,
+  }
+  : {});
 
 const record = async (entries, run) => {
   for (const file of run.landed) {
@@ -144,7 +276,14 @@ const record = async (entries, run) => {
     const byteLength = stored.status === 200
       ? Buffer.from(stored.body.contentBase64, 'base64').byteLength
       : null;
-    entries.push({ task: run.task, path: file.path, contentHash: file.contentHash, containerMs: run.wallMs, byteLength });
+    entries.push({
+      task: run.task,
+      path: file.path,
+      contentHash: file.contentHash,
+      containerMs: run.wallMs,
+      byteLength,
+      ...modelFields(run),
+    });
   }
 };
 
@@ -187,11 +326,21 @@ expectResult('the mission is seeded through the fence', seeded.status === 200, `
 
 step('1. three participants build the project in real containers, declaring what they built from');
 for (const id of ['report', 'notes', 'summary']) {
-  const run = await runParticipant({ id, task: id, command: tasks[id].command, writePaths: [tasks[id].output] });
-  console.log(`  ${id}: exit ${run.exit} in ${run.wallMs}ms — ${run.admitted ? 'admitted' : `refused (${run.reason})`}`);
+  const prepared = await commandFor(id);
+  if (prepared.model && !prepared.model.ok) {
+    console.log(`  ${id}: model turn did not produce a usable file — ${prepared.model.error} ${JSON.stringify(prepared.model.runtimeError ?? null)}`);
+  }
+  const run = await runParticipant({ id, task: id, command: prepared.command, writePaths: [tasks[id].output], model: prepared.model });
+  console.log(`  ${id}: exit ${run.exit} in ${run.wallMs}ms — ${run.admitted ? 'admitted' : `refused (${run.reason})`}${prepared.model ? ` | model ${prepared.model.outcome}, ${prepared.model.steps} steps, cost ${prepared.model.cost}` : ''}`);
   if (!run.admitted) console.log('    ' + JSON.stringify(run.log.split('\n').slice(-6).join('\n    ')));
   expectResult(`${id} landed its output through the fence`, run.admitted && run.landed.some(file => file.path === tasks[id].output));
-  expectResult(`${id} printed its own result`, run.log.includes(tasks[id].emits));
+  if (PARTICIPANTS === 'command') {
+    expectResult(`${id} printed its own result`, run.log.includes(tasks[id].emits));
+  } else {
+    expectResult(`${id}: the model produced the file and the container published it`,
+      prepared.model.ok === true && run.log.includes('MODEL_BYTES_PUBLISHED'),
+      JSON.stringify({ modelOutcome: prepared.model.outcome, error: prepared.model.error, bytes: prepared.model.bytes, cost: prepared.model.cost }));
+  }
   await record(publishes, run);
   attempts[id] = 0;
 }
@@ -251,8 +400,9 @@ for (const round of [1, 2]) {
 
   for (const item of plan.regenerate) {
     const output = tasks[item.task].output;
-    const run = await runParticipant({ id: `${item.task}-r${round}`, task: item.task, command: tasks[item.task].command, writePaths: [output] });
-    console.log(`  ${item.task}: exit ${run.exit} in ${run.wallMs}ms — ${run.admitted ? 'admitted' : `refused (${run.reason})`}`);
+    const prepared = await commandFor(item.task);
+    const run = await runParticipant({ id: `${item.task}-r${round}`, task: item.task, command: prepared.command, writePaths: [output], model: prepared.model });
+    console.log(`  ${item.task}: exit ${run.exit} in ${run.wallMs}ms — ${run.admitted ? 'admitted' : `refused (${run.reason})`}${prepared.model ? ` | model ${prepared.model.outcome}, cost ${prepared.model.cost}` : ''}`);
     expectResult(`round ${round}: ${item.task} republished`, run.admitted);
     attempts[item.task] = item.attempt;
 
@@ -270,6 +420,7 @@ for (const round of [1, 2]) {
       // The hash of what this output held before the recovery wave, so "did the work change
       // anything" is a measurement rather than an opinion.
       previousHash: before.get(output) ?? null,
+      ...modelFields(run),
     });
 
     if (run.unchanged.includes(output)) {
@@ -308,9 +459,32 @@ const tax = taxOf({
 });
 
 const final = await invalidated();
-const verdict = recoveryVerdict({ after: { invalidated: final.invalidated, content }, expected });
+
+// Correctness is checked differently in each mode, and for a reason. The mission's own
+// generators are ours, so they are held to the exact bytes they are declared to produce and a
+// difference is a defect. A model's layout is the model's to choose, so it is held to the value
+// it exports: what is relaxed is formatting, and what is not relaxed is the number.
+const perOutput = mission.outputs.map(({ task, path }) => ({
+  path,
+  task,
+  ok: PARTICIPANTS === 'command'
+    ? content[path] === expected[path]
+    : mission.verify[task](content[path] ?? '', offerAfterRounds),
+}));
+
+const verdict = PARTICIPANTS === 'command'
+  ? recoveryVerdict({ after: { invalidated: final.invalidated, content }, expected })
+  : {
+    coherent: final.invalidated.length === 0,
+    invalidated: final.invalidated.map(entry => entry.path),
+    correct: perOutput.every(output => output.ok),
+    perOutput,
+  };
+
 expectResult('the mission is coherent: the workspace approves everything it knows about', verdict.coherent, JSON.stringify(final.counts));
-expectResult('the mission is correct: every output holds the value the mission asked for', verdict.correct, JSON.stringify({ mismatched: verdict.mismatched, missing: verdict.missing }));
+expectResult('the mission is correct: every output holds the value the mission asked for',
+  verdict.correct,
+  JSON.stringify({ failed: perOutput.filter(output => !output.ok), mode: PARTICIPANTS }));
 expectResult('the tax counts the container starts the mission actually made',
   tax.totals.starts === containerStarts, `tax says ${tax.totals.starts}, the run made ${containerStarts}`);
 const changedPaths = [...new Set(tax.changedOutputs.map(item => item.path))].sort();
@@ -324,25 +498,55 @@ expectResult('while the one that only depended on the change changed nothing, on
 expectResult('and the waste is one regeneration in three, which is the tax the mechanism charges',
   tax.overInvalidationRate === 1 / 3, `rate ${tax.overInvalidationRate}`);
 
-const output = resolve(import.meta.dirname, '../artifacts', `mission-recovery-${randomUUID()}`);
-await mkdir(output, { recursive: true, mode: 0o700 });
-evidence.rounds = rounds;
-evidence.tax = tax;
-evidence.verdict = verdict;
-evidence.counts = final.counts;
-evidence.content = content;
-evidence.publishes = publishes;
-evidence.regenerations = regenerations;
-await writeFile(join(output, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
+// The dollars, when a model produced the work. Two things are asserted rather than reported:
+// that every turn's cost was actually measured (a total over unknown steps is not a total),
+// and that the tax's own arithmetic agrees with the run it measured.
+const modelTotals = modelResults.length > 0 ? modelTax(modelResults) : null;
+const regeneratedCost = regenerations.reduce((total, entry) => total + (Number.isFinite(entry.modelCost) ? entry.modelCost : 0), 0);
+const wasted = regenerations.filter(entry => entry.previousHash === entry.contentHash);
+const wastedCost = wasted.reduce((total, entry) => total + (Number.isFinite(entry.modelCost) ? entry.modelCost : 0), 0);
 
-console.log(`\n  regenerations: ${tax.regenerations}`);
+if (modelTotals) {
+  expectResult('every model turn reported what it cost',
+    modelTotals.costComplete, JSON.stringify(modelTotals.byLabel));
+  expectResult('and every model turn produced a file the container could publish',
+    modelTotals.succeeded === modelTotals.calls, JSON.stringify(modelTotals.byLabel.filter(call => !call.ok)));
+  expectResult('the regeneration spend the tax reports is the spend the regenerations made',
+    Math.abs(tax.totals.regenerationModelCost - regeneratedCost) < 1e-9,
+    `tax ${tax.totals.regenerationModelCost}, run ${regeneratedCost}`);
+  expectResult('and the mechanism charged real money for work that changed nothing',
+    wasted.length === rounds.length && wastedCost > 0,
+    `${wasted.length} wasted turns costing ${wastedCost}`);
+}
+
+const output = await writeRunEvidence({
+  modelTotals,
+  wastedModelCost: modelTotals ? wastedCost : null,
+  rounds,
+  tax,
+  verdict,
+  counts: final.counts,
+  content,
+  publishes,
+  regenerations,
+});
+
+console.log(`\n  participants:  ${PARTICIPANTS}${profile ? ` (${profile.model.providerID}/${profile.model.id})` : ''}`);
+console.log(`  regenerations: ${tax.regenerations}`);
 console.log(`  changed:       ${tax.changedOutputs.map(item => item.path).join(', ') || 'none'}`);
 console.log(`  unchanged:     ${tax.unchangedOutputs.map(item => item.path).join(', ') || 'none'}`);
 console.log(`  over-invalidation rate: ${tax.overInvalidationRate === null ? 'not judgeable' : tax.overInvalidationRate}`);
 console.log(`  container time: ${tax.totals.containerMs}ms across ${tax.totals.starts} starts (recovery: ${tax.totals.regenerationContainerMs}ms)`);
-console.log(`  model cost:     ${tax.totals.modelCost} (deterministic participants: no model ran)`);
+if (modelTotals) {
+  console.log(`  model calls:   ${modelTotals.calls} (${modelTotals.succeeded} usable), ${modelTotals.steps} steps`);
+  console.log(`  model spend:   ${modelTotals.cost}${modelTotals.costComplete ? '' : ' (incomplete: some turns did not report a cost)'}`);
+  console.log(`  input/output tokens: ${modelTotals.inputTokens}/${modelTotals.outputTokens}`);
+  console.log(`  recovery spend: ${tax.totals.regenerationModelCost} of which wasted: ${wastedCost}`);
+} else {
+  console.log(`  model cost:     ${tax.totals.modelCost} (deterministic participants: no model ran)`);
+}
 console.log(`  evidence:       ${output}/evidence.json`);
 
 finish(results, passed => passed
-  ? 'THE DEPLOYED PRODUCT REPORTS ITS OWN STALE OUTPUTS, AND THE RECOVERY TAX IS MEASURED'
+  ? `THE DEPLOYED PRODUCT REPORTS ITS OWN STALE OUTPUTS, AND THE RECOVERY TAX IS MEASURED (${PARTICIPANTS} participants)`
   : 'THE PUBLICATION RECORD DOES NOT HOLD ON THE DEPLOYED SURFACE');
