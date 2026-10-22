@@ -2,6 +2,11 @@
 
 **Date:** 2026-09-29. **Status:** RT-0 diagnostic, not product qualification.
 
+This is the dated record of the initial diagnostic. For what exists now — the deployed product, the
+two flown missions, the browser-based design judge, and the trace/retention tooling — see
+[current state of play](state-of-play.md). The limits recorded below still hold; none of them has
+been revoked.
+
 | Capability | Evidence | Limit |
 | --- | --- | --- |
 | Independent repository | Built-ins-only manifest/lockfile, deterministic tests and import/link checker | No Stow checkout, Go build or provider login needed for core tests |

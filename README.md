@@ -17,7 +17,7 @@ The harness supplies task-scoped workspace context with the initial connection,
 including existing participants and their last known cursor. Later dependency changes
 use the same contextual envelope. See [the harness contract](docs/harness-context.md). Unknown locations and observation gaps stay visible.
 
-The real probe uses a dedicated OpenCode 2.0.16 server and your selected OpenCode model.
+The real probe uses a dedicated OpenCode 2.0.32 server and your selected OpenCode model.
 It reads the existing provider login only in opt-in real mode, keeps it in memory and
 scopes child HOME/XDG state outside the fixture. It creates a temporary fixture and
 sanitized evidence; it does not modify user workspaces or global harness settings.
@@ -156,17 +156,39 @@ activity stays unknown; filters apply to the bounded comparison/activity views.
 
 ## Large missions and blind tasting
 
-Six new missions cover evidence research, exact mathematics, and integrated SaaS workflows, with eight substantive streams each. All contenders for a mission receive identical inputs and the full directive. Matched stock/Ingress rosters can run with two, four or eight builders, plus a stock solo baseline. Anonymous outputs are available for human ratings before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md).
+Nine missions each carry eight substantive streams. Five cover evidence research, exact
+mathematics, integrated SaaS workflows, map rendering and first-party site analytics
+with graded contracts — [Signal](docs/mission-signal.md) is the analytics one, and it was
+flown: eight cheap agents built it to 27/27 twice ([results](docs/mission-analytics-results.md)).
+[Signal, underspecified](docs/mission-design.md) is the same product with the design left
+in and no contracts at all, judged by a real browser because a design cannot be checked by
+a signature; it was flown too, and the fleet designed a product the brief never described
+([results](docs/mission-design-results.md)). All contenders for a mission receive identical
+inputs and the full directive. Matched stock/Ingress rosters can run with two, four or eight
+builders, plus a stock solo baseline. Anonymous outputs are available for human ratings
+before explicit authorship reveal. See [the mission protocol](docs/missions/protocol.md).
 
 Executable mission grading requires Node 26, because submission isolation relies on
 that runtime's permission model to deny writes, private reads, child processes and
 network without trusting the submission. On an older runtime the grader reports
 `isolationRefused` and an `evaluator_refused_isolation_unavailable` check rather than
 a grade, because an unrunnable grade and a wrong submission must not look alike in
-retained evidence.
+retained evidence. `signal-open` additionally needs a browser: its judge starts the
+submission's server and drives it, and a machine without Chrome records
+`evaluator_refused_browser_unavailable` rather than blaming the submission for the host.
 
 ```sh
 npm run missions:plan
 npm run missions:real
+npm run missions:view             # the observatory, for a flight in the air
+npm run missions:trace            # the live change stream, per actor
+npm run missions:retain           # keep a flight's workspaces and fence receipts
+npm run missions:regrade          # re-grade retained artifacts, refusing if the fixture moved
+npm run missions:summary          # the compact, committable numbers for a flight
 npm run missions:review -- --directory=<private flight directory>
+node scripts/mission-open-accept.mjs --workspace=DIR --out=DIR   # look at a design submission
 ```
+
+A flight records its aggregate; `missions:retain` keeps the trace, `missions:regrade` corrects
+a verdict whose judge was wrong, and `missions:summary` writes the few kilobytes that survive a
+flight directory disappearing — which one did.

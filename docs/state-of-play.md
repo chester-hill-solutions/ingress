@@ -49,13 +49,14 @@ record.
 | Observation | artifacts and a full grade at 60 s, 3 min and 10 min, retained as per-band hashes and check results |
 | Cost accounting | the harness reads prices from the local model catalog at start and sums per-actor usage. **$2.72 for the flight; the deterministic work cost no model spend** |
 | Blind review | labels shuffled, authorship redacted, artifacts frozen at settle, rated by a human on usefulness, completeness, clarity, coherence, overall |
-| Watching | `missions:view` (observatory), `missions:trace` (live change stream), `missions:review` (tasting) |
+| Watching | `missions:view` (observatory), `missions:trace` (live change stream), `missions:review` (tasting), `mission-open-accept` (a design submission, in a browser) |
 | Keeping | `missions:retain` (workspaces + fence receipts into `traces/`, labelled settled/running/post-hoc), automatic at settle |
 | Correcting | `missions:regrade` (re-grade retained artifacts with the judge as it stands, refusing when the fixture has moved) |
+| Surviving | `missions:summary` writes a few kilobytes of numbers into `docs/flights/` at settle, because a flight directory can vanish and one did |
 | OpenCode pin | `v2.0.32`, with a re-run compatibility probe (8 assertions) recorded as attempt 8, and `test/opencode-pin.test.mjs` asserting that pin, record and installed binary agree |
-| Suite | 974 tests, ~41 s, each bounded at two minutes; `npm run check` for boundary and link integrity |
+| Suite | 958 tests, ~28 s, each bounded at two minutes; `npm run check` for boundary and link integrity |
 
-## 4. Today's flight
+## 4. The analytic flight: a specified product
 
 `signal-analytics`: Signal, a first-party Clarity-class site analytics platform — one small tag, an
 ingest, a store, a dashboard, 27 criteria. Four cohorts, 32 actors, one repeat.
@@ -79,7 +80,39 @@ about whether a handler's body is a string or an object, and a fix that silently
 that no longer matched. Both numbers are kept; the flight's evidence is untouched and `regrade.json`
 says what changed.
 
-## 4a. What was lost, and what it says about retention
+## 5. The design flight: the same product with no contracts
+
+`signal-open` is the same product with **no contracts**: the customer's two pages, a sentence of
+intent, and six product facts that make it observable. One cohort, DeepSeek V4 Flash, stock,
+eight actors, one repeat.
+
+| | |
+| --- | --- |
+| Criteria | **12 / 12**, `correct: true` |
+| Wall | 739 s · bands: 60 s → 0/12, **180 s → 12/12**, 600 s → 12/12 |
+| Actors | 8 of 8 completed successfully |
+| Cost | $1.60, 1.84 M tokens |
+
+It designed a wire protocol nobody named (`{"v":1,"sid",page:{…},events:[{t:"view"},{t:"snap",
+doc:{t:"html",i:1,…}}]}` — an indexed DOM tree, the shape a replay protocol needs), a dashboard
+with stat cards, plain-language sublabels and a "what is working / what is not" pair written as
+sentences, and decided for itself that session replay, engagement time, a 25/50/75/100 funnel,
+form-field reach and a JSON API should exist. Four files, 1,690 lines, nothing beyond the four
+editable paths, tag 6,130 bytes gzipped against 12,000. **Specified, it wrote eight modules;
+unspecified, it chose one file each for the tag and the server.**
+
+The strongest evidence is privacy, checked independently of the judge: the card number, the email
+and the `data-private` paragraph are absent from the wire *and* from the dashboard — while it sent
+a full DOM snapshot of the page. The brief asked for the property, never for a mechanism.
+
+This is the answer to the objection that the previous flight did no design work: the fleet was
+never asked to. Given the problem instead of the contract, it designed — and the honest limits are
+that one cohort is an existence proof, the judge is a floor rather than a verdict on quality, and
+its own figures are its own vocabulary -- 1 rage click where the pass made four, AVG SCROLL 100%
+where the pass scrolled to 60% -- which is precisely what a specification would have decided for it.
+[Full record](mission-design-results.md).
+
+## 6. What was lost, and what it says about retention
 
 The flight directory is gone. `artifacts/` is gitignored and holds every flight's evidence, its
 retained traces and the re-grade; it was present when the flight settled and absent a few hours
@@ -87,7 +120,7 @@ later, and nothing in this repository removes it — `rm` appears in `src/`, `sc
 and the tests only for directories the code creates itself, and every one of those is a `mkdtemp`.
 The cause is not established.
 
-What survives is what was written down: the figures in §4 and in
+What survives is what was written down: the figures in §4 and §5 and in
 [the results document](mission-analytics-results.md), the commit message, and the four judge
 defects. What is lost is the trace — the 74 fence decisions, the per-actor workspaces, and
 `regrade.json`.
@@ -100,7 +133,7 @@ next harness change is to write a compact, committable summary per flight — th
 criteria, the cost, the fingerprints — so that losing the directory costs the evidence's detail and
 never its existence.
 
-## 5. What this establishes, and what it does not
+## 7. What this establishes, and what it does not
 
 **Establishes.** A cheap model fleet can build a specified product to a contract it never sees, at
 about a dollar a run, with the work traced, graded and retained. Stale-output detection works on the
@@ -124,15 +157,20 @@ three. Cheap-model failures are legible rather than mysterious.
   them.
 - **No RT status advanced, and no useful-benefit claim.** Nothing here qualifies the product.
 
-## 6. Open
+## 8. Open
 
-- **The frontier arm** on `signal-analytics`, same judge, a few repeats — the experiment that answers
-  the original question. Estimate $20–60 for a first pass at frontier prices.
-- **The underspecified mission — built, not yet flown.** `signal-open` ships the problem instead of
-  the contracts and is judged by a real browser; the judge is proven fair from both ends (stubs
-  0/12, a reference 12/12, a mutation fails exactly the two checks it should).
-  See [the design mission](mission-design.md). What it still cannot measure is the ceiling — whether
-  the dashboard is any *good* — which is the blind review's job.
+- **The frontier arm** — the experiment that answers the original question. Both missions are now
+  ready for it, and `signal-open` is the better instrument: it has no answer key to transcribe, so a
+  frontier score and a cheap score would mean the same kind of thing. Estimate $20–60 for a first
+  pass at frontier prices, plus repeats to say anything about variance.
+- **The design mission's ceiling.** `signal-open` is flown (12/12, one cohort) and its judge is
+  proven fair from both ends — stubs 0/12, a reference 12/12, a mutation failing exactly the two
+  checks it should ([design mission](mission-design.md), [results](mission-design-results.md)). What
+  it still cannot measure is whether the dashboard is any *good*; that is the blind review's job, and
+  the flight's sample has not been rated.
+- **A second design cohort.** One run with one model is an existence proof. The obvious next two are
+  the same mission at the same roster on a frontier model, and a run with the fence on — neither has
+  been done, and the fence's value on a design task is unmeasured.
 - **The dollars for regeneration**: the model-driven recovery mode exists and is unblocked; the tax
   has never been priced in money rather than container seconds.
 - **The product queue**: item 14's remaining slices (durable authenticated checkout, the private

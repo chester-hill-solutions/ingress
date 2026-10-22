@@ -88,6 +88,6 @@ still know what to exclude" — and the brief asked only for the property, never
 
 ## The evidence problem this flight inherits
 
-The previous flight's directory vanished (`docs/state-of-play.md` §4a). This one is copied to
+The previous flight's directory vanished (`docs/state-of-play.md` §6). This one is copied to
 `~/.local/share/ingress/flights/` as well as `artifacts/`, and its numbers are in this document and
 in `docs/flights/`, because retention into an ignored directory with no copy is not retention.

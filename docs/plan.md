@@ -236,3 +236,30 @@ Revision4 preserves model-native tool menus, observes bounded patch targets and 
 Revision4 completed all162 assignments:91 native completions,71 deadline outcomes,71 correct-completed and113 independently correct final artifacts. All owned processes stopped and15 runtime fingerprints verified. [Results and limits](benchmark-results.md) retain six unqualified comparison rows and every historical attempt. No consistent coordination advantage or RT-1 qualification is established. The refreshed live dashboard passed213 deterministic package tests and browser QA.
 
 The user challenged the90-second deadline and whether the fixtures constitute many-agent missions. Both limitations are explicit in the results: this budget is operational, and two-goal fixtures with expanded4/8-role rosters measure possible oversubscription. Follow-up comparative work needs a substantial shared mission, identical acceptance criteria across solo/stock/Ingress, controlled integration/dependency changes, correctness over time and first-correct versus settlement/cost measurements over predeclared multiple budgets. No follow-up real-model study has been admitted.
+
+## 2026-10-22: publication evidence, two flown missions, and a browser judge
+
+The product grew the part the mechanism was always about. Every published output now records what it
+was built from, and a write that moves an input reports the outputs it contradicts, transitively,
+with `output_invalidated` and `evidence_refreshed` receipts. Deployed and live. Two defects were found
+only by deploying it, both worth keeping: an output whose value never changes could never be cleared,
+and the first fix let a holder of a seeded file overwrite a publisher's evidence. A recovery mission on
+the deployed surface measured the tax in containers — one wasted regeneration in three — and the
+model-driven pricing of that tax remains unrun.
+
+Two missions flew. [Signal](mission-signal.md), specified to the signature, was built by eight cheap
+agents to **27/27 twice**, and all four failures the harness recorded were defects in the judge, not
+the submission ([results](mission-analytics-results.md)). That result also produced the sharper finding:
+a perfect score against a contract measures the transcription of a design, not the design, and the
+contract's author was the harness. [Signal, underspecified](mission-design.md) is the same product with
+no contracts, judged by a real Chrome driving the submission's own server; the fleet scored **12/12**
+and designed a product the brief never described — its own wire protocol, its own dashboard, its own
+decision that session replay should exist ([results](mission-design-results.md)).
+
+What is now apparatus rather than intent: a trace per flight (`missions:retain`), a re-grade that
+refuses when a mission fixture has moved (`missions:regrade`), a mission fixture frozen once flown by a
+pinned seed hash, a browser driver, an acceptance pass for looking at a design submission, and a
+compact committable summary per flight (`missions:summary`) after one flight's directory disappeared
+with its trace. The frontier arm — the comparison the whole line of work exists to make — remains
+unrun, and is now cheap to run on a mission with no answer key.
+
