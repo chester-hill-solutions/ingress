@@ -652,3 +652,40 @@ may still be appropriate for particular hazards. Unknown semantic coupling remai
 This is design input, not an implemented architecture change. The admitted varied native
 study keeps its original tasks, mechanisms, graders and budgets; its operational continuation
 is recorded in the [protocol](checkout-varied-protocol.md#interrupted-execution-and-bounded-continuation-2026-10-13).
+
+### The invalidation mechanism, qualified (2026-10-22)
+
+The mechanism above is now built and measured rather than proposed. It is
+`src/prototypes/checkout/invalidation.mjs`, and the results are in
+[the invalidation results](checkout-invalidation-results.md).
+
+What it does, in three rules: at publication, record for each output the version
+(content hash) of every input it was built from; when an input advances, every output
+that recorded the older version loses its approved status; an invalidated output is
+never silently re-approved, and must be revalidated or regenerated.
+
+Three findings from building it, none of which were visible from the design note:
+
+- **The dependency relation is not in the graph.** The failing case is a consumer that
+  reads a policy value out of another module without importing it. No static import
+  edge exists, so the graph cannot supply the relation, and the relation is exactly
+  what invalidation needs. The evidence came from the participant's own declared
+  inputs — which the product already carries as `builtFrom` — and from explicit
+  contract records. A mechanism that only accepts graph edges would not have fired
+  once in the whole campaign.
+- **Publication-time checks and invalidation are different mechanisms, and only one
+  of them catches this.** In the forward order the consumer publishes *after* the
+  provider, so a publication-time read check would refuse it — that is the check the
+  product already makes for a declared `builtFrom`. In the reverse order the consumer
+  publishes *before* the provider changes, and only invalidation notices. The
+  campaign contains both, and they are not substitutes.
+- **Recovery is the agent's work, and it is not automatic.** Detecting the stale
+  dependent is mechanical. Restoring the mission needs the output to be re-derived
+  against the current input, which the workspace cannot do on the participant's
+  behalf, and which a participant that re-sends its old bytes will not achieve. The
+  campaign measures the mechanism with a stated model of a worker that redoes its own
+  work; that model is a modelling choice, not a measurement of agent behaviour.
+
+The durable, product-side form of this is slice 4's "versioned dependency evidence at
+publication". It is not built: the module is an in-memory experiment record, and the
+product's ledger does not yet carry publication evidence.

@@ -32,7 +32,7 @@ test('virtual scheduler retains refused work and retries on a fresh base with un
   const system = new ProductReplay(() => true); await system.seed(files);
   const workload = { tasks: [{ id: 'a', path: 'x.mjs', workTicks: 10 }, { id: 'b', path: 'x.mjs', workTicks: 10 }] };
   const result = await replaySchedule({ workload, schedule: schedules[2],
-    patch: (task, base) => ({ 'x.mjs': task.id === 'a' ? base['x.mjs'].replace('x=1', 'x=3') : base['x.mjs'].replace('y=2', 'y=4') }),
+    patch: (task, base) => ({ files: { 'x.mjs': task.id === 'a' ? base['x.mjs'].replace('x=1', 'x=3') : base['x.mjs'].replace('y=2', 'y=4') }, reads: [] }),
     acceptance: candidate => candidate['x.mjs'].includes('x=3') && candidate['x.mjs'].includes('y=4'),
     api: { snapshot: () => system.snapshot(), checkout: (task, participantId) => system.checkout({ participantId, paths: [task.path] }),
       submit: (grant, patch) => system.submit({ checkoutId: grant.checkoutId, participantId: grant.participantId, files: patch }),
@@ -47,11 +47,23 @@ test('all frozen task anchors are unambiguous and dependency-sensitive actor use
   const seed = Object.fromEntries(readdirSync(root).filter(path => path.endsWith('.mjs')).map(path => [`src/${path}`, readFileSync(new URL(path, root), 'utf8')]));
   for (const workload of workloads) {
     let candidate = structuredClone(seed);
-    for (const task of workload.tasks) Object.assign(candidate, patchTask(task, candidate));
+    for (const task of workload.tasks) Object.assign(candidate, patchTask(task, candidate).files);
   }
   const workload = workloads.find(w => w.id === 'contract-sensitive-read');
-  const stale = patchTask(workload.tasks[1], seed)['src/reports.mjs'];
-  const updated = { ...seed, ...patchTask(workload.tasks[0], seed) };
-  const fresh = patchTask(workload.tasks[1], updated)['src/reports.mjs'];
+  const stale = patchTask(workload.tasks[1], seed).files['src/reports.mjs'];
+  const updated = { ...seed, ...patchTask(workload.tasks[0], seed).files };
+  const fresh = patchTask(workload.tasks[1], updated).files['src/reports.mjs'];
   assert.match(stale, /offer 10%/); assert.match(fresh, /offer 20%/);
+});
+test('the dependency evidence is derived from what the patch read, not asserted beside it', () => {
+  const root = new URL('../fixtures/checkout-lab/src/', import.meta.url);
+  const seed = Object.fromEntries(readdirSync(root).filter(path => path.endsWith('.mjs')).map(path => [`src/${path}`, readFileSync(new URL(path, root), 'utf8')]));
+  const consumer = patchTask(workloads.find(w => w.id === 'contract-sensitive-read').tasks[1], seed);
+  assert.deepEqual(consumer.reads, [{ path: 'src/config.mjs', source: 'declared_read' }]);
+  // A task that only edits its own file takes no dependency on anything else.
+  const independent = workloads.find(w => w.id === 'independent-same-file');
+  assert.deepEqual(patchTask(independent.tasks[0], seed).reads, []);
+  // A patch that introduces an import takes the dependency from that moment on.
+  const introducing = workloads.find(w => w.id === 'new-dependency').tasks[0];
+  assert.deepEqual(patchTask(introducing, seed).reads, [{ path: 'src/reports.mjs', source: 'introduced_import' }]);
 });

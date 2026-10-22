@@ -40,7 +40,7 @@ code-hygiene tier.
 | 11 | Package the client | P3 | M | open |
 | 12 | Usage signal, cost ceiling, then billing | P3 | L | **usage + ceiling done and verified live**; billing not built — needs a price |
 | 13 | Make the fence survive a swarm | P0 | M | **scoping, concurrency and content-per-revision done** (`e2e:swarm`, `e2e:concurrency`, `e2e:content`); **the trial says the swarm use case is not reachable as deployed** — no model inside the container; **output visibility shipped**; merge deferred to the trial's number |
-| 14 | Qualify graph-backed block checkouts and publication | P1 | L | user-directed 2026-10-12; Graphify qualification 37/38, false target under parameter shadowing; AST ranges measured; graph eligibility guards and durable integration open |
+| 14 | Qualify graph-backed block checkouts and publication | P1 | L | user-directed 2026-10-12; Graphify qualification 37/38, false target under parameter shadowing; AST ranges measured; graph eligibility guards and durable integration open; **versioned publication evidence and dependent-output invalidation qualified in the experiment scope (2026-10-22)**; product-side evidence recording still open |
 
 Item 14 is a user-directed addition to this ordered queue. Its exclusive modification
 grants belong to the managed checkout profile. The observation harness retains its
@@ -1396,6 +1396,37 @@ Native edit prevention and useful benefit remain unqualified unless separately p
 This addition brings managed checkout/base retention and graph publication into scope;
 the older exclusions below still apply to a general Git replacement and to claims of
 semantic merge correctness.
+
+#### The invalidation increment (2026-10-22)
+
+Slice 4 asks for "versioned dependency evidence at publication". That part is now
+qualified in the experiment scope, and the finding that shaped it is worth recording
+here because it changes what the product would have to build.
+
+**The dependency relation the mechanism needs is not in the graph.** The case that
+fails is a consumer that reads a policy value out of another module without importing
+it. There is no import edge, so a graph-derived relation does not exist, and the
+relation is precisely what invalidation compares. The evidence that works is the
+participant's own declared inputs — the `builtFrom` this queue already introduced in
+item 13 leg 1 — plus explicit contract records. **A product implementation that took
+dependency evidence only from a code graph would not fire once on the measured
+failure.**
+
+**What the product would have to hold.** Per published output: the output's own
+revision, the revision of each input it was built from, and the source of that
+declaration. That is a publication record, not a fence decision, and it belongs with
+the commit receipt rather than inside the admission path. The experiment implementation
+is `src/prototypes/checkout/invalidation.mjs` and it is in-memory; the durable form,
+the authenticated read route and the product's ledger do not exist yet.
+
+**What it does not do.** It does not make a stale output *wrong* — it makes the
+workspace *say* the output is no longer approved. Restoring correctness is the
+participant's work: revalidate or regenerate. The measured campaign shows the
+mechanism converting six published-but-wrong missions per arm into correct ones under
+a stated model of a worker that redoes its own work, at the cost of extra work ticks
+and of invalidating dependents the change could not have affected. See
+[the invalidation results](checkout-invalidation-results.md). No product route,
+admission rule or durable record changed, and no RT status advances.
 
 ## Verification gates per tier
 

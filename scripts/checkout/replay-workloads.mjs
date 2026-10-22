@@ -33,10 +33,16 @@ import {format as receiptFormat} from '../src/notifications.mjs';
 import {format as reportFormat} from '../src/reports.mjs';
 import {sendDefaultReceipt,sendCustomReceipt} from '../src/notifier.mjs';
 ${workload.assertions}\n`;
+// `patchTask` returns the edited files *and* the other paths the patch consulted.
+// Those reads are the dependency evidence: they are derived from the patch function
+// itself rather than asserted beside it, so a task cannot claim a dependency it did
+// not take and cannot hide one it did.
 export function patchTask(task, base) {
   let text = base[task.path], search = task.search, replacement = task.replace;
+  const reads = [];
   if (task.adaptive === 'read-promotion-percent') {
     const value = /promotionPercent:\s*(\d+)/.exec(base['src/config.mjs'])?.[1] ?? '10';
+    reads.push({ path: 'src/config.mjs', source: 'declared_read' });
     replacement = `  if (order.status === 'offer') return \`Order \${order.id}: offer ${value}%, \${formatMoney(order.totalPaidCents, order.currency)}\`;\n  return \`Order`;
   }
   if (task.scopedAnchor) {
@@ -44,5 +50,11 @@ export function patchTask(task, base) {
     replacement = `export function ${task.symbol}(${task.parameters ?? 'receipt, notify'}) {\n${replacement}`;
   }
   if (text.split(search).length !== 2) throw new Error('patch_anchor_ambiguous_or_missing');
-  return { [task.path]: (task.prepend ?? '') + text.replace(search, replacement) };
+  const files = { [task.path]: (task.prepend ?? '') + text.replace(search, replacement) };
+  // A patch that adds an import takes a dependency on the imported module from that
+  // moment on, even though it never read its bytes.
+  for (const match of (task.prepend ?? '').matchAll(/from '(\.\/[^']+)'/g)) {
+    reads.push({ path: `src/${match[1].slice(2)}`, source: 'introduced_import' });
+  }
+  return { files, reads };
 }

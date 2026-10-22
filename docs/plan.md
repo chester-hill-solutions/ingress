@@ -25,6 +25,20 @@ the product name.
 
 ## Current work
 
+- Versioned publication evidence and dependent-output invalidation (2026-10-22): the
+  mechanism the source-control design input named as the next thing to qualify is
+  built (`src/prototypes/checkout/invalidation.mjs`), tested without Python, a model
+  or a deployment, and measured on a paired campaign: the same 108 assignments run
+  with the mechanism off and on, in one run over one implementation. The finding that
+  shaped it is that the dependency relation the mechanism needs is *not* in the code
+  graph — it is a data dependency with no import edge — so the evidence has to come
+  from the participant's own declared inputs, which the product already carries as
+  `builtFrom`. Publication-time checks and invalidation are not substitutes: the
+  forward order is caught by a read check, the reverse order only by invalidation.
+  The recovery policy is a stated model of a worker, not a measurement of one.
+  No deployed route, admission rule, durable record or RT status changed; the
+  product-side form is hardening queue item 14, slice 4, and is still open. See
+  [the invalidation results](checkout-invalidation-results.md).
 - User-directed checkout experiment (2026-10-12): a separate memory-only block arbiter
   and optional EmbeddingGemma 2 discovery/comparison. Exclusive modification grants
   explore a new design beyond the observer's no-claims contract; no deployed routes,

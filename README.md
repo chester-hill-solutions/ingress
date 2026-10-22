@@ -68,6 +68,16 @@ invalidation the next proposed mechanism to qualify. No RT status changes.
 Its private copies and publication decisions live in memory; it is not wired into
 the deployed product or the observation harness.
 
+The [invalidation increment](docs/checkout-invalidation-results.md) qualifies the
+mechanism that study pointed at: at publication the workspace records the version of
+every input each output was built from, and an input that advances invalidates the
+outputs that depended on it. It was measured as a paired campaign — the same 108
+assignments with the mechanism off and on, one run, one implementation — and the
+dependency relation it needs turned out not to be in the code graph at all: it is a
+data dependency with no import edge, so the evidence has to come from the
+participant's own declared inputs. No deployed route, admission rule or durable
+record changed, and no RT status changes.
+
 The standalone [checkout lab corpus](fixtures/checkout-lab/README.md) has a working
 order/fulfillment application, independent behavior checks, explicit data contracts,
 and 13 prospective checkout scenarios. Materialize it outside this repository:

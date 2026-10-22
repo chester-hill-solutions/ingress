@@ -11,6 +11,7 @@ import { normalizeGraph, sourceRevision } from '../../src/prototypes/checkout/gr
 import { CheckoutArbiter } from '../../src/prototypes/checkout/arbiter.mjs';
 import { GraphCheckout } from '../../src/prototypes/checkout/graph-checkout.mjs';
 import { hashText } from '../../src/prototypes/checkout/impact.mjs';
+import { withPublicationEvidence } from './evidence-layer.mjs';
 import { introducedWrites } from './expansion-request.mjs';
 
 const { values } = parseArgs({ options: { python: { type: 'string' }, repo: { type: 'string' }, output: { type: 'string' }, repeats: { type: 'string', default: '2' } } });
@@ -24,22 +25,31 @@ const files = Object.fromEntries(readdirSync(resolve(repo, 'src')).filter(path =
 const contracts = JSON.parse(readFileSync(resolve(repo, 'contracts.json'), 'utf8'));
 const behavior = readFileSync(resolve(repo, 'test/behavior.test.mjs'), 'utf8');
 const arms = ['current', 'blocks', 'graph'];
+// The factor under test: the workspace records versioned publication evidence and
+// invalidates a published output whose input has moved since it was built. The
+// `off` condition is the retained behaviour, kept in the same run and the same
+// implementation so the two conditions are paired rather than compared across runs.
+const conditions = ['off', 'on'];
 const assignments = [];
 for (let repeat = 0; repeat < repeats; repeat++) for (let wi = 0; wi < workloads.length; wi++) for (let si = 0; si < schedules.length; si++) {
   const rotated = arms.map((_, i) => arms[(i + repeat + wi + si) % arms.length]);
-  for (const arm of rotated) assignments.push({ id: `${repeat + 1}-${workloads[wi].id}-${schedules[si].id}-${arm}`,
-    repeat: repeat + 1, workload: workloads[wi].id, schedule: schedules[si].id, arm });
+  const rotatedConditions = conditions.map((_, i) => conditions[(i + repeat + wi) % conditions.length]);
+  for (const arm of rotated) for (const condition of rotatedConditions) assignments.push({ id: `${repeat + 1}-${workloads[wi].id}-${schedules[si].id}-${arm}-${condition}`,
+    repeat: repeat + 1, workload: workloads[wi].id, schedule: schedules[si].id, arm, invalidation: condition });
 }
 const implementationPaths = ['product-replay.mjs', 'replay-workloads.mjs', 'replay-schedule.mjs', 'compare-replays.mjs', 'expansion-request.mjs', 'binding-producer.mjs', 'bindings.py',
+  'evidence-layer.mjs',
   '../../src/prototypes/checkout/graph-checkout.mjs', '../../src/prototypes/checkout/graph-index.mjs', '../../src/prototypes/checkout/arbiter.mjs',
+  '../../src/prototypes/checkout/invalidation.mjs',
   '../../src/product/handlers/commit.mjs', '../../src/product/handlers/container.mjs', '../../src/product/lease.mjs', '../../src/product/merge.mjs'];
-const protocol = { schema: 1, mode: 'deterministic-mechanism-replay', assignedAt: new Date().toISOString(), assignments,
-  arms, workloads, schedules, repeats, seedRevision: sourceRevision(files), contractsHash: hashText(JSON.stringify(contracts)), behaviorHash: hashText(behavior),
+const protocol = { schema: 2, mode: 'deterministic-mechanism-replay', assignedAt: new Date().toISOString(), assignments,
+  arms, conditions, workloads, schedules, repeats, seedRevision: sourceRevision(files), contractsHash: hashText(JSON.stringify(contracts)), behaviorHash: hashText(behavior),
   implementationHashes: Object.fromEntries(implementationPaths.map(path => [path, hashText(readFileSync(resolve(import.meta.dirname, path)))])),
-  deadlineTicks: 40, workTicksPerAttempt: 10, maximumSubmissionAttempts: 3, configuredModel: null, modelRuns: 0,
+  deadlineTicks: 40, workTicksPerAttempt: 10, maximumSubmissionAttempts: 3, maximumRegenerations: 2, configuredModel: null, modelRuns: 0,
   baseline: 'Actual product WorkspaceAgent commit route and LeaseTable; /start free-path/contended rule adapted locally; no deployment/container/transport timing',
   controls: 'Same private seed copies, patches, schedule, common baseline behavior validator, held mission checker, merge implementation; no result-based rescue',
   scopeExpansion: 'Both scoped arms request introduced blocks explicitly and candidate-derived dependencies after a scope refusal. Candidate-bound expansion is atomic; a changed head requires a fresh edit attempt. Every refusal/expansion is retained.',
+  invalidation: 'The `on` condition records, at each publication, the version of every path the published output was built from, and invalidates a published output when an input it was built from has moved. The invalidated owner regenerates from a current base; the workspace never re-approves an invalidated output by itself. Evidence is derived from what the patch function actually read or newly imported.',
   timing: 'Virtual work/wait ticks and measured local policy/producer/validator/evaluator costs reported separately; repeats estimate timing variability only',
   usefulnessQualified: false };
 writeFileSync(resolve(run, 'protocol.json'), JSON.stringify(protocol, null, 2) + '\n');
@@ -64,7 +74,7 @@ for (const workload of workloads) {
   writeFileSync(resolve(seedPath, 'checks/acceptance-check.mjs'), acceptanceSource(workload));
   const seedCorrect = command(seedPath, ['checks/acceptance-check.mjs'], 'acceptance');
   let reference = structuredClone(files);
-  for (const task of workload.tasks) Object.assign(reference, patchTask(task, reference));
+  for (const task of workload.tasks) Object.assign(reference, patchTask(task, reference).files);
   const referencePath = resolve(run, 'reference', workload.id, 'solution'); materialize(reference, referencePath);
   writeFileSync(resolve(referencePath, 'checks/acceptance-check.mjs'), acceptanceSource(workload));
   const behaviorValid = command(referencePath, ['--test', '--test-timeout=30000', 'checks/behavior-check.mjs'], 'behavior');
@@ -77,7 +87,7 @@ const rows = [];
 for (const assignment of assignments) {
   const destination = resolve(run, 'trials', assignment.id); mkdirSync(destination, { recursive: true });
   const workload = workloads.find(w => w.id === assignment.workload), schedule = schedules.find(s => s.id === assignment.schedule);
-  const clocks = { graphBuildMs: 0, graphBuilds: 0, validationMs: 0, validations: 0, checkerMs: 0, checks: 0, policyMs: 0 };
+  const clocks = { graphBuildMs: 0, graphBuilds: 0, validationMs: 0, validations: 0, checkerMs: 0, checks: 0, policyMs: 0, invalidationMs: 0 };
   const started = performance.now();
   const build = candidate => {
     const begin = performance.now();
@@ -134,9 +144,14 @@ for (const assignment of assignments) {
       return { ...system.expand({ ...request, candidate, blocks: next.blocks, edges: [],
         writes: [...grant.writes.map(({ blockId }) => ({ blockId })), ...additionalWrites] }, tick), requestedAdditionalWrites: additionalWrites };
     });
+    // The mechanism under test. It sits above every arm and does not change what an
+    // arm admits: it only records what each publication was built from, and reports
+    // the outputs whose inputs have moved since.
+    if (assignment.invalidation === 'on') withPublicationEvidence(api, { clocks });
     const setupMs = performance.now() - started;
     const outcome = await replaySchedule({ workload, schedule, api, patch: patchTask, acceptance,
-      deadlineTicks: protocol.deadlineTicks, maxAttempts: protocol.maximumSubmissionAttempts });
+      deadlineTicks: protocol.deadlineTicks, maxAttempts: protocol.maximumSubmissionAttempts,
+      maxRegenerations: protocol.maximumRegenerations });
     writeFileSync(resolve(destination, 'final-files.json'), JSON.stringify(outcome.finalFiles, null, 2) + '\n');
     delete outcome.finalFiles;
     const blocked = outcome.events.filter(e => e.phase === 'checkout' && !e.granted);
@@ -152,25 +167,32 @@ for (const assignment of assignments) {
   console.log(`${rows.length}/${assignments.length} ${assignment.id}: ${row.failure ?? (row.finalCorrect ? 'correct' : 'incomplete/incorrect')}`);
 }
 const median = values => { const sorted = values.toSorted((a, b) => a - b); return sorted.length ? (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.floor(sorted.length / 2)]) / 2 : null; };
-const summary = arms.map(arm => {
-  const subset = rows.filter(row => row.arm === arm);
-  return { arm, assigned: subset.length, correct: subset.filter(r => r.finalCorrect).length,
+const summary = arms.flatMap(arm => conditions.map(condition => {
+  const subset = rows.filter(row => row.arm === arm && row.invalidation === condition);
+  return { arm, invalidation: condition, assigned: subset.length, correct: subset.filter(r => r.finalCorrect).length,
     allPublishedButWrong: subset.filter(r => r.admittedWrongMission).length, apparatusFailures: subset.filter(r => r.failure).length,
     medianCorrectVirtualTicks: median(subset.filter(r => r.finalCorrect).map(r => r.firstCorrectTick)),
     totalWaitingTicks: subset.reduce((n, r) => n + (r.waitingTicks ?? 0), 0), rejectedWorkTicks: subset.reduce((n, r) => n + (r.rejectedWorkTicks ?? 0), 0),
+    regeneratedWorkTicks: subset.reduce((n, r) => n + (r.regeneratedWorkTicks ?? 0), 0),
+    invalidations: subset.reduce((n, r) => n + (r.invalidations?.length ?? 0), 0),
+    regenerations: subset.reduce((n, r) => n + (r.regenerations ?? 0), 0),
+    regenerationsThatChangedTheOutput: subset.reduce((n, r) => n + r.jobs.filter(job => job.regenerationChangedOutput === true).length, 0),
+    outputsLeftInvalidated: subset.reduce((n, r) => n + (r.invalidatedOutputs?.length ?? 0), 0),
     independentExclusions: subset.reduce((n, r) => n + (r.independentExclusions ?? 0), 0),
     medianGraphBuildMs: median(subset.map(r => r.clocks.graphBuildMs)), medianPolicyMs: median(subset.map(r => r.clocks.policyMs)),
-    medianValidationMs: median(subset.map(r => r.clocks.validationMs)), medianEvaluatorMs: median(subset.map(r => r.clocks.checkerMs)) };
-});
-const report = { schema: 1, mode: protocol.mode, run, assigned: assignments.length, completed: rows.length, summary,
-  perWorkload: workloads.map(workload => ({ workload: workload.id, arms: arms.map(arm => {
-    const selected = rows.filter(row => row.arm === arm && row.workload === workload.id);
-    return { arm, correct: selected.filter(r => r.finalCorrect).length, assigned: selected.length,
+    medianValidationMs: median(subset.map(r => r.clocks.validationMs)), medianEvaluatorMs: median(subset.map(r => r.clocks.checkerMs)),
+    medianInvalidationMs: median(subset.map(r => r.clocks.invalidationMs)) };
+}));
+const report = { schema: 2, mode: protocol.mode, run, assigned: assignments.length, completed: rows.length, summary,
+  perWorkload: workloads.map(workload => ({ workload: workload.id, arms: arms.flatMap(arm => conditions.map(condition => {
+    const selected = rows.filter(row => row.arm === arm && row.workload === workload.id && row.invalidation === condition);
+    return { arm, invalidation: condition, correct: selected.filter(r => r.finalCorrect).length, assigned: selected.length,
+      invalidations: selected.reduce((n, r) => n + (r.invalidations?.length ?? 0), 0),
       refusalReasons: [...new Set(selected.flatMap(row => row.events?.filter(e => e.reason).map(e => e.reason) ?? []))] };
-  }) })),
+  })) })),
   apparatusPassed: rows.length === assignments.length && rows.every(row => !row.failure),
   modelRuns: 0, usefulBenefitQualified: false,
-  interpretation: 'Selected hand-authored deterministic edits demonstrate mechanism tradeoffs only. Virtual ticks are synthetic; elapsed policy costs are local replay overhead. No agent productivity or statistical significance claim.' };
+  interpretation: 'Selected hand-authored deterministic edits demonstrate mechanism tradeoffs only. Virtual ticks are synthetic; elapsed policy costs are local replay overhead. The invalidation factor is paired within one run over one implementation; it shows what the mechanism does on these cases and nothing about agent productivity or statistical significance.' };
 writeFileSync(resolve(run, 'summary.json'), JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
 if (!report.apparatusPassed) process.exitCode = 1;
