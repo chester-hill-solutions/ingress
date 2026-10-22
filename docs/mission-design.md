@@ -100,3 +100,17 @@ node scripts/mission-benchmark.mjs --real --missions=signal-open --configs=stock
 
 The mission id is `signal-open`; it shares the `analytics` domain with `signal-analytics` and
 dispatches on its own id.
+
+## Looking at the result
+
+The judge decides twelve booleans and never shows anyone the product. The acceptance pass does:
+it starts a cohort's server, visits it like a visitor, opens the dashboard like an owner, and keeps
+the pictures and the text.
+
+```sh
+node scripts/mission-open-accept.mjs --workspace=DIR --out=DIR
+# writes site.png, dashboard.png, dashboard.html, report.json; prints the dashboard as text
+```
+
+Run against the reference implementation it prints a page table and an escaped error list, which is
+the floor: a design submission should be judged by a human against that.
