@@ -33,3 +33,13 @@ test('unsafe or partial mission definitions are rejected',()=>{
   assert.throws(()=>assignMissions(missionFixtures,{configs:['stock-four','stock-four']}));assert.throws(()=>verifyMissionFixture('unknown','/tmp'));
   const broken=structuredClone(missionFixtures[0]);broken.files['../private']='secret';assert.throws(()=>validateMission(broken));
 });
+test('a model selection narrows the matrix and keeps the assignments it keeps', () => {
+  // A flight of one cheap model should not pay for a cohort nobody asked for, and the selection
+  // must not quietly change what the remaining rows contain.
+  const rows = assignMissions(missionFixtures, { repeats: 1, configs: ['stock-eight'], models: ['deepseek-v4-flash'] });
+  assert.equal(rows.length, missionFixtures.length);
+  assert.ok(rows.every(row => row.actorModels.length === 8 && row.actorModels.every(model => model.id === 'deepseek-v4-flash')));
+  const both = assignMissions(missionFixtures, { repeats: 1, configs: ['stock-eight'] });
+  assert.equal(both.length, missionFixtures.length * 2);
+  assert.throws(() => assignMissions(missionFixtures, { models: ['gpt-5'] }), /invalid_mission_assignment/);
+});

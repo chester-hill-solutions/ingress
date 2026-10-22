@@ -95,7 +95,7 @@ more interesting should pass at least as easily.
 
 ```sh
 node --test --test-timeout=180000 test/mission-design.test.mjs   # stubs 0/12, reference 12/12, mutation 2/12
-node scripts/mission-benchmark.mjs --real --missions=signal-open --configs=stock-eight --repeats=1
+node scripts/mission-benchmark.mjs --real --missions=signal-open --configs=stock-eight --models=deepseek-v4-flash --repeats=1
 ```
 
 The mission id is `signal-open`; it shares the `analytics` domain with `signal-analytics` and

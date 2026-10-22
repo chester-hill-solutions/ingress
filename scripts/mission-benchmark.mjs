@@ -11,19 +11,20 @@ import { readMissionFile } from '../src/mission-verifier.mjs';
 import { createBlindStudy, freezeBlindSample, saveBlindJSON } from '../src/blind-review.mjs';
 import { retain } from '../src/mission-retention.mjs';
 
-const args = process.argv.slice(2), keys = ['--repeats=', '--parallel=', '--deadline-ms=', '--seed=', '--configs=', '--missions='];
-if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,ingress-four]');
+const args = process.argv.slice(2), keys = ['--repeats=', '--parallel=', '--deadline-ms=', '--seed=', '--configs=', '--missions=', '--models='];
+if ((!args.includes('--real') && !args.includes('--plan')) || args.includes('--real') && args.includes('--plan') || args.some(arg => !['--real','--plan'].includes(arg) && !keys.some(key => arg.startsWith(key))) || keys.some(key => args.filter(arg => arg.startsWith(key)).length > 1)) throw Error('Usage: node scripts/mission-benchmark.mjs --plan|--real [--repeats=1 --parallel=6 --deadline-ms=900000 --configs=stock-four,ingress-four --models=deepseek-v4-flash]');
 const option = (key, fallback, min, max) => { const text = args.find(arg => arg.startsWith(key))?.slice(key.length); if (text === undefined) return fallback; const value = Number(text); if (!/^\d+$/.test(text) || !Number.isSafeInteger(value) || value < min || value > max) throw Error('invalid_mission_option'); return value; };
 const repeats = option('--repeats=',1,1,10), parallel = option('--parallel=',6,1,12), deadlineMs = option('--deadline-ms=',900000,1000,1800000), seed = option('--seed=',104729,0,4294967295);
 const configs = args.find(arg => arg.startsWith('--configs='))?.slice(10).split(',') ?? ['stock-four','ingress-four'];
 const ids = args.find(arg => arg.startsWith('--missions='))?.slice(11).split(',');
 if (ids && (new Set(ids).size !== ids.length || ids.some(id => !missionFixtures.some(value => value.id === id)))) throw Error('unknown_mission_selection');
 const fixtures = ids ? missionFixtures.filter(value => ids.includes(value.id)) : missionFixtures;
-const results = assignMissions(fixtures, { repeats, configs, seed });
+const models = args.find(arg => arg.startsWith('--models='))?.slice(9).split(',') ?? ['gpt-5-nano','deepseek-v4-flash'];
+const results = assignMissions(fixtures, { repeats, configs, models, seed });
 const directory = resolve(import.meta.dirname, '../artifacts', 'mission-flight-' + randomUUID());
 await mkdir(directory, { recursive: true, mode: 0o700 });
 const protocol = { purpose: 'Exploratory large-workflow benchmark and blind human tasting; not a product-benefit conclusion.',
-  repeats, configs, models: ['opencode/gpt-5-nano','opencode/deepseek-v4-flash'], parallelCohorts: parallel, seed, deadlineMs,
+  repeats, configs, models: models.map(id => 'opencode/' + id), parallelCohorts: parallel, seed, deadlineMs,
   cutoffBasis: 'Operational safety cap including setup. Native completion and independent artifact correctness are separate; unfinished attempts are retained and rated. This cap is not a validated task-adequacy claim.',
   observationBandsMs: [60000,180000,600000].filter(value => value < deadlineMs), snapshotBasis: 'Double-collected stable content then immutable grading copy. Not an atomic filesystem snapshot; sampled success bounds first observed correctness, not exact time to completion.',
   directiveEquality: 'All files and the complete MISSION.md directive are identical across configurations. Stream allocation differs by 1/2/4/8-agent layout. Every roster runs concurrently with no exclusive file ownership.',
@@ -64,11 +65,11 @@ async function publish(result, fixture) {
 }
 try {
   const profile = await selectedProfile(), catalog = JSON.parse(await readFile(profile.modelCatalogPath,'utf8'));
-  for (const id of ['gpt-5-nano','deepseek-v4-flash']) {
+  for (const id of models) {
     const model = catalog.opencode?.models?.[id];
     if (!model || model.tool_call!==true || !Number.isFinite(model.cost?.input) || !Number.isFinite(model.cost?.output)) throw Error('mission_model_ineligible');
   }
-  evidence.catalogPrices=Object.fromEntries(['gpt-5-nano','deepseek-v4-flash'].map(id=>[id,catalog.opencode.models[id].cost]));
+  evidence.catalogPrices=Object.fromEntries(models.map(id=>[id,catalog.opencode.models[id].cost]));
   evidence.status=study.status='running'; await saveBlindJSON(join(directory,'review-private.json'),study);save();
   const workers=Array.from({length:Math.min(parallel,results.length)},async()=>{
     while(!abort.signal.aborted) {
