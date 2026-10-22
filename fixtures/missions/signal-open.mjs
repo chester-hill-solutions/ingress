@@ -197,7 +197,7 @@ function fixture() {
     editablePaths,
     criteria: criteria.map(id => ({ id, description: id.replaceAll('-', ' ') })),
     workstreams,
-    evaluatorTimeoutMs: 45000,
+    evaluatorTimeoutMs: 30000,
     // No reviewInvocation: the blind review's rendered sample is a string, and this mission's
     // artifact is a running server. Its reviewable form is a served instance and the dashboard a
     // reviewer opens against it, which is why the flight records a screenshot per cohort.

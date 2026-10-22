@@ -43,9 +43,9 @@ record.
 
 | | |
 | --- | --- |
-| Missions | 8 — `synthetic-systematic-review`, `primary-cache-evidence-audit`, `exact-circulation`, `exact-reliability`, `operations-desk`, `reservation-ledger`, `ontario-drive`, `signal-analytics` — each 8 workstreams, a seeded tree, protected files, and a judge |
+| Missions | 9 — `synthetic-systematic-review`, `primary-cache-evidence-audit`, `exact-circulation`, `exact-reliability`, `operations-desk`, `reservation-ledger`, `ontario-drive`, `signal-analytics`, `signal-open` — each 8 workstreams, a seeded tree, protected files, and a judge |
 | Configurations | 7: stock/ingress at rosters 1, 2, 4, 8 |
-| Grading | the verifier replays submission code under Node's permission model — no network, no writes — against expectations the submission never sees, within a 16-invocation budget |
+| Grading | the verifier replays submission code under Node's permission model — no network, no writes — against expectations the submission never sees, within a 16-invocation budget. `signal-open` is the exception: it is judged by a real Chrome over the DevTools protocol visiting the submission's own server, because a design cannot be checked by a signature |
 | Observation | artifacts and a full grade at 60 s, 3 min and 10 min, retained as per-band hashes and check results |
 | Cost accounting | the harness reads prices from the local model catalog at start and sums per-actor usage. **$2.72 for the flight; the deterministic work cost no model spend** |
 | Blind review | labels shuffled, authorship redacted, artifacts frozen at settle, rated by a human on usefulness, completeness, clarity, coherence, overall |
@@ -79,6 +79,27 @@ about whether a handler's body is a string or an object, and a fix that silently
 that no longer matched. Both numbers are kept; the flight's evidence is untouched and `regrade.json`
 says what changed.
 
+## 4a. What was lost, and what it says about retention
+
+The flight directory is gone. `artifacts/` is gitignored and holds every flight's evidence, its
+retained traces and the re-grade; it was present when the flight settled and absent a few hours
+later, and nothing in this repository removes it — `rm` appears in `src/`, `scripts/`, `fixtures/`
+and the tests only for directories the code creates itself, and every one of those is a `mkdtemp`.
+The cause is not established.
+
+What survives is what was written down: the figures in §4 and in
+[the results document](mission-analytics-results.md), the commit message, and the four judge
+defects. What is lost is the trace — the 74 fence decisions, the per-actor workspaces, and
+`regrade.json`.
+
+The lesson is not "back up `artifacts/`". It is that **retention into an ignored, unbacked directory
+is not retention.** `npm run missions:retain` copies a flight's workspaces and receipts into the
+flight directory, which is the right shape and the wrong location: the durable record of a flight
+has to be a committed summary, and the bytes are a working copy that may not survive the week. The
+next harness change is to write a compact, committable summary per flight — the numbers, the
+criteria, the cost, the fingerprints — so that losing the directory costs the evidence's detail and
+never its existence.
+
 ## 5. What this establishes, and what it does not
 
 **Establishes.** A cheap model fleet can build a specified product to a contract it never sees, at
@@ -107,10 +128,11 @@ three. Cheap-model failures are legible rather than mysterious.
 
 - **The frontier arm** on `signal-analytics`, same judge, a few repeats — the experiment that answers
   the original question. Estimate $20–60 for a first pass at frontier prices.
-- **The underspecified mission**: ship the problem, not the contracts, and judge by outcome —
-  a real browser loading the tag from the submission's own instructions, a fresh agent wiring it up
-  from the README alone, adversarial inputs, blind human tasting, and which requirements the fleet
-  discovers that nobody told it. This is the mission that would measure design.
+- **The underspecified mission — built, not yet flown.** `signal-open` ships the problem instead of
+  the contracts and is judged by a real browser; the judge is proven fair from both ends (stubs
+  0/12, a reference 12/12, a mutation fails exactly the two checks it should).
+  See [the design mission](mission-design.md). What it still cannot measure is the ceiling — whether
+  the dashboard is any *good* — which is the blind review's job.
 - **The dollars for regeneration**: the model-driven recovery mode exists and is unblocked; the tax
   has never been priced in money rather than container seconds.
 - **The product queue**: item 14's remaining slices (durable authenticated checkout, the private

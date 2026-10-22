@@ -102,3 +102,12 @@ test('the judge catches a leak and an unescaped error, and only those', { skip }
   const failed = result.checks.filter(check => !check.passed).map(check => check.name).sort();
   assert.deepEqual(failed, ['dashboard-escapes-the-error', 'never-collects-typed-values'], `a mutated submission failed: ${failed.join(', ') || 'nothing'}`);
 });
+
+test('every mission fits the cohort runner\'s evaluator budget', () => {
+  // The runner rejects a fixture outside [1000, 35000] ms at cohort start, with a message that
+  // names the budget and nothing about which mission is wrong -- a flight was lost to it once.
+  for (const fixture of missionFixtures) {
+    const budget = fixture.evaluatorTimeoutMs ?? 6000;
+    assert.ok(Number.isInteger(budget) && budget >= 1000 && budget <= 35000, `${fixture.id} has an evaluator budget the runner will reject: ${budget}`);
+  }
+});

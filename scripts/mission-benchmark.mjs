@@ -87,7 +87,10 @@ try {
         }});
         await observer?.settled();Object.assign(results[index],result,{snapshots});
         if(result.actors.some(actor=>actor.processStopped===false))abort.abort();
-      } catch { results[index].outcome='failed'; results[index].errors=[{code:'unexpected_mission_runtime_failure'}];abort.abort(); }
+      } catch (error) { // The message is recorded because a bare catch here makes every future failure
+        // undiagnosable: the flight says a cohort failed and nothing about why, which is how this
+        // one cost a full re-run to attribute. It is a stack from our own code, never model prose.
+        results[index].outcome='failed'; results[index].errors=[{code:'unexpected_mission_runtime_failure', message:String(error?.message ?? error).slice(0,600)}];abort.abort(); }
       await publish(results[index],fixture);active--;finished++;
       evidence.loadEvents.push({time:new Date().toISOString(),type:'cohort.settled',id:assignment.id,activeCohorts:active});save();
       console.log(JSON.stringify({ready:finished,assigned:results.length,activeCohorts:active}));
