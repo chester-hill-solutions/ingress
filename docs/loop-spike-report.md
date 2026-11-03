@@ -5,7 +5,7 @@ attempts failed on wiring errors of mine, each recorded below. Worker
 `ingress-loop-spike`, account `6b149553c5075c79bbc132c481f387fe`, repository
 `loop/agent-work`.
 
-This is the load-bearing test behind [ADR 0018](../../stow/docs/adr/0018-snapshot-isolation-enforced-egress.md).
+This is the load-bearing test behind [ADR 0018](https://github.com/chester-hill-solutions/stow-s3/blob/main/docs/adr/0018-snapshot-isolation-enforced-egress.md).
 The [snapshot spike](snapshot-spike-report.md) proved isolation and a refusable
 egress gate. Neither is worth anything unless an agent in that container can do
 real work against a real repository. If it cannot, the approach is a demo.
