@@ -5,6 +5,7 @@ import { realpath } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import { verifyMission } from '../../src/mission-verifier.mjs';
 import { browserAvailable, launchBrowser } from '../../src/browser.mjs';
+import { stopProcess } from '../../src/process.mjs';
 
 /**
  * Signal, underspecified: the same product as `signal-analytics`, with the design left in.
@@ -404,7 +405,7 @@ async function gradeDesign(root, { check, readText }) {
       assert.match(readme, /node\s+server\.mjs/i, 'the README does not say how to start it');
     });
   } finally {
-    await browser?.close();
-    try { server.kill('SIGKILL'); } catch { /* already dead */ }
+    try { await browser?.close(); }
+    finally { await stopProcess(server, { graceMs: 100, killMs: 3000 }); }
   }
 }
