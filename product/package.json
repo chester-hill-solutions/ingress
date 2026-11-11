@@ -4,5 +4,8 @@
   "type": "module",
   "devDependencies": {
     "wrangler": "^4.156.2"
+  },
+  "overrides": {
+    "undici": "7.30.2"
   }
 }
